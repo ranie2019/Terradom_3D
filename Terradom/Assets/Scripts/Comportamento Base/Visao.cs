@@ -197,4 +197,40 @@ public class Visao : MonoBehaviour
         b.y = 0f;
         return Vector3.Distance(a, b);
     }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, raioVisao);
+
+        Vector3 frente = transform.forward;
+        frente.y = 0f;
+
+        if (frente.sqrMagnitude < 0.0001f)
+            frente = Vector3.forward;
+
+        Quaternion rotEsq = Quaternion.Euler(0f, -anguloCampoDeVisao * 0.5f, 0f);
+        Quaternion rotDir = Quaternion.Euler(0f, anguloCampoDeVisao * 0.5f, 0f);
+
+        Vector3 linhaEsq = rotEsq * frente.normalized * raioVisao;
+        Vector3 linhaDir = rotDir * frente.normalized * raioVisao;
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawLine(transform.position, transform.position + linhaEsq);
+        Gizmos.DrawLine(transform.position, transform.position + linhaDir);
+
+        if (_alvoDetectado360 != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, _alvoDetectado360.position);
+        }
+
+        if (_alvoEngajavel != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(transform.position, _alvoEngajavel.position);
+        }
+    }
+#endif
 }

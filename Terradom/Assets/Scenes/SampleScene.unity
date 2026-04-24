@@ -4119,6 +4119,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 499718594}
     m_Modifications:
+    - target: {fileID: 510537659906093563, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1644270781630906693, guid: eed938288b1520948a728152ba161b55, type: 3}
       propertyPath: m_Name
       value: Player Recurso Azul (1)

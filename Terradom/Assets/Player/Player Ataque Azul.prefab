@@ -1889,20 +1889,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3567fd7daf2dbb418b5faac2b1d737f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayControleAI
-  attackTag: Vermelho
-  ignoreTag: 
-  detectRadius: 6
-  attackRadius: 1.4
-  targetLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  lockY: 1
-  perseguirAlvo: 1
-  pararSemAlvo: 1
-  damage: 1
-  attackCooldown: 0.7
+  distanciaParadaSemAtaque: 1.5
+  folgaParaEntrarNoAlcance: 0.1
+  patrulharSemAlvo: 1
+  tempoTrocaDirecao: 2
   movimentacao: {fileID: 3243296221677114727}
-  animator: {fileID: 7814832280628718391}
+  visao: {fileID: 0}
+  ataque: {fileID: 0}
 --- !u!114 &3243296221677114727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1915,15 +1908,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3177ad91ef6457b4492d8412ad38669a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Movimentacao
-  velocidade: 3
+  velocidadeNormal: 2.4
+  velocidadePerseguicao: 4
   velocidadeRotacao: 540
-  travarY: 1
   usarRigidbody: 1
-  zerarVelocidadeVerticalAoParar: 0
-  desativarPlayControleAIQuandoMover: 1
-  reativarPlayControleAIQuandoParar: 0
+  travarY: 1
+  parametroAndando: Andando
+  desligarAnimacaoDeMovimentoDuranteAtaque: 1
+  raizVisual: {fileID: 0}
+  correcaoRotacaoVisualEuler: {x: 0, y: 0, z: 0}
+  autoEncontrarRaizVisual: 1
   rb: {fileID: 6812690891371205206}
   animator: {fileID: 7814832280628718391}
+  ataque: {fileID: 473956432005272863}
 --- !u!114 &6150588251118747596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1962,8 +1959,6 @@ MonoBehaviour:
   duracaoAnimAtaque: 0.35
   momentoDoHit: 0.15
   aplicarDanoDireto: 1
-  virarParaAlvoAoAtacar: 1
-  velocidadeRotacaoAtaque: 720
   parametroAtaque: Ataque
   animator: {fileID: 7814832280628718391}
 --- !u!114 &1239496216647659892

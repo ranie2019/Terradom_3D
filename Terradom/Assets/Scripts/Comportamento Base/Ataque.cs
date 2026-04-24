@@ -14,19 +14,18 @@ public class Ataque : MonoBehaviour
     [Header("Animator")]
     [SerializeField] private string parametroAtaque = "Ataque";
 
-    [Header("Referências (auto)")]
+    [Header("Referências")]
     [SerializeField] private Animator animator;
 
     private Transform _alvoAtual;
+    private bool _estaAtacando;
+    private bool _hitAplicado;
 
-    private bool _estaAtacando = false;
-    private bool _hitAplicado = false;
+    private float _fimAtaque;
+    private float _momentoHitTempo;
+    private float _proximoAtaque;
 
-    private float _fimAtaque = 0f;
-    private float _momentoHitTempo = 0f;
-    private float _proximoAtaque = 0f;
-
-    private bool _animTemAtaque = false;
+    private bool _animTemAtaque;
 
     private void Awake()
     {
@@ -35,7 +34,11 @@ public class Ataque : MonoBehaviour
         if (animator != null)
             animator.applyRootMotion = false;
 
-        _animTemAtaque = VerificarParametroAnimator(animator, parametroAtaque, AnimatorControllerParameterType.Bool);
+        _animTemAtaque = VerificarParametroAnimator(
+            animator,
+            parametroAtaque,
+            AnimatorControllerParameterType.Bool
+        );
     }
 
     private void OnDisable()
@@ -63,11 +66,6 @@ public class Ataque : MonoBehaviour
         _hitAplicado = false;
     }
 
-    public Transform GetAlvoAtual()
-    {
-        return _alvoAtual;
-    }
-
     public bool EstaAtacandoAgora()
     {
         return _estaAtacando;
@@ -92,7 +90,8 @@ public class Ataque : MonoBehaviour
             return;
         }
 
-        float dist = DistXZ(transform.position, _alvoAtual.position);
+        float dist = DistanciaAteAlvo(_alvoAtual);
+
         if (dist > alcanceAtaque)
         {
             _estaAtacando = false;
@@ -135,14 +134,11 @@ public class Ataque : MonoBehaviour
 
     private void AplicarHit()
     {
-        if (!aplicarDanoDireto)
+        if (!aplicarDanoDireto || !AlvoValido(_alvoAtual))
             return;
 
-        if (!AlvoValido(_alvoAtual))
-            return;
-
-        float dist = DistXZ(transform.position, _alvoAtual.position);
-        if (dist > alcanceAtaque + 0.25f)
+        float dist = DistanciaAteAlvo(_alvoAtual);
+        if (dist > alcanceAtaque + 0.35f)
             return;
 
         Vida vida = _alvoAtual.GetComponent<Vida>();
@@ -150,7 +146,32 @@ public class Ataque : MonoBehaviour
             vida = _alvoAtual.GetComponentInChildren<Vida>();
 
         if (vida != null)
+        {
             vida.AplicarDano(dano);
+            return;
+        }
+
+        // Para funcionar também com BaseVida/Basevida sem depender do tipo exato.
+        _alvoAtual.SendMessage("AplicarDano", dano, SendMessageOptions.DontRequireReceiver);
+        _alvoAtual.SendMessage("ReceberDano", dano, SendMessageOptions.DontRequireReceiver);
+    }
+
+    private float DistanciaAteAlvo(Transform alvo)
+    {
+        if (alvo == null)
+            return float.MaxValue;
+
+        Collider col = alvo.GetComponent<Collider>();
+        if (col == null)
+            col = alvo.GetComponentInChildren<Collider>();
+
+        Vector3 pontoMaisProximo = col != null
+            ? col.ClosestPoint(transform.position)
+            : alvo.position;
+
+        pontoMaisProximo.y = transform.position.y;
+
+        return Vector3.Distance(transform.position, pontoMaisProximo);
     }
 
     private void AtualizarAnimator()
@@ -178,12 +199,5 @@ public class Ataque : MonoBehaviour
         }
 
         return false;
-    }
-
-    private static float DistXZ(Vector3 a, Vector3 b)
-    {
-        a.y = 0f;
-        b.y = 0f;
-        return Vector3.Distance(a, b);
     }
 }
