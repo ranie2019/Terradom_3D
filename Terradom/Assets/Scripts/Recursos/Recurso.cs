@@ -50,8 +50,6 @@ public class Recurso : MonoBehaviour
 
     private void AplicarDano()
     {
-        Debug.Log("[Pedra] Houve colisão válida com uma tag de dano.");
-
         valorAtual -= 1;
 
         if (valorAtual <= 0)

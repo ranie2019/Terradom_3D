@@ -4,6 +4,13 @@
 [RequireComponent(typeof(Rigidbody))]
 public class ColetorAI : MonoBehaviour
 {
+    private enum TipoRecurso
+    {
+        Nenhum,
+        Pedra,
+        Arvore
+    }
+
     [Header("Vida")]
     [SerializeField] private int vidaMaxima = 10;
     [SerializeField] private int vidaAtual = 10;
@@ -24,7 +31,7 @@ public class ColetorAI : MonoBehaviour
     [SerializeField] private float intervaloBuscaAlvo = 0.2f;
     [SerializeField] private LayerMask camadasDetectaveis = ~0;
     [SerializeField] private bool usarCampoDeVisao = false;
-    [SerializeField] [Range(1f, 360f)] private float anguloCampoDeVisao = 180f;
+    [SerializeField, Range(1f, 360f)] private float anguloCampoDeVisao = 180f;
     [SerializeField] private bool travarYNaVisao = true;
 
     [Header("Ação")]
@@ -40,13 +47,21 @@ public class ColetorAI : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private string paramAndando = "Andando";
     [SerializeField] private string paramMinerar = "Minerar";
-    [SerializeField] private string paramCortar = "Cortar";
+    [SerializeField] private string paramCorta = "Corta";
     [SerializeField] private string paramMorto = "Morto";
+
+    [Header("Debug")]
+    [SerializeField] private bool debugLogs = false;
+    [SerializeField] private string debugAlvoAtual;
+    [SerializeField] private string debugTipoRecurso;
+    [SerializeField] private bool debugMinerarAtivo;
+    [SerializeField] private bool debugCortaAtivo;
 
     private Rigidbody rb;
 
     private Transform alvoAtual;
     private Collider colliderAlvoAtual;
+    private TipoRecurso tipoRecursoAtual = TipoRecurso.Nenhum;
 
     private Vector3 direcaoPatrulha;
     private Vector3 direcaoDesejada;
@@ -62,7 +77,7 @@ public class ColetorAI : MonoBehaviour
 
     private bool animAndandoExiste;
     private bool animMinerarExiste;
-    private bool animCortarExiste;
+    private bool animCortaExiste;
     private bool animMortoExiste;
 
     private void Awake()
@@ -72,17 +87,29 @@ public class ColetorAI : MonoBehaviour
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
 
+        if (animator != null)
+            animator.applyRootMotion = false;
+
         vidaAtual = vidaMaxima;
 
         animAndandoExiste = TemParametro(paramAndando);
         animMinerarExiste = TemParametro(paramMinerar);
-        animCortarExiste = TemParametro(paramCortar);
+        animCortaExiste = TemParametro(paramCorta);
         animMortoExiste = TemParametro(paramMorto);
 
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
         DefinirNovaDirecaoPatrulha();
+
+        if (debugLogs)
+        {
+            Debug.Log($"[ColetorAI] Animator encontrado: {animator != null}");
+            Debug.Log($"[ColetorAI] Param Andando existe: {animAndandoExiste}");
+            Debug.Log($"[ColetorAI] Param Minerar existe: {animMinerarExiste}");
+            Debug.Log($"[ColetorAI] Param Corta existe: {animCortaExiste}");
+            Debug.Log($"[ColetorAI] Param Morto existe: {animMortoExiste}");
+        }
     }
 
     private void Update()
@@ -92,6 +119,7 @@ public class ColetorAI : MonoBehaviour
 
         AtualizarAlvo();
         ControlarEstado();
+        AtualizarDebugInspector();
     }
 
     private void FixedUpdate()
@@ -113,6 +141,7 @@ public class ColetorAI : MonoBehaviour
         {
             alvoAtual = null;
             colliderAlvoAtual = null;
+            tipoRecursoAtual = TipoRecurso.Nenhum;
         }
 
         if (Time.time < proximaBuscaAlvo)
@@ -129,6 +158,7 @@ public class ColetorAI : MonoBehaviour
 
         Transform melhorTransform = null;
         Collider melhorCollider = null;
+        TipoRecurso melhorTipo = TipoRecurso.Nenhum;
         float melhorDistancia = float.MaxValue;
 
         for (int i = 0; i < hits.Length; i++)
@@ -140,32 +170,29 @@ public class ColetorAI : MonoBehaviour
             if (hit.transform == transform || hit.transform.IsChildOf(transform))
                 continue;
 
-            Transform recurso = ResolverTransformDoRecurso(hit.transform);
-            if (recurso == null)
+            Transform recurso = ResolverTransformDoRecurso(hit.transform, out TipoRecurso tipoEncontrado);
+            if (recurso == null || tipoEncontrado == TipoRecurso.Nenhum)
                 continue;
 
-            if (!EstaNoCampoDeVisao(hit.bounds.center))
+            Vector3 ponto = hit.ClosestPoint(transform.position);
+
+            if (!EstaNoCampoDeVisao(ponto))
                 continue;
 
-            float distancia = DistanciaPlano(transform.position, hit.bounds.center);
+            float distancia = DistanciaPlano(transform.position, ponto);
 
             if (distancia < melhorDistancia)
             {
                 melhorDistancia = distancia;
                 melhorTransform = recurso;
                 melhorCollider = hit;
+                melhorTipo = tipoEncontrado;
             }
         }
 
-        if (melhorTransform != alvoAtual)
-        {
-            alvoAtual = melhorTransform;
-            colliderAlvoAtual = melhorCollider;
-        }
-        else
-        {
-            colliderAlvoAtual = melhorCollider;
-        }
+        alvoAtual = melhorTransform;
+        colliderAlvoAtual = melhorCollider;
+        tipoRecursoAtual = melhorTipo;
     }
 
     private void ControlarEstado()
@@ -253,15 +280,17 @@ public class ColetorAI : MonoBehaviour
         if (alvoAtual == null)
             return;
 
-        AtivarAnimacaoPorTag(alvoAtual.tag);
+        AtivarAnimacaoPorTipo(tipoRecursoAtual);
 
         if (Time.time < proximaAcao)
             return;
 
         proximaAcao = Time.time + tempoEntreAcoes;
 
-        // Aqui depois você pode ligar:
-        // Pedra, Árvore, inventário, dano no recurso, etc.
+        // Aqui depois você pode adicionar:
+        // - diminuir vida da pedra/árvore
+        // - adicionar madeira/pedra no inventário
+        // - mandar recurso para a base
     }
 
     private void MoverNaDirecao(Vector3 direcao)
@@ -325,8 +354,10 @@ public class ColetorAI : MonoBehaviour
         proximaTrocaDirecao = Time.time + tempoTrocaDirecao;
     }
 
-    private Transform ResolverTransformDoRecurso(Transform origem)
+    private Transform ResolverTransformDoRecurso(Transform origem, out TipoRecurso tipo)
     {
+        tipo = TipoRecurso.Nenhum;
+
         if (origem == null)
             return null;
 
@@ -334,7 +365,9 @@ public class ColetorAI : MonoBehaviour
 
         while (atual != null)
         {
-            if (EhTagDeRecurso(atual.tag))
+            tipo = ObterTipoRecursoPorTag(atual.tag);
+
+            if (tipo != TipoRecurso.Nenhum)
                 return atual;
 
             atual = atual.parent;
@@ -343,9 +376,15 @@ public class ColetorAI : MonoBehaviour
         return null;
     }
 
-    private bool EhTagDeRecurso(string tagRecebida)
+    private TipoRecurso ObterTipoRecursoPorTag(string tagRecebida)
     {
-        return tagRecebida == tagPedra || tagRecebida == tagArvore;
+        if (tagRecebida == tagPedra)
+            return TipoRecurso.Pedra;
+
+        if (tagRecebida == tagArvore)
+            return TipoRecurso.Arvore;
+
+        return TipoRecurso.Nenhum;
     }
 
     private bool AlvoEhValido()
@@ -356,7 +395,9 @@ public class ColetorAI : MonoBehaviour
         if (!alvoAtual.gameObject.activeInHierarchy)
             return false;
 
-        if (!EhTagDeRecurso(alvoAtual.tag))
+        tipoRecursoAtual = ObterTipoRecursoPorTag(alvoAtual.tag);
+
+        if (tipoRecursoAtual == TipoRecurso.Nenhum)
             return false;
 
         Vector3 pontoAlvo = GetPontoAlvoAtual();
@@ -374,10 +415,20 @@ public class ColetorAI : MonoBehaviour
     private Vector3 GetPontoAlvoAtual()
     {
         if (colliderAlvoAtual != null)
-            return colliderAlvoAtual.bounds.center;
+            return colliderAlvoAtual.ClosestPoint(transform.position);
 
         if (alvoAtual != null)
+        {
+            Collider col = alvoAtual.GetComponent<Collider>();
+
+            if (col == null)
+                col = alvoAtual.GetComponentInChildren<Collider>();
+
+            if (col != null)
+                return col.ClosestPoint(transform.position);
+
             return alvoAtual.position;
+        }
 
         return transform.position;
     }
@@ -414,23 +465,36 @@ public class ColetorAI : MonoBehaviour
         return Vector3.Distance(a, b);
     }
 
-    private void AtivarAnimacaoPorTag(string tagDoAlvo)
+    private void AtivarAnimacaoPorTipo(TipoRecurso tipo)
     {
         if (animator == null)
             return;
 
-        PararAnimacoesAcao();
-
-        if (tagDoAlvo == tagPedra)
+        if (tipo == TipoRecurso.Pedra)
         {
             if (animMinerarExiste)
                 animator.SetBool(paramMinerar, true);
+
+            SetCorta(false);
+            return;
         }
-        else if (tagDoAlvo == tagArvore)
+
+        if (tipo == TipoRecurso.Arvore)
         {
-            if (animCortarExiste)
-                animator.SetBool(paramCortar, true);
+            if (animMinerarExiste)
+                animator.SetBool(paramMinerar, false);
+
+            SetCorta(true);
+            return;
         }
+
+        PararAnimacoesAcao();
+    }
+
+    private void SetCorta(bool ativo)
+    {
+        if (animCortaExiste)
+            animator.SetBool(paramCorta, ativo);
     }
 
     private void PararAnimacoesAcao()
@@ -441,8 +505,7 @@ public class ColetorAI : MonoBehaviour
         if (animMinerarExiste)
             animator.SetBool(paramMinerar, false);
 
-        if (animCortarExiste)
-            animator.SetBool(paramCortar, false);
+        SetCorta(false);
     }
 
     private void OlharPara(Vector3 destino)
@@ -454,11 +517,25 @@ public class ColetorAI : MonoBehaviour
             return;
 
         Quaternion rotacaoAlvo = Quaternion.LookRotation(direcao.normalized);
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            rotacaoAlvo,
-            velocidadeRotacao * Time.deltaTime
-        );
+
+        if (rb != null)
+        {
+            Quaternion novaRotacao = Quaternion.Slerp(
+                rb.rotation,
+                rotacaoAlvo,
+                velocidadeRotacao * Time.deltaTime
+            );
+
+            rb.MoveRotation(novaRotacao);
+        }
+        else
+        {
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                rotacaoAlvo,
+                velocidadeRotacao * Time.deltaTime
+            );
+        }
     }
 
     public void ReceberDano(int dano)
@@ -534,6 +611,18 @@ public class ColetorAI : MonoBehaviour
         return false;
     }
 
+    private void AtualizarDebugInspector()
+    {
+        debugAlvoAtual = alvoAtual != null ? alvoAtual.name : "Nenhum";
+        debugTipoRecurso = tipoRecursoAtual.ToString();
+
+        if (animator != null)
+        {
+            debugMinerarAtivo = animMinerarExiste && animator.GetBool(paramMinerar);
+            debugCortaAtivo = animCortaExiste && animator.GetBool(paramCorta);
+        }
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
@@ -549,6 +638,7 @@ public class ColetorAI : MonoBehaviour
         {
             Vector3 frente = transform.forward;
             frente.y = 0f;
+
             if (frente.sqrMagnitude < 0.0001f)
                 frente = Vector3.forward;
 
