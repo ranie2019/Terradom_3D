@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: SimpleNaturePack_Texture_01
-  m_Shader: {fileID: 4800000, guid: 0ca6dca7396eb48e5849247ffd444914, type: 3}
+  m_Shader: {fileID: 4800000, guid: ee7e4c9a5f6364b688a332c67fc32cca, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -64,6 +64,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ClearCoatMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -199,8 +203,10 @@ Material:
     - _Anisotropy: 0
     - _Blend: 0
     - _BlendMode: 0
+    - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
     - _BumpScale: 1
+    - _ClearCoat: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _CoatMask: 0
@@ -377,3 +383,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   version: 11
+  hdPluginSubTargetMaterialVersions:
+    m_Keys: []
+    m_Values: 
