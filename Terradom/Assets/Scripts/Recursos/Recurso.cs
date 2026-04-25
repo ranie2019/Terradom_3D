@@ -3,27 +3,26 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class Recurso : MonoBehaviour
 {
-    [Header("Quantidade do Recurso")]
-    [SerializeField] private int valorMaxima = 3;
-    [SerializeField] private int valorAtual = 3;
+    [Header("Quantidade")]
+    [SerializeField] private int valorMaximo = 10;
+    [SerializeField] private int valorAtual = 10;
 
-    [Header("Tags que causam dano")]
-    [SerializeField] private string[] tagsQueDaoDano = { "Picareta" };
+    [Header("Coleta")]
+    [SerializeField] private int valorPorColeta = 1;
+    [SerializeField] private float intervaloEntreColetas = 0.25f;
+
+    [Header("Ferramentas")]
+    [SerializeField] private string tagPicareta = "Picareta";
+    [SerializeField] private string tagMachado = "Machado";
+
+    [Header("Jogadores")]
+    [SerializeField] private string[] tagsDosDonos = { "Azul", "Vermelho" };
+
+    private float proximaColeta = 0f;
 
     private void Awake()
     {
-        valorAtual = valorMaxima;
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision == null)
-            return;
-
-        if (ColisaoTemTagQueDaDano(collision))
-        {
-            AplicarDano();
-        }
+        valorAtual = valorMaximo;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -31,26 +30,52 @@ public class Recurso : MonoBehaviour
         if (other == null)
             return;
 
-        if (ObjetoOuPaisTemAlgumaTagDeDano(other.transform))
-        {
-            AplicarDano();
-        }
+        TentarColetar(other.transform);
     }
 
-    public void ProcessarColisao(GameObject outroObjeto)
+    private void OnCollisionEnter(Collision collision)
     {
-        if (outroObjeto == null)
+        if (collision == null || collision.collider == null)
             return;
 
-        if (ObjetoOuPaisTemAlgumaTagDeDano(outroObjeto.transform))
-        {
-            AplicarDano();
-        }
+        TentarColetar(collision.collider.transform);
     }
 
-    private void AplicarDano()
+    private void TentarColetar(Transform objetoQueTocou)
     {
-        valorAtual -= 1;
+        if (Time.time < proximaColeta)
+            return;
+
+        Transform ferramenta = EncontrarFerramenta(objetoQueTocou);
+
+        if (ferramenta == null)
+            return;
+
+        string tipoRecurso = ObterTipoRecursoPelaTagDoObjeto();
+
+        if (string.IsNullOrWhiteSpace(tipoRecurso))
+            return;
+
+        if (!FerramentaPodeColetar(ferramenta, tipoRecurso))
+            return;
+
+        string tagDono = EncontrarTagDono(ferramenta);
+
+        if (string.IsNullOrWhiteSpace(tagDono))
+            return;
+
+        proximaColeta = Time.time + intervaloEntreColetas;
+
+        valorAtual -= valorPorColeta;
+
+        if (GameControllerRecursos.Instance != null)
+        {
+            GameControllerRecursos.Instance.AdicionarRecurso(
+                tagDono,
+                tipoRecurso,
+                valorPorColeta
+            );
+        }
 
         if (valorAtual <= 0)
         {
@@ -59,60 +84,66 @@ public class Recurso : MonoBehaviour
         }
     }
 
-    private bool ColisaoTemTagQueDaDano(Collision collision)
+    private string ObterTipoRecursoPelaTagDoObjeto()
     {
-        if (collision.collider != null && ObjetoOuPaisTemAlgumaTagDeDano(collision.collider.transform))
-            return true;
+        if (CompareTag("Pedra"))
+            return "Pedra";
 
-        if (collision.transform != null && ObjetoOuPaisTemAlgumaTagDeDano(collision.transform))
-            return true;
+        if (CompareTag("Arvore"))
+            return "Arvore";
 
-        int totalContatos = collision.contactCount;
-        for (int i = 0; i < totalContatos; i++)
-        {
-            ContactPoint contato = collision.GetContact(i);
+        if (CompareTag("Metal"))
+            return "Metal";
 
-            if (contato.otherCollider != null && ObjetoOuPaisTemAlgumaTagDeDano(contato.otherCollider.transform))
-                return true;
-        }
-
-        return false;
+        return "";
     }
 
-    private bool ObjetoOuPaisTemAlgumaTagDeDano(Transform alvo)
+    private Transform EncontrarFerramenta(Transform origem)
     {
-        if (alvo == null || tagsQueDaoDano == null || tagsQueDaoDano.Length == 0)
-            return false;
-
-        Transform atual = alvo;
+        Transform atual = origem;
 
         while (atual != null)
         {
-            if (TemTagDeDano(atual))
-                return true;
+            if (atual.CompareTag(tagPicareta) || atual.CompareTag(tagMachado))
+                return atual;
 
             atual = atual.parent;
         }
 
+        return null;
+    }
+
+    private bool FerramentaPodeColetar(Transform ferramenta, string tipoRecurso)
+    {
+        if (ferramenta.CompareTag(tagPicareta) && tipoRecurso == "Pedra")
+            return true;
+
+        if (ferramenta.CompareTag(tagMachado) && tipoRecurso == "Arvore")
+            return true;
+
         return false;
     }
 
-    private bool TemTagDeDano(Transform alvo)
+    private string EncontrarTagDono(Transform ferramenta)
     {
-        if (alvo == null || tagsQueDaoDano == null)
-            return false;
+        Transform atual = ferramenta;
 
-        for (int i = 0; i < tagsQueDaoDano.Length; i++)
+        while (atual != null)
         {
-            string tagAtual = tagsQueDaoDano[i];
+            for (int i = 0; i < tagsDosDonos.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(tagsDosDonos[i]) && atual.CompareTag(tagsDosDonos[i]))
+                    return tagsDosDonos[i];
+            }
 
-            if (string.IsNullOrWhiteSpace(tagAtual))
-                continue;
-
-            if (alvo.CompareTag(tagAtual))
-                return true;
+            atual = atual.parent;
         }
 
-        return false;
+        return "";
+    }
+
+    public int GetValorAtual()
+    {
+        return valorAtual;
     }
 }

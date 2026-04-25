@@ -67,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5f17d654a450810478416dd014ed3b0c, type: 2}
+  - {fileID: 2100000, guid: 0ec77e506658168428e174ef6ddb4abe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -291,7 +291,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5f17d654a450810478416dd014ed3b0c, type: 2}
+  - {fileID: 2100000, guid: 0ec77e506658168428e174ef6ddb4abe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -714,7 +714,7 @@ MonoBehaviour:
   usarCampoDeVisao: 0
   anguloCampoDeVisao: 180
   travarYNaVisao: 1
-  distanciaAcao: 2
+  distanciaAcao: 1.2
   distanciaSairDaAcao: 1
   tempoEntreAcoes: 1
   tagPedra: Pedra
@@ -722,8 +722,13 @@ MonoBehaviour:
   animator: {fileID: 4203598442501423056}
   paramAndando: Andando
   paramMinerar: Minerar
-  paramCortar: Cortar
+  paramCorta: Corta
   paramMorto: Morto
+  debugLogs: 0
+  debugAlvoAtual: 
+  debugTipoRecurso: 
+  debugMinerarAtivo: 0
+  debugCortaAtivo: 0
 --- !u!1 &1971835015596084245
 GameObject:
   m_ObjectHideFlags: 0
@@ -791,7 +796,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5f17d654a450810478416dd014ed3b0c, type: 2}
+  - {fileID: 2100000, guid: 0ec77e506658168428e174ef6ddb4abe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -935,7 +940,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5f17d654a450810478416dd014ed3b0c, type: 2}
+  - {fileID: 2100000, guid: 0ec77e506658168428e174ef6ddb4abe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1789,7 +1794,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5f17d654a450810478416dd014ed3b0c, type: 2}
+  - {fileID: 2100000, guid: 0ec77e506658168428e174ef6ddb4abe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
