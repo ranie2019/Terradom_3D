@@ -15,6 +15,7 @@ TagManager:
   - Pedra
   - Arvore
   - Machado
+  - Metal
   layers:
   - Default
   - TransparentFX
