@@ -1,4 +1,4 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
@@ -8,7 +8,8 @@ public class ColetorAI : MonoBehaviour
     {
         Nenhum,
         Pedra,
-        Arvore
+        Arvore,
+        Metal
     }
 
     [Header("Vida")]
@@ -42,6 +43,7 @@ public class ColetorAI : MonoBehaviour
     [Header("Tags de recurso")]
     [SerializeField] private string tagPedra = "Pedra";
     [SerializeField] private string tagArvore = "Arvore";
+    [SerializeField] private string tagMetal = "Metal";
 
     [Header("Animator")]
     [SerializeField] private Animator animator;
@@ -286,11 +288,6 @@ public class ColetorAI : MonoBehaviour
             return;
 
         proximaAcao = Time.time + tempoEntreAcoes;
-
-        // Aqui depois você pode adicionar:
-        // - diminuir vida da pedra/árvore
-        // - adicionar madeira/pedra no inventário
-        // - mandar recurso para a base
     }
 
     private void MoverNaDirecao(Vector3 direcao)
@@ -384,6 +381,9 @@ public class ColetorAI : MonoBehaviour
         if (tagRecebida == tagArvore)
             return TipoRecurso.Arvore;
 
+        if (tagRecebida == tagMetal)
+            return TipoRecurso.Metal;
+
         return TipoRecurso.Nenhum;
     }
 
@@ -470,12 +470,14 @@ public class ColetorAI : MonoBehaviour
         if (animator == null)
             return;
 
-        if (tipo == TipoRecurso.Pedra)
+        if (tipo == TipoRecurso.Pedra || tipo == TipoRecurso.Metal)
         {
             if (animMinerarExiste)
                 animator.SetBool(paramMinerar, true);
 
-            SetCorta(false);
+            if (animCortaExiste)
+                animator.SetBool(paramCorta, false);
+
             return;
         }
 
@@ -484,17 +486,13 @@ public class ColetorAI : MonoBehaviour
             if (animMinerarExiste)
                 animator.SetBool(paramMinerar, false);
 
-            SetCorta(true);
+            if (animCortaExiste)
+                animator.SetBool(paramCorta, true);
+
             return;
         }
 
         PararAnimacoesAcao();
-    }
-
-    private void SetCorta(bool ativo)
-    {
-        if (animCortaExiste)
-            animator.SetBool(paramCorta, ativo);
     }
 
     private void PararAnimacoesAcao()
@@ -505,7 +503,8 @@ public class ColetorAI : MonoBehaviour
         if (animMinerarExiste)
             animator.SetBool(paramMinerar, false);
 
-        SetCorta(false);
+        if (animCortaExiste)
+            animator.SetBool(paramCorta, false);
     }
 
     private void OlharPara(Vector3 destino)

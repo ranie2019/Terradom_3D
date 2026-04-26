@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(Camera))]
 public class Tela : MonoBehaviour
 {
     [Header("Movimento da câmera")]
@@ -27,9 +28,8 @@ public class Tela : MonoBehaviour
     private void Awake()
     {
         cam = GetComponent<Camera>();
-
-        if (canvasUI != null && canvasUI.renderMode == RenderMode.ScreenSpaceCamera)
-            canvasUI.worldCamera = cam;
+        ConfigurarCanvas();
+        CorrigirLimitesInvertidos();
     }
 
     private void Update()
@@ -38,11 +38,47 @@ public class Tela : MonoBehaviour
         AjustarAlturaComScroll();
     }
 
+    private void ConfigurarCanvas()
+    {
+        if (canvasUI == null || cam == null)
+            return;
+
+        if (canvasUI.renderMode == RenderMode.ScreenSpaceCamera)
+            canvasUI.worldCamera = cam;
+    }
+
+    private void CorrigirLimitesInvertidos()
+    {
+        if (limiteMinX > limiteMaxX)
+            Trocar(ref limiteMinX, ref limiteMaxX);
+
+        if (limiteMinZ > limiteMaxZ)
+            Trocar(ref limiteMinZ, ref limiteMaxZ);
+
+        if (limiteAproximacaoY > limiteAfastamentoY)
+            Trocar(ref limiteAproximacaoY, ref limiteAfastamentoY);
+    }
+
     private void MoverCameraComTeclado()
     {
         if (Keyboard.current == null)
             return;
 
+        Vector3 direcao = ObterDirecaoTeclado();
+
+        if (direcao.sqrMagnitude < 0.0001f)
+            return;
+
+        direcao.Normalize();
+
+        Vector3 novaPos = transform.position + direcao * velocidadeMovimento * Time.deltaTime;
+        novaPos = AplicarLimitesXZ(novaPos);
+
+        transform.position = novaPos;
+    }
+
+    private Vector3 ObterDirecaoTeclado()
+    {
         Vector3 direcao = Vector3.zero;
 
         if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed)
@@ -57,18 +93,7 @@ public class Tela : MonoBehaviour
         if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
             direcao.x -= 1f;
 
-        if (direcao.sqrMagnitude > 1f)
-            direcao.Normalize();
-
-        Vector3 novaPos = transform.position + direcao * velocidadeMovimento * Time.deltaTime;
-
-        if (usarLimites)
-        {
-            novaPos.x = Mathf.Clamp(novaPos.x, limiteMinX, limiteMaxX);
-            novaPos.z = Mathf.Clamp(novaPos.z, limiteMinZ, limiteMaxZ);
-        }
-
-        transform.position = novaPos;
+        return direcao;
     }
 
     private void AjustarAlturaComScroll()
@@ -87,5 +112,23 @@ public class Tela : MonoBehaviour
         novaPos.y = Mathf.Clamp(novaPos.y, limiteAproximacaoY, limiteAfastamentoY);
 
         transform.position = novaPos;
+    }
+
+    private Vector3 AplicarLimitesXZ(Vector3 pos)
+    {
+        if (!usarLimites)
+            return pos;
+
+        pos.x = Mathf.Clamp(pos.x, limiteMinX, limiteMaxX);
+        pos.z = Mathf.Clamp(pos.z, limiteMinZ, limiteMaxZ);
+
+        return pos;
+    }
+
+    private void Trocar(ref float a, ref float b)
+    {
+        float temp = a;
+        a = b;
+        b = temp;
     }
 }

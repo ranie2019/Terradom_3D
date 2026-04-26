@@ -4,8 +4,8 @@ using UnityEngine;
 public class Recurso : MonoBehaviour
 {
     [Header("Quantidade")]
-    [SerializeField] private int valorMaximo = 10;
-    [SerializeField] private int valorAtual = 10;
+    [SerializeField] private int valorMaximo = 300;
+    [SerializeField] private int valorAtual = 300;
 
     [Header("Coleta")]
     [SerializeField] private int valorPorColeta = 1;
@@ -25,14 +25,6 @@ public class Recurso : MonoBehaviour
         valorAtual = valorMaximo;
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other == null)
-            return;
-
-        TentarColetar(other.transform);
-    }
-
     private void OnCollisionEnter(Collision collision)
     {
         if (collision == null || collision.collider == null)
@@ -41,17 +33,40 @@ public class Recurso : MonoBehaviour
         TentarColetar(collision.collider.transform);
     }
 
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision == null || collision.collider == null)
+            return;
+
+        TentarColetar(collision.collider.transform);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other == null)
+            return;
+
+        TentarColetar(other.transform);
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other == null)
+            return;
+
+        TentarColetar(other.transform);
+    }
+
     private void TentarColetar(Transform objetoQueTocou)
     {
         if (Time.time < proximaColeta)
             return;
 
         Transform ferramenta = EncontrarFerramenta(objetoQueTocou);
-
         if (ferramenta == null)
             return;
 
-        string tipoRecurso = ObterTipoRecursoPelaTagDoObjeto();
+        string tipoRecurso = ObterTipoRecurso();
 
         if (string.IsNullOrWhiteSpace(tipoRecurso))
             return;
@@ -60,7 +75,6 @@ public class Recurso : MonoBehaviour
             return;
 
         string tagDono = EncontrarTagDono(ferramenta);
-
         if (string.IsNullOrWhiteSpace(tagDono))
             return;
 
@@ -84,7 +98,7 @@ public class Recurso : MonoBehaviour
         }
     }
 
-    private string ObterTipoRecursoPelaTagDoObjeto()
+    private string ObterTipoRecurso()
     {
         if (CompareTag("Pedra"))
             return "Pedra";
@@ -94,6 +108,22 @@ public class Recurso : MonoBehaviour
 
         if (CompareTag("Metal"))
             return "Metal";
+
+        Transform atual = transform.parent;
+
+        while (atual != null)
+        {
+            if (atual.CompareTag("Pedra"))
+                return "Pedra";
+
+            if (atual.CompareTag("Arvore"))
+                return "Arvore";
+
+            if (atual.CompareTag("Metal"))
+                return "Metal";
+
+            atual = atual.parent;
+        }
 
         return "";
     }
@@ -116,6 +146,9 @@ public class Recurso : MonoBehaviour
     private bool FerramentaPodeColetar(Transform ferramenta, string tipoRecurso)
     {
         if (ferramenta.CompareTag(tagPicareta) && tipoRecurso == "Pedra")
+            return true;
+
+        if (ferramenta.CompareTag(tagPicareta) && tipoRecurso == "Metal")
             return true;
 
         if (ferramenta.CompareTag(tagMachado) && tipoRecurso == "Arvore")
