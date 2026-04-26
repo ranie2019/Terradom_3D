@@ -51,48 +51,95 @@ public class BaseArea : MonoBehaviour
     public void CriarBaseParaPosicionar()
     {
         if (prefabBase == null)
-        {
-            Debug.LogWarning("Prefab da base não foi colocado no BaseArea.");
             return;
-        }
+
+        if (estaPosicionando)
+            return;
+
+        if (GameControllerRecursos.Instance == null)
+            return;
+
+        if (!GameControllerRecursos.Instance.GastarMetalParaBase())
+            return;
 
         if (baseAtual != null)
-        {
-            if (Application.isPlaying)
-                Destroy(baseAtual);
-            else
-                DestroyImmediate(baseAtual);
-        }
+            Destroy(baseAtual);
 
         baseAtual = Instantiate(prefabBase);
+        baseAtual.SetActive(true);
+
         estaPosicionando = true;
         podeConstruir = false;
 
         DesativarScriptsDaBase(baseAtual);
+        PosicionarBaseNoCentroDaTela();
+        VerificarColisao();
     }
 
     private void AtualizarPosicaoComMouse()
     {
-        if (Mouse.current == null || cameraPrincipal == null)
+        if (Mouse.current == null || cameraPrincipal == null || baseAtual == null)
             return;
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = cameraPrincipal.ScreenPointToRay(mousePos);
+
+        if (TentarPegarPontoNoChao(mousePos, out Vector3 ponto))
+        {
+            ponto.y = 0f;
+            baseAtual.transform.position = ponto;
+        }
+    }
+
+    private void PosicionarBaseNoCentroDaTela()
+    {
+        if (cameraPrincipal == null || baseAtual == null)
+            return;
+
+        Vector2 centroTela = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+
+        if (TentarPegarPontoNoChao(centroTela, out Vector3 ponto))
+        {
+            ponto.y = 0f;
+            baseAtual.transform.position = ponto;
+        }
+    }
+
+    private bool TentarPegarPontoNoChao(Vector2 posicaoTela, out Vector3 ponto)
+    {
+        ponto = Vector3.zero;
+
+        Ray ray = cameraPrincipal.ScreenPointToRay(posicaoTela);
 
         if (Physics.Raycast(ray, out RaycastHit hit, 2000f, camadaDoChao, QueryTriggerInteraction.Ignore))
         {
-            Vector3 novaPos = hit.point;
-            novaPos.y = 0f;
-            baseAtual.transform.position = novaPos;
+            if (baseAtual != null && hit.collider.transform.IsChildOf(baseAtual.transform))
+                return UsarPlanoYZero(ray, out ponto);
+
+            ponto = hit.point;
+            return true;
         }
+
+        return UsarPlanoYZero(ray, out ponto);
+    }
+
+    private bool UsarPlanoYZero(Ray ray, out Vector3 ponto)
+    {
+        ponto = Vector3.zero;
+
+        Plane plano = new Plane(Vector3.up, Vector3.zero);
+
+        if (plano.Raycast(ray, out float distancia))
+        {
+            ponto = ray.GetPoint(distancia);
+            return true;
+        }
+
+        return false;
     }
 
     private void RotacionarComBotaoDireito()
     {
-        if (Mouse.current == null)
-            return;
-
-        if (!Mouse.current.rightButton.isPressed)
+        if (Mouse.current == null || baseAtual == null)
             return;
 
         Vector2 deltaMouse = Mouse.current.delta.ReadValue();
@@ -113,21 +160,20 @@ public class BaseArea : MonoBehaviour
             return;
 
         if (!podeConstruir)
-        {
-            Debug.Log("Não pode colocar a base aqui. Existe outro objeto ocupando essa área.");
             return;
-        }
 
         TravarBase();
     }
 
     private void TravarBase()
     {
+        if (baseAtual == null)
+            return;
+
         estaPosicionando = false;
         podeConstruir = true;
 
         AtivarScriptsDaBase(baseAtual);
-
         baseAtual = null;
     }
 
@@ -175,12 +221,29 @@ public class BaseArea : MonoBehaviour
             if (col.gameObject == baseAtual)
                 continue;
 
+            if (EhChao(col))
+                continue;
+
             if (!bloquearQualquerObjeto && !EhBase(col.transform))
                 continue;
 
             podeConstruir = false;
             return;
         }
+    }
+
+    private bool EhChao(Collider col)
+    {
+        if (col == null)
+            return false;
+
+        if (col is TerrainCollider)
+            return true;
+
+        if (col.gameObject.name == "Terrain")
+            return true;
+
+        return false;
     }
 
     private bool EhBase(Transform alvo)
@@ -233,6 +296,7 @@ public class BaseArea : MonoBehaviour
             return;
 
         Gizmos.color = podeConstruir ? Color.green : Color.red;
+
         Gizmos.DrawWireCube(
             baseCollider.bounds.center,
             baseCollider.bounds.size * margemColisao
