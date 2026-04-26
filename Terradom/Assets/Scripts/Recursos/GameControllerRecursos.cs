@@ -12,15 +12,17 @@ public class GameControllerRecursos : MonoBehaviour
     public int madeira = 0;
     public int metal = 0;
 
-    [Header("Custo")]
-    [SerializeField] private int custoBaseMetal = 100;
+    [Header("Custo da Base")]
+    [SerializeField] private int custoPedraBase = 100;
+    [SerializeField] private int custoMadeiraBase = 100;
+    [SerializeField] private int custoMetalBase = 100;
 
     [Header("UI")]
     [SerializeField] private TMP_Text textoPedra;
     [SerializeField] private TMP_Text textoMadeira;
     [SerializeField] private TMP_Text textoMetal;
 
-    [Header("Botões")]
+    [Header("Botão Base")]
     [SerializeField] private Button botaoBase;
 
     private void Awake()
@@ -44,33 +46,45 @@ public class GameControllerRecursos : MonoBehaviour
         AtualizarUI();
     }
 
-    public bool PodeCriarBase()
+    public bool TemRecursos(int custoPedra, int custoMadeira, int custoMetal)
     {
-        return metal >= custoBaseMetal;
+        return pedra >= custoPedra &&
+               madeira >= custoMadeira &&
+               metal >= custoMetal;
     }
 
-    public bool GastarMetalParaBase()
+    public bool TentarGastarRecursos(int custoPedra, int custoMadeira, int custoMetal)
     {
-        if (!PodeCriarBase())
+        if (!TemRecursos(custoPedra, custoMadeira, custoMetal))
             return false;
 
-        metal -= custoBaseMetal;
+        pedra -= custoPedra;
+        madeira -= custoMadeira;
+        metal -= custoMetal;
+
         AtualizarUI();
         return true;
     }
 
-    private void AtualizarUI()
+    public bool PodeCriarBase()
     {
-        if (textoPedra != null)
-            textoPedra.text = pedra.ToString();
+        return TemRecursos(custoPedraBase, custoMadeiraBase, custoMetalBase);
+    }
 
-        if (textoMadeira != null)
-            textoMadeira.text = madeira.ToString();
+    public bool TentarGastarRecursosDaBase()
+    {
+        return TentarGastarRecursos(custoPedraBase, custoMadeiraBase, custoMetalBase);
+    }
 
-        if (textoMetal != null)
-            textoMetal.text = metal.ToString();
+    public void AtualizarUI()
+    {
+        if (textoPedra != null) textoPedra.text = pedra.ToString();
+        if (textoMadeira != null) textoMadeira.text = madeira.ToString();
+        if (textoMetal != null) textoMetal.text = metal.ToString();
 
         if (botaoBase != null)
             botaoBase.interactable = PodeCriarBase();
+
+        BotoesProducaoUnidades.AtualizarTodos();
     }
 }

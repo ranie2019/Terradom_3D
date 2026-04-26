@@ -613,7 +613,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1687145964157993802
 Transform:
   m_ObjectHideFlags: 0
@@ -719,6 +719,7 @@ MonoBehaviour:
   tempoEntreAcoes: 1
   tagPedra: Pedra
   tagArvore: Arvore
+  tagMetal: Metal
   animator: {fileID: 4203598442501423056}
   paramAndando: Andando
   paramMinerar: Minerar

@@ -24,6 +24,7 @@ public class BaseArea : MonoBehaviour
     [SerializeField] private GameObject baseAtual;
     [SerializeField] private bool estaPosicionando;
     [SerializeField] private bool podeConstruir;
+    [SerializeField] private bool modoRotacao;
 
     private void Awake()
     {
@@ -36,11 +37,10 @@ public class BaseArea : MonoBehaviour
         if (!estaPosicionando || baseAtual == null)
             return;
 
-        bool botaoDireitoPressionado =
-            Mouse.current != null && Mouse.current.rightButton.isPressed;
+        AlternarModoComBotaoDireito();
 
-        if (botaoDireitoPressionado)
-            RotacionarComBotaoDireito();
+        if (modoRotacao)
+            RotacionarComMouse();
         else
             AtualizarPosicaoComMouse();
 
@@ -59,7 +59,7 @@ public class BaseArea : MonoBehaviour
         if (GameControllerRecursos.Instance == null)
             return;
 
-        if (!GameControllerRecursos.Instance.GastarMetalParaBase())
+        if (!GameControllerRecursos.Instance.TentarGastarRecursosDaBase())
             return;
 
         if (baseAtual != null)
@@ -70,10 +70,22 @@ public class BaseArea : MonoBehaviour
 
         estaPosicionando = true;
         podeConstruir = false;
+        modoRotacao = false;
 
         DesativarScriptsDaBase(baseAtual);
         PosicionarBaseNoCentroDaTela();
         VerificarColisao();
+    }
+
+    private void AlternarModoComBotaoDireito()
+    {
+        if (Mouse.current == null)
+            return;
+
+        if (!Mouse.current.rightButton.wasPressedThisFrame)
+            return;
+
+        modoRotacao = !modoRotacao;
     }
 
     private void AtualizarPosicaoComMouse()
@@ -88,6 +100,18 @@ public class BaseArea : MonoBehaviour
             ponto.y = 0f;
             baseAtual.transform.position = ponto;
         }
+    }
+
+    private void RotacionarComMouse()
+    {
+        if (Mouse.current == null || baseAtual == null)
+            return;
+
+        Vector2 deltaMouse = Mouse.current.delta.ReadValue();
+
+        float rotacaoY = deltaMouse.y * velocidadeRotacaoMouse;
+
+        baseAtual.transform.Rotate(Vector3.up, rotacaoY, Space.World);
     }
 
     private void PosicionarBaseNoCentroDaTela()
@@ -107,6 +131,9 @@ public class BaseArea : MonoBehaviour
     private bool TentarPegarPontoNoChao(Vector2 posicaoTela, out Vector3 ponto)
     {
         ponto = Vector3.zero;
+
+        if (cameraPrincipal == null)
+            return false;
 
         Ray ray = cameraPrincipal.ScreenPointToRay(posicaoTela);
 
@@ -137,17 +164,6 @@ public class BaseArea : MonoBehaviour
         return false;
     }
 
-    private void RotacionarComBotaoDireito()
-    {
-        if (Mouse.current == null || baseAtual == null)
-            return;
-
-        Vector2 deltaMouse = Mouse.current.delta.ReadValue();
-        float rotacaoY = deltaMouse.y * velocidadeRotacaoMouse;
-
-        baseAtual.transform.Rotate(Vector3.up, rotacaoY, Space.World);
-    }
-
     private void ConfirmarComBotaoEsquerdo()
     {
         if (Mouse.current == null)
@@ -172,6 +188,7 @@ public class BaseArea : MonoBehaviour
 
         estaPosicionando = false;
         podeConstruir = true;
+        modoRotacao = false;
 
         AtivarScriptsDaBase(baseAtual);
         baseAtual = null;

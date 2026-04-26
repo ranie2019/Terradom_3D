@@ -3,47 +3,139 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class SoldadoSpown : MonoBehaviour
 {
-    [System.Serializable]
-    public class SoldadoParaSpawn
-    {
-        public GameObject prefabSoldado;
-        public float tempoParaNascer = 5f;
-
-        [HideInInspector] public float proximoSpawn;
-    }
-
     [Header("Ponto onde o soldado vai nascer")]
     [SerializeField] private Transform pontoSpawn;
 
-    [Header("Soldados que a base pode criar")]
-    [SerializeField] private SoldadoParaSpawn[] soldados;
+    [Header("Prefab Guerreiro")]
+    [SerializeField] private GameObject prefabGuerreiro;
 
-    private void Start()
+    [Header("Prefab Coletor/Recurso")]
+    [SerializeField] private GameObject prefabRecurso;
+
+    [Header("Custo Guerreiro")]
+    [SerializeField] private int custoPedraGuerreiro = 10;
+    [SerializeField] private int custoMadeiraGuerreiro = 10;
+    [SerializeField] private int custoMetalGuerreiro = 10;
+
+    [Header("Custo Recurso")]
+    [SerializeField] private int custoPedraRecurso = 10;
+    [SerializeField] private int custoMadeiraRecurso = 10;
+    [SerializeField] private int custoMetalRecurso = 10;
+
+    [Header("Organização")]
+    [SerializeField] private bool manterMesmoPaiDaBase = false;
+
+    public bool PodeCriarGuerreiro()
     {
-        for (int i = 0; i < soldados.Length; i++)
-            soldados[i].proximoSpawn = Time.time + soldados[i].tempoParaNascer;
+        if (GameControllerRecursos.Instance == null)
+            return false;
+
+        return GameControllerRecursos.Instance.TemRecursos(
+            custoPedraGuerreiro,
+            custoMadeiraGuerreiro,
+            custoMetalGuerreiro
+        );
     }
 
-    private void Update()
+    public bool PodeCriarRecurso()
     {
-        if (pontoSpawn == null)
+        if (GameControllerRecursos.Instance == null)
+            return false;
+
+        return GameControllerRecursos.Instance.TemRecursos(
+            custoPedraRecurso,
+            custoMadeiraRecurso,
+            custoMetalRecurso
+        );
+    }
+
+    public void CriarGuerreiro()
+    {
+        CriarUnidade(
+            prefabGuerreiro,
+            custoPedraGuerreiro,
+            custoMadeiraGuerreiro,
+            custoMetalGuerreiro
+        );
+    }
+
+    public void CriarRecurso()
+    {
+        CriarUnidade(
+            prefabRecurso,
+            custoPedraRecurso,
+            custoMadeiraRecurso,
+            custoMetalRecurso
+        );
+    }
+
+    private void CriarUnidade(GameObject prefab, int custoPedra, int custoMadeira, int custoMetal)
+    {
+        if (prefab == null || pontoSpawn == null)
             return;
 
-        for (int i = 0; i < soldados.Length; i++)
+        if (GameControllerRecursos.Instance == null)
+            return;
+
+        bool gastou = GameControllerRecursos.Instance.TentarGastarRecursos(
+            custoPedra,
+            custoMadeira,
+            custoMetal
+        );
+
+        if (!gastou)
+            return;
+
+        GameObject novo = Instantiate(
+            prefab,
+            pontoSpawn.position,
+            pontoSpawn.rotation
+        );
+
+        novo.SetActive(true);
+        AtivarObjetoCompleto(novo);
+
+        if (manterMesmoPaiDaBase && transform.parent != null)
+            novo.transform.SetParent(transform.parent);
+    }
+
+    private void AtivarObjetoCompleto(GameObject obj)
+    {
+        if (obj == null)
+            return;
+
+        obj.SetActive(true);
+
+        Transform[] filhos = obj.GetComponentsInChildren<Transform>(true);
+
+        for (int i = 0; i < filhos.Length; i++)
         {
-            if (soldados[i].prefabSoldado == null)
-                continue;
+            if (filhos[i] != null)
+                filhos[i].gameObject.SetActive(true);
+        }
 
-            if (Time.time >= soldados[i].proximoSpawn)
-            {
-                Instantiate(
-                    soldados[i].prefabSoldado,
-                    pontoSpawn.position,
-                    pontoSpawn.rotation
-                );
+        MonoBehaviour[] scripts = obj.GetComponentsInChildren<MonoBehaviour>(true);
 
-                soldados[i].proximoSpawn = Time.time + soldados[i].tempoParaNascer;
-            }
+        for (int i = 0; i < scripts.Length; i++)
+        {
+            if (scripts[i] != null)
+                scripts[i].enabled = true;
+        }
+
+        Collider[] colliders = obj.GetComponentsInChildren<Collider>(true);
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null)
+                colliders[i].enabled = true;
+        }
+
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                renderers[i].enabled = true;
         }
     }
 }
