@@ -15,6 +15,7 @@ public class PlayControleAI : MonoBehaviour
     [SerializeField] private Movimentacao movimentacao;
     [SerializeField] private Visao visao;
     [SerializeField] private Ataque ataque;
+    [SerializeField] private AtaqueDistancia ataqueDistancia;
 
     private Transform alvoAtual;
     private Vector3 direcaoPatrulha;
@@ -25,6 +26,7 @@ public class PlayControleAI : MonoBehaviour
         if (!movimentacao) movimentacao = GetComponent<Movimentacao>();
         if (!visao) visao = GetComponent<Visao>();
         if (!ataque) ataque = GetComponent<Ataque>();
+        if (!ataqueDistancia) ataqueDistancia = GetComponent<AtaqueDistancia>();
 
         DefinirNovaDirecaoPatrulha();
     }
@@ -33,6 +35,9 @@ public class PlayControleAI : MonoBehaviour
     {
         if (ataque != null)
             ataque.LimparAlvo();
+
+        if (ataqueDistancia != null)
+            ataqueDistancia.LimparAlvo();
     }
 
     private void Update()
@@ -44,12 +49,18 @@ public class PlayControleAI : MonoBehaviour
             if (ataque != null)
                 ataque.DefinirAlvo(alvoAtual);
 
+            if (ataqueDistancia != null)
+                ataqueDistancia.DefinirAlvo(alvoAtual);
+
             ControlarPerseguicaoECombate();
         }
         else
         {
             if (ataque != null)
                 ataque.LimparAlvo();
+
+            if (ataqueDistancia != null)
+                ataqueDistancia.LimparAlvo();
 
             ControlarPatrulha();
         }
@@ -108,11 +119,14 @@ public class PlayControleAI : MonoBehaviour
 
     private float CalcularDistanciaParada()
     {
-        if (ataque == null)
-            return distanciaParadaSemAtaque;
+        float alcance = distanciaParadaSemAtaque;
 
-        float alcanceAtaque = ataque.GetAlcanceAtaque();
-        float distancia = alcanceAtaque - folgaParaEntrarNoAlcance;
+        if (ataqueDistancia != null)
+            alcance = ataqueDistancia.GetAlcanceAtaque();
+        else if (ataque != null)
+            alcance = ataque.GetAlcanceAtaque();
+
+        float distancia = alcance - folgaParaEntrarNoAlcance;
 
         if (distancia < 0.1f)
             distancia = 0.1f;
@@ -169,6 +183,7 @@ public class PlayControleAI : MonoBehaviour
             return null;
 
         Collider col = alvo.GetComponent<Collider>();
+
         if (col != null)
             return col;
 
