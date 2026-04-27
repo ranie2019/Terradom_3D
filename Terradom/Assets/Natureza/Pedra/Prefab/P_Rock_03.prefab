@@ -38,43 +38,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -34.90293
+      value: 26.5
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.72
+      value: 1.3538227
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -23.7
+      value: 37.2
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.93272436
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.34197468
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.040243108
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: 0.1070473
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 39
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 2300000, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -128,7 +128,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 122
+  m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!114 &7491426784408082674
 MonoBehaviour:

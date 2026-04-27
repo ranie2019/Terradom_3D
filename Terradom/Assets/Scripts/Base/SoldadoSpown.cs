@@ -3,7 +3,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class SoldadoSpown : MonoBehaviour
 {
-    [Header("Ponto onde o soldado vai nascer")]
+    [Header("Ponto onde a unidade vai nascer")]
     [SerializeField] private Transform pontoSpawn;
 
     [Header("Prefab Guerreiro")]
@@ -11,6 +11,9 @@ public class SoldadoSpown : MonoBehaviour
 
     [Header("Prefab Coletor/Recurso")]
     [SerializeField] private GameObject prefabRecurso;
+
+    [Header("Prefab Soldado")]
+    [SerializeField] private GameObject prefabSoldado;
 
     [Header("Custo Guerreiro")]
     [SerializeField] private int custoPedraGuerreiro = 10;
@@ -21,6 +24,11 @@ public class SoldadoSpown : MonoBehaviour
     [SerializeField] private int custoPedraRecurso = 10;
     [SerializeField] private int custoMadeiraRecurso = 10;
     [SerializeField] private int custoMetalRecurso = 10;
+
+    [Header("Custo Soldado")]
+    [SerializeField] private int custoPedraSoldado = 10;
+    [SerializeField] private int custoMadeiraSoldado = 10;
+    [SerializeField] private int custoMetalSoldado = 10;
 
     [Header("Organização")]
     [SerializeField] private bool manterMesmoPaiDaBase = false;
@@ -49,6 +57,18 @@ public class SoldadoSpown : MonoBehaviour
         );
     }
 
+    public bool PodeCriarSoldado()
+    {
+        if (GameControllerRecursos.Instance == null)
+            return false;
+
+        return GameControllerRecursos.Instance.TemRecursos(
+            custoPedraSoldado,
+            custoMadeiraSoldado,
+            custoMetalSoldado
+        );
+    }
+
     public void CriarGuerreiro()
     {
         CriarUnidade(
@@ -66,6 +86,16 @@ public class SoldadoSpown : MonoBehaviour
             custoPedraRecurso,
             custoMadeiraRecurso,
             custoMetalRecurso
+        );
+    }
+
+    public void CriarSoldado()
+    {
+        CriarUnidade(
+            prefabSoldado,
+            custoPedraSoldado,
+            custoMadeiraSoldado,
+            custoMetalSoldado
         );
     }
 

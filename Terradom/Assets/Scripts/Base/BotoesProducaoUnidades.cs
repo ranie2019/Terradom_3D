@@ -9,10 +9,12 @@ public class BotoesProducaoUnidades : MonoBehaviour
     [Header("Botões")]
     [SerializeField] private Button botaoGuerreiro;
     [SerializeField] private Button botaoRecurso;
+    [SerializeField] private Button botaoSoldado;
 
     [Header("Objetos visuais dos botões")]
     [SerializeField] private GameObject objetoBotaoGuerreiro;
     [SerializeField] private GameObject objetoBotaoRecurso;
+    [SerializeField] private GameObject objetoBotaoSoldado;
 
     private void Awake()
     {
@@ -53,6 +55,17 @@ public class BotoesProducaoUnidades : MonoBehaviour
         AtualizarEstado();
     }
 
+    public void BotaoCriarSoldado()
+    {
+        SoldadoSpown spown = GetSpawnSelecionado();
+
+        if (spown == null)
+            return;
+
+        spown.CriarSoldado();
+        AtualizarEstado();
+    }
+
     private void AtualizarEstado()
     {
         SoldadoSpown spown = GetSpawnSelecionado();
@@ -70,6 +83,9 @@ public class BotoesProducaoUnidades : MonoBehaviour
 
         if (botaoRecurso != null)
             botaoRecurso.interactable = spown.PodeCriarRecurso();
+
+        if (botaoSoldado != null)
+            botaoSoldado.interactable = spown.PodeCriarSoldado();
     }
 
     private void MostrarBotoes()
@@ -79,6 +95,9 @@ public class BotoesProducaoUnidades : MonoBehaviour
 
         if (objetoBotaoRecurso != null)
             objetoBotaoRecurso.SetActive(true);
+
+        if (objetoBotaoSoldado != null)
+            objetoBotaoSoldado.SetActive(true);
     }
 
     private void EsconderBotoes()
@@ -89,11 +108,17 @@ public class BotoesProducaoUnidades : MonoBehaviour
         if (objetoBotaoRecurso != null)
             objetoBotaoRecurso.SetActive(false);
 
+        if (objetoBotaoSoldado != null)
+            objetoBotaoSoldado.SetActive(false);
+
         if (botaoGuerreiro != null)
             botaoGuerreiro.interactable = false;
 
         if (botaoRecurso != null)
             botaoRecurso.interactable = false;
+
+        if (botaoSoldado != null)
+            botaoSoldado.interactable = false;
     }
 
     private SoldadoSpown GetSpawnSelecionado()
