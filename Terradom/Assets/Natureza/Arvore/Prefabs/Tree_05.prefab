@@ -121,6 +121,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9069115365609054727}
+  - component: {fileID: 6791112048406384326}
   m_Layer: 0
   m_Name: Tree_05
   m_TagString: Arvore
@@ -138,9 +139,30 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.2609878, y: 2.2609878, z: 2.2609878}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5204263869384690163}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6791112048406384326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9069115365609291303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15a2f943f00e9e34a8acc091da382d28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Recurso
+  valorMaximo: 300
+  valorAtual: 300
+  valorPorColeta: 1
+  intervaloEntreColetas: 0.25
+  tagPicareta: Picareta
+  tagMachado: Machado
+  tagsDosDonos:
+  - Azul
+  - Vermelho

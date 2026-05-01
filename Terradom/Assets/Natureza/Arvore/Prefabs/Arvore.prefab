@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -29.744514, y: 0.016916046, z: -8.491638}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.574065, y: 2.574065, z: 2.574065}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -127,11 +127,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Recurso
   valorMaximo: 50
   valorAtual: 50
-  tipoRecurso: Pedra
-  tagsQueDaoDano:
-  - Machado
+  valorPorColeta: 1
+  intervaloEntreColetas: 0.25
+  tagPicareta: Picareta
+  tagMachado: Machado
   tagsDosDonos:
   - Azul
   - Vermelho
-  valorPorDano: 1
-  intervaloEntreColetas: 0.25
