@@ -38,7 +38,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.8
+      value: -431.99
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
       propertyPath: m_LocalPosition.y
@@ -46,7 +46,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.4
+      value: -109
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
       propertyPath: m_LocalRotation.w
@@ -74,6 +74,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400004, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
+      propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2300000, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}
@@ -111,7 +115,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4781163376788596185}
   serializedVersion: 5
-  m_Mass: 100
+  m_Mass: 1000
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -151,6 +155,8 @@ MonoBehaviour:
   tagsDosDonos:
   - Azul
   - Vermelho
+  detectarColisoresNosFilhos: 1
+  adicionarSensorNosFilhosAutomaticamente: 1
 --- !u!1 &4781163376788596191 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100004, guid: a87b87121e0b90b46a8bf2eff6029dd8, type: 3}

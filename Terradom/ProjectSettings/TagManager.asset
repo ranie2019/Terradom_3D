@@ -9,7 +9,6 @@ TagManager:
   - Terrain
   - Azul
   - Vermelho
-  - espada vermelho
   - espada azul
   - Picareta
   - Pedra
@@ -17,6 +16,7 @@ TagManager:
   - Machado
   - Metal
   - Bala
+  - Espada
   layers:
   - Default
   - TransparentFX

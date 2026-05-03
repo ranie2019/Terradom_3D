@@ -1402,6 +1402,7 @@ GameObject:
   - component: {fileID: 2881780850526819847}
   - component: {fileID: 7686631217234085654}
   - component: {fileID: 4843904732050496637}
+  - component: {fileID: 8610520208465946372}
   m_Layer: 0
   m_Name: Tank Azul
   m_TagString: Azul
@@ -1436,7 +1437,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4952290172439605243}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 1000
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -1467,19 +1468,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f5da760e63b1c142abc29bc9f2f9b4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankLeve
-  velocidadeFrente: 4
-  aceleracao: 7
+  velocidadeFrente: 10
+  aceleracao: 15
   distanciaEntreEixos: 2.5
   anguloMaximoDirecao: 32
   suavidadeDirecao: 3.5
   tempoMinimoMesmaCurva: 2
   tempoMaximoMesmaCurva: 5
-  chanceDeAndarReto: 0.35
+  chanceDeAndarReto: 1
   anguloMinimoCurva: 8
   alternarLadoDaCurva: 1
   forcarRetoEntreCurvas: 1
   tempoMinimoRetoEntreCurvas: 0.8
   tempoMaximoRetoEntreCurvas: 1.6
+  buscarModulosAutomaticamente: 1
+  tankVisao: {fileID: 0}
+  tankAtaque: {fileID: 0}
+  controleRodas: {fileID: 2881780850526819847}
+  vidaTank: {fileID: 0}
+  pararQuandoTemAlvoNaVisao: 1
+  pararParaAlvoTerrestre: 1
+  pararParaAlvoAereo: 1
+  velocidadeDuranteCombate: 0
+  freioAoEncontrarInimigo: 18
+  tempoContinuarParadoAposPerderAlvo: 0.15
+  tankLeveGerenciaAtaque: 1
+  ativarTankAtaqueSomenteComAlvo: 0
+  tankLeveGerenciaVida: 1
+  pararTankQuandoMorrer: 1
+  desativarVisaoQuandoMorrer: 1
+  desativarAtaqueQuandoMorrer: 1
+  tornarRigidbodyKinematicAoMorrer: 0
+  destruirTankAoMorrer: 0
+  tempoParaDestruirAposMorrer: 1.5
   usarSensorDesvio: 1
   camadasDetectaveis:
     serializedVersion: 2
@@ -1504,7 +1525,6 @@ MonoBehaviour:
   trocarCurvaAoBater: 1
   ignorarChaoNaColisao: 1
   tempoManterDesvioAposColisao: 1.2
-  controleRodas: {fileID: 2881780850526819847}
   rotacaoRodasPorUnidadeVelocidade: 160
   inverterDirecaoVisualRodasDianteiras: 0
   multiplicadorVisualDirecaoRodas: 1
@@ -1512,6 +1532,7 @@ MonoBehaviour:
   limiteCentralizarVisualRodas: 0.35
   desenharFrenteNoEditor: 1
   desenharSensorNoEditor: 1
+  desenharAlvoNoEditor: 1
 --- !u!114 &2881780850526819847
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1599,14 +1620,33 @@ MonoBehaviour:
   atacarAlvoTerrestre: 1
   atacarAlvoAereo: 1
   prefabBala: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
-  intervaloEntreTiros: 1.2
-  velocidadeBala: 25
-  tempoVidaBala: 5
+  intervaloEntreTiros: 0.5
+  velocidadeBala: 80
+  tempoVidaBala: 10
   toleranciaMiraParaAtirar: 6
   alturaExtraMiraAlvo: 0.2
   centralizarMiraSemAlvo: 1
   velocidadeCentralizarSemAlvo: 90
   desenharLinhaMiraNoEditor: 1
+--- !u!114 &8610520208465946372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4952290172439605243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2b6933c4dfa559459ef55dd52529862, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Vida
+  vidaMax: 25
+  vidaAtual: 25
+  tagsEspadaQueDano:
+  - espada vermelho
+  - Bala
+  cooldownDano: 0.25
+  ignorarSeAtingirEsses: []
 --- !u!1 &5198013775936986468
 GameObject:
   m_ObjectHideFlags: 0

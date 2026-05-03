@@ -7,7 +7,7 @@ public class Recurso : MonoBehaviour
     [SerializeField] private int valorMaximo = 300;
     [SerializeField] private int valorAtual = 300;
 
-    [Header("Coleta")]
+    [Header("Coleta / Dano")]
     [SerializeField] private int valorPorColeta = 1;
     [SerializeField] private float intervaloEntreColetas = 0.25f;
 
@@ -18,11 +18,24 @@ public class Recurso : MonoBehaviour
     [Header("Jogadores")]
     [SerializeField] private string[] tagsDosDonos = { "Azul", "Vermelho" };
 
+    [Header("Colisores filhos")]
+    [SerializeField] private bool detectarColisoresNosFilhos = true;
+    [SerializeField] private bool adicionarSensorNosFilhosAutomaticamente = true;
+
     private float proximaColeta = 0f;
 
     private void Awake()
     {
         valorAtual = valorMaximo;
+
+        if (detectarColisoresNosFilhos && adicionarSensorNosFilhosAutomaticamente)
+            RegistrarColisoresFilhos();
+    }
+
+    private void OnEnable()
+    {
+        if (detectarColisoresNosFilhos && adicionarSensorNosFilhosAutomaticamente)
+            RegistrarColisoresFilhos();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -57,8 +70,56 @@ public class Recurso : MonoBehaviour
         TentarColetar(other.transform);
     }
 
+    public void ReceberColisaoDoFilho(Collision collision)
+    {
+        if (!detectarColisoresNosFilhos)
+            return;
+
+        if (collision == null || collision.collider == null)
+            return;
+
+        TentarColetar(collision.collider.transform);
+    }
+
+    public void ReceberTriggerDoFilho(Collider other)
+    {
+        if (!detectarColisoresNosFilhos)
+            return;
+
+        if (other == null)
+            return;
+
+        TentarColetar(other.transform);
+    }
+
+    private void RegistrarColisoresFilhos()
+    {
+        Collider[] colisores = GetComponentsInChildren<Collider>(true);
+
+        for (int i = 0; i < colisores.Length; i++)
+        {
+            Collider colisor = colisores[i];
+
+            if (colisor == null)
+                continue;
+
+            if (colisor.gameObject == gameObject)
+                continue;
+
+            RecursoColliderFilho sensor = colisor.GetComponent<RecursoColliderFilho>();
+
+            if (sensor == null)
+                sensor = colisor.gameObject.AddComponent<RecursoColliderFilho>();
+
+            sensor.DefinirRecursoPai(this);
+        }
+    }
+
     private void TentarColetar(Transform objetoQueTocou)
     {
+        if (objetoQueTocou == null)
+            return;
+
         if (Time.time < proximaColeta)
             return;
 
@@ -78,16 +139,23 @@ public class Recurso : MonoBehaviour
         if (string.IsNullOrWhiteSpace(tagDono))
             return;
 
-        proximaColeta = Time.time + intervaloEntreColetas;
+        AplicarColeta(tagDono, tipoRecurso, valorPorColeta);
+    }
 
-        valorAtual -= valorPorColeta;
+    private void AplicarColeta(string tagDono, string tipoRecurso, int quantidade)
+    {
+        if (quantidade <= 0)
+            return;
+
+        proximaColeta = Time.time + intervaloEntreColetas;
+        valorAtual -= quantidade;
 
         if (GameControllerRecursos.Instance != null)
         {
             GameControllerRecursos.Instance.AdicionarRecurso(
                 tagDono,
                 tipoRecurso,
-                valorPorColeta
+                quantidade
             );
         }
 
@@ -100,16 +168,7 @@ public class Recurso : MonoBehaviour
 
     private string ObterTipoRecurso()
     {
-        if (CompareTag("Pedra"))
-            return "Pedra";
-
-        if (CompareTag("Arvore"))
-            return "Arvore";
-
-        if (CompareTag("Metal"))
-            return "Metal";
-
-        Transform atual = transform.parent;
+        Transform atual = transform;
 
         while (atual != null)
         {
@@ -125,7 +184,37 @@ public class Recurso : MonoBehaviour
             atual = atual.parent;
         }
 
+        Transform recursoNosFilhos = EncontrarTagNosFilhos(transform, "Pedra");
+        if (recursoNosFilhos != null)
+            return "Pedra";
+
+        recursoNosFilhos = EncontrarTagNosFilhos(transform, "Arvore");
+        if (recursoNosFilhos != null)
+            return "Arvore";
+
+        recursoNosFilhos = EncontrarTagNosFilhos(transform, "Metal");
+        if (recursoNosFilhos != null)
+            return "Metal";
+
         return "";
+    }
+
+    private Transform EncontrarTagNosFilhos(Transform raiz, string tagProcurada)
+    {
+        if (raiz == null || string.IsNullOrWhiteSpace(tagProcurada))
+            return null;
+
+        Transform[] filhos = raiz.GetComponentsInChildren<Transform>(true);
+
+        for (int i = 0; i < filhos.Length; i++)
+        {
+            Transform filho = filhos[i];
+
+            if (filho != null && filho.CompareTag(tagProcurada))
+                return filho;
+        }
+
+        return null;
     }
 
     private Transform EncontrarFerramenta(Transform origem)
@@ -145,6 +234,9 @@ public class Recurso : MonoBehaviour
 
     private bool FerramentaPodeColetar(Transform ferramenta, string tipoRecurso)
     {
+        if (ferramenta == null || string.IsNullOrWhiteSpace(tipoRecurso))
+            return false;
+
         if (ferramenta.CompareTag(tagPicareta) && tipoRecurso == "Pedra")
             return true;
 
@@ -178,5 +270,72 @@ public class Recurso : MonoBehaviour
     public int GetValorAtual()
     {
         return valorAtual;
+    }
+
+    public int GetValorMaximo()
+    {
+        return valorMaximo;
+    }
+
+    public void SetValorAtual(int novoValor)
+    {
+        valorAtual = Mathf.Clamp(novoValor, 0, valorMaximo);
+    }
+
+    private void OnValidate()
+    {
+        valorMaximo = Mathf.Max(1, valorMaximo);
+        valorAtual = Mathf.Clamp(valorAtual, 0, valorMaximo);
+        valorPorColeta = Mathf.Max(1, valorPorColeta);
+        intervaloEntreColetas = Mathf.Max(0f, intervaloEntreColetas);
+    }
+}
+
+[DisallowMultipleComponent]
+public class RecursoColliderFilho : MonoBehaviour
+{
+    [SerializeField] private Recurso recursoPai;
+
+    public void DefinirRecursoPai(Recurso novoRecursoPai)
+    {
+        recursoPai = novoRecursoPai;
+    }
+
+    private void Awake()
+    {
+        if (recursoPai == null)
+            recursoPai = GetComponentInParent<Recurso>();
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (recursoPai == null)
+            return;
+
+        recursoPai.ReceberColisaoDoFilho(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        if (recursoPai == null)
+            return;
+
+        recursoPai.ReceberColisaoDoFilho(collision);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (recursoPai == null)
+            return;
+
+        recursoPai.ReceberTriggerDoFilho(other);
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (recursoPai == null)
+            return;
+
+        recursoPai.ReceberTriggerDoFilho(other);
     }
 }

@@ -38,43 +38,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 26.5
+      value: 650.31104
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.3538227
+      value: 0.72
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 37.2
+      value: -94
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.93272436
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.34197468
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.040243108
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.1070473
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 39
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 17
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2300000, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -151,6 +151,8 @@ MonoBehaviour:
   tagsDosDonos:
   - Azul
   - Vermelho
+  detectarColisoresNosFilhos: 1
+  adicionarSensorNosFilhosAutomaticamente: 1
 --- !u!1 &1870309750301438054 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100004, guid: 44176ea44e4d7224ebbf39b2b1769305, type: 3}

@@ -240,8 +240,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 6.889303, y: 3.4101439, z: 8.444229}
-  m_Center: {x: -0.029155731, y: 1.8076072, z: -0.3401413}
+  m_Size: {x: 6.889303, y: 3.4101439, z: 8.751778}
+  m_Center: {x: -0.029155731, y: 1.8076072, z: -0.18636703}
 --- !u!114 &6852539559104056651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -254,10 +254,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 504082c863ccc1c4b949f6895dbfeeba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseVida
-  vidaMaxima: 25
-  vidaAtual: 25
-  tagInimigo: Vermelho
-  danoPorColisao: 1
+  vidaMaxima: 50
+  vidaAtual: 50
+  reiniciarVidaAoIniciar: 1
+  destruirAoChegarEmZero: 1
+  exigirTagPermitidaParaReceberDano: 1
+  tagsQuePodemCausarDano:
+  - Azul
+  - Bala
+  - Espada
+  receberDanoAutomaticoPorImpacto: 1
+  procurarDanoNoAtacante: 1
+  usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
+  danosAutomaticosPorTag:
+  - tagAtacante: Bala
+    dano: 1
+    destruirAtacanteAposDano: 1
+  receberImpactoEmCollidersFilhos: 1
+  mostrarDebugDano: 0
 --- !u!114 &3271814551070379762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -271,9 +285,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoldadoSpown
   pontoSpawn: {fileID: 7553590036095631742}
-  prefabGuerreiro: {fileID: 7232638899730246449, guid: 1f133781c4bbbe34bb91a2bed9569c02, type: 3}
-  prefabRecurso: {fileID: 1644270781630906693, guid: eed938288b1520948a728152ba161b55, type: 3}
-  prefabSoldado: {fileID: 9054462154329564230, guid: 75f0311f5bdecc74b87e5908f7f38e6d, type: 3}
+  prefabGuerreiro: {fileID: 693426419382440785, guid: 26341861a3111a1459f048146f64e0fe, type: 3}
+  prefabRecurso: {fileID: 5981386159099598770, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+  prefabSoldado: {fileID: 6888144992685499757, guid: c18bac876c23b974cad5dd8a07d4c919, type: 3}
   custoPedraGuerreiro: 10
   custoMadeiraGuerreiro: 10
   custoMetalGuerreiro: 10
