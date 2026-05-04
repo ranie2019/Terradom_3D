@@ -17,15 +17,16 @@ TagManager:
   - Metal
   - Bala
   - Espada
+  - espada vermelho
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - BaseSoldado
   - Water
   - UI
-  - 
-  - 
+  - BaseTank
+  - BaseAviao
   - 
   - 
   - 

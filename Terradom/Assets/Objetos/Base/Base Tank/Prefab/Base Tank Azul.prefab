@@ -232,6 +232,10 @@ MonoBehaviour:
   custoPedraTankLeve: 100
   custoMadeiraTankLeve: 100
   custoMetalTankLeve: 100
+  tempoEntreSpawns: 4
+  usarEspacamentoEntreSpawns: 1
+  distanciaEntreUnidadesSpawn: 2.2
+  quantidadePosicoesPorLinha: 3
   manterMesmoPaiDaBase: 0
 --- !u!4 &8732515983989682730 stripped
 Transform:

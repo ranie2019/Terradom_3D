@@ -22,6 +22,9 @@ public class Recurso : MonoBehaviour
     [SerializeField] private bool detectarColisoresNosFilhos = true;
     [SerializeField] private bool adicionarSensorNosFilhosAutomaticamente = true;
 
+    [Header("Debug")]
+    [SerializeField] private bool mostrarLogsColeta = false;
+
     private float proximaColeta = 0f;
 
     private void Awake()
@@ -150,20 +153,87 @@ public class Recurso : MonoBehaviour
         proximaColeta = Time.time + intervaloEntreColetas;
         valorAtual -= quantidade;
 
-        if (GameControllerRecursos.Instance != null)
-        {
-            GameControllerRecursos.Instance.AdicionarRecurso(
-                tagDono,
-                tipoRecurso,
-                quantidade
-            );
-        }
+        // Adiciona recursos ao controlador do time correto
+        AdicionarRecursoAoControlador(tagDono, tipoRecurso, quantidade);
+
+        if (mostrarLogsColeta)
+            Debug.Log($"[Recurso] {tagDono} coletou {quantidade} de {tipoRecurso}. Restante: {valorAtual}/{valorMaximo}");
 
         if (valorAtual <= 0)
         {
             valorAtual = 0;
+
+            if (mostrarLogsColeta)
+                Debug.Log($"[Recurso] {gameObject.name} esgotado e será destruído.");
+
             Destroy(gameObject);
         }
+    }
+
+    /// <summary>
+    /// Adiciona recursos ao controlador correto baseado na tag do dono.
+    /// Suporta múltiplos times. Basta adicionar novos casos conforme novas tags forem criadas.
+    /// </summary>
+    private void AdicionarRecursoAoControlador(string tagDono, string tipoRecurso, int quantidade)
+    {
+        if (string.IsNullOrWhiteSpace(tagDono) || quantidade <= 0)
+            return;
+
+        // Time Azul - Jogador
+        if (tagDono == "Azul")
+        {
+            if (GameControllerRecursos.Instance != null)
+            {
+                GameControllerRecursos.Instance.AdicionarRecurso(tagDono, tipoRecurso, quantidade);
+            }
+            else if (mostrarLogsColeta)
+            {
+                Debug.LogWarning($"[Recurso] GameControllerRecursos.Instance é null! Recurso não foi adicionado para {tagDono}.");
+            }
+            return;
+        }
+
+        // Time Vermelho - IA
+        if (tagDono == "Vermelho")
+        {
+            if (GameControllerRecursosIA.Instance != null)
+            {
+                GameControllerRecursosIA.Instance.AdicionarRecurso(tagDono, tipoRecurso, quantidade);
+            }
+            else if (mostrarLogsColeta)
+            {
+                Debug.LogWarning($"[Recurso] GameControllerRecursosIA.Instance é null! Recurso não foi adicionado para {tagDono}.");
+            }
+            return;
+        }
+
+        // =====================================================================
+        // NOVOS TIMES NO FUTURO - ADICIONE AQUI
+        // =====================================================================
+        // Exemplo:
+        //
+        // if (tagDono == "Verde")
+        // {
+        //     if (GameControllerRecursosVerde.Instance != null)
+        //     {
+        //         GameControllerRecursosVerde.Instance.AdicionarRecurso(tagDono, tipoRecurso, quantidade);
+        //     }
+        //     return;
+        // }
+        //
+        // if (tagDono == "Amarelo")
+        // {
+        //     if (GameControllerRecursosAmarelo.Instance != null)
+        //     {
+        //         GameControllerRecursosAmarelo.Instance.AdicionarRecurso(tagDono, tipoRecurso, quantidade);
+        //     }
+        //     return;
+        // }
+        // =====================================================================
+
+        // Se nenhum controlador foi encontrado para esta tag
+        if (mostrarLogsColeta)
+            Debug.LogWarning($"[Recurso] Nenhum controlador de recursos configurado para a tag '{tagDono}'. Recurso não foi adicionado.");
     }
 
     private string ObterTipoRecurso()

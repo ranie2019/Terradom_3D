@@ -1482,10 +1482,10 @@ MonoBehaviour:
   tempoMinimoRetoEntreCurvas: 0.8
   tempoMaximoRetoEntreCurvas: 1.6
   buscarModulosAutomaticamente: 1
-  tankVisao: {fileID: 0}
-  tankAtaque: {fileID: 0}
+  tankVisao: {fileID: 7686631217234085654}
+  tankAtaque: {fileID: 4843904732050496637}
   controleRodas: {fileID: 2881780850526819847}
-  vidaTank: {fileID: 0}
+  vidaTank: {fileID: 8610520208465946372}
   pararQuandoTemAlvoNaVisao: 1
   pararParaAlvoTerrestre: 1
   pararParaAlvoAereo: 1

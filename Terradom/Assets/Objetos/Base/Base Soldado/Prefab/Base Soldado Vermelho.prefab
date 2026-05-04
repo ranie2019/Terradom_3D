@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7300731705960311481}
   - component: {fileID: 1494445615092505420}
   - component: {fileID: 1856497267403070478}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: tent_001.003
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 7974975984101835984}
   - component: {fileID: 2150236727401304965}
   - component: {fileID: 3969920790854545434}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: tent_001.004
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -190,10 +190,9 @@ GameObject:
   m_Component:
   - component: {fileID: 6802509303515661813}
   - component: {fileID: 4391127395565093973}
-  - component: {fileID: 6852539559104056651}
-  - component: {fileID: 3271814551070379762}
-  - component: {fileID: 2685533893296820531}
-  m_Layer: 0
+  - component: {fileID: 2348207100829215443}
+  - component: {fileID: 6471754032522877703}
+  m_Layer: 3
   m_Name: Base Soldado Vermelho
   m_TagString: Vermelho
   m_Icon: {fileID: 0}
@@ -242,7 +241,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6.889303, y: 3.4101439, z: 8.751778}
   m_Center: {x: -0.029155731, y: 1.8076072, z: -0.18636703}
---- !u!114 &6852539559104056651
+--- !u!114 &2348207100829215443
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -251,11 +250,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 6137437102736351055}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 504082c863ccc1c4b949f6895dbfeeba, type: 3}
+  m_Script: {fileID: 11500000, guid: ffb1e7aed4a69fb458711783c24b653b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseVida
-  vidaMaxima: 50
-  vidaAtual: 50
+  m_EditorClassIdentifier: Assembly-CSharp::BaseVidaIA
+  vidaMaxima: 100
+  vidaAtual: 100
   reiniciarVidaAoIniciar: 1
   destruirAoChegarEmZero: 1
   exigirTagPermitidaParaReceberDano: 1
@@ -271,8 +270,7 @@ MonoBehaviour:
     dano: 1
     destruirAtacanteAposDano: 1
   receberImpactoEmCollidersFilhos: 1
-  mostrarDebugDano: 0
---- !u!114 &3271814551070379762
+--- !u!114 &6471754032522877703
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -281,43 +279,30 @@ MonoBehaviour:
   m_GameObject: {fileID: 6137437102736351055}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b33c6b9ae9d9ec49b33b402382a7893, type: 3}
+  m_Script: {fileID: 11500000, guid: d6f7d1c917a31d3469f613e52b220d91, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SoldadoSpown
-  pontoSpawn: {fileID: 7553590036095631742}
+  m_EditorClassIdentifier: Assembly-CSharp::SoldadoSpownIA
   prefabGuerreiro: {fileID: 693426419382440785, guid: 26341861a3111a1459f048146f64e0fe, type: 3}
-  prefabRecurso: {fileID: 5981386159099598770, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
-  prefabSoldado: {fileID: 6888144992685499757, guid: c18bac876c23b974cad5dd8a07d4c919, type: 3}
   custoPedraGuerreiro: 10
   custoMadeiraGuerreiro: 10
   custoMetalGuerreiro: 10
+  delayGuerreiro: 1.2
+  prefabRecurso: {fileID: 5981386159099598770, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
   custoPedraRecurso: 20
   custoMadeiraRecurso: 20
   custoMetalRecurso: 20
+  delayRecurso: 1.2
+  prefabSoldado: {fileID: 6888144992685499757, guid: c18bac876c23b974cad5dd8a07d4c919, type: 3}
   custoPedraSoldado: 50
   custoMadeiraSoldado: 50
   custoMetalSoldado: 50
-  manterMesmoPaiDaBase: 0
---- !u!114 &2685533893296820531
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6137437102736351055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cf17a99adb232346b71a207181a0d6d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseSelecionavel
-  cameraPrincipal: {fileID: 0}
-  camadaSelecionavel:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  debugSelecionar: 1
-  piscarQuandoSelecionada: 1
-  corSelecionada: {r: 1, g: 0.65, b: 0.25, a: 1}
-  velocidadePiscar: 4
+  delaySoldado: 1.2
+  pontoSpawn: {fileID: 7553590036095631742}
+  usarEspacamentoEntreSpawns: 1
+  distanciaEntreUnidadesSpawn: 1.2
+  quantidadePosicoesPorLinha: 4
+  tagDoTime: Vermelho
+  mostrarLogs: 0
 --- !u!1 &6252068582237215293
 GameObject:
   m_ObjectHideFlags: 0
@@ -329,7 +314,7 @@ GameObject:
   - component: {fileID: 5226344276088168094}
   - component: {fileID: 743358187067110352}
   - component: {fileID: 6652536011857935931}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: tent_001.002
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -421,7 +406,7 @@ GameObject:
   - component: {fileID: 7682171045066446826}
   - component: {fileID: 7002103623799207823}
   - component: {fileID: 2880743654970581829}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Spawn (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -522,7 +507,7 @@ GameObject:
   - component: {fileID: 4991439435381642538}
   - component: {fileID: 8556015118251153327}
   - component: {fileID: 8372134495890007453}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: tent_001
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -613,7 +598,7 @@ GameObject:
   - component: {fileID: 798943913838592045}
   - component: {fileID: 8362896577917689038}
   - component: {fileID: 3812634013981393655}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -688,7 +673,7 @@ GameObject:
   - component: {fileID: 4170260802559166769}
   - component: {fileID: 2611082225635621109}
   - component: {fileID: 9129850644693479404}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: tent_001.001
   m_TagString: Untagged
   m_Icon: {fileID: 0}

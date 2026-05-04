@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1185763503955809205}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Spawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53,15 +53,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -25.245884
+      value: 1.042347
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.00001044753
+      value: -0.000022891381
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 42.54202
+      value: 49.7524
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalRotation.w
@@ -91,17 +91,57 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8391222552659086748, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -7640558969779515294, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -7146521406498821007, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: -4683669308469848369, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 8866d280224eae34992c07ab5b61276b, type: 2}
+    - target: {fileID: -3756473180518285571, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: -1823322365421230674, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 8fb4d91c33f4fe64bad1fd0f6b6fa313, type: 2}
+    - target: {fileID: -1599826595754709761, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -1025663018108745142, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -516098083770646512, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -466329591000292508, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -208595431880416365, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_Name
       value: Base Tank Vermelho
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_TagString
@@ -123,6 +163,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[3]'
       value: 
       objectReference: {fileID: 2100000, guid: 22e7fb49e2b49e0418ef97b61b1c8db5, type: 2}
+    - target: {fileID: 8416272007918961125, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -135,13 +179,10 @@ PrefabInstance:
       addedObject: {fileID: 936691865725863809}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7242060506247546018}
+      addedObject: {fileID: 4234017026988487762}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5001249028150810845}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6815938640463043701}
+      addedObject: {fileID: 177036420850440472}
   m_SourcePrefab: {fileID: 100100000, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
 --- !u!1 &8249452854361745552 stripped
 GameObject:
@@ -169,7 +210,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.241853, y: 2.3074405, z: 4.081537}
   m_Center: {x: -0.44228888, y: 1.1740286, z: -0.010007425}
---- !u!114 &7242060506247546018
+--- !u!114 &4234017026988487762
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,13 +219,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 8249452854361745552}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 504082c863ccc1c4b949f6895dbfeeba, type: 3}
+  m_Script: {fileID: 11500000, guid: ffb1e7aed4a69fb458711783c24b653b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseVida
+  m_EditorClassIdentifier: Assembly-CSharp::BaseVidaIA
   vidaMaxima: 100
   vidaAtual: 100
   reiniciarVidaAoIniciar: 1
-  destruirAoChegarEmZero: 0
+  destruirAoChegarEmZero: 1
   exigirTagPermitidaParaReceberDano: 1
   tagsQuePodemCausarDano:
   - Azul
@@ -198,8 +239,7 @@ MonoBehaviour:
     dano: 1
     destruirAtacanteAposDano: 1
   receberImpactoEmCollidersFilhos: 1
-  mostrarDebugDano: 0
---- !u!114 &5001249028150810845
+--- !u!114 &177036420850440472
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -208,35 +248,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 8249452854361745552}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cf17a99adb232346b71a207181a0d6d, type: 3}
+  m_Script: {fileID: 11500000, guid: f3b65d0666694f04380c445c6259b0e0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseSelecionavel
-  cameraPrincipal: {fileID: 0}
-  camadaSelecionavel:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  debugSelecionar: 1
-  piscarQuandoSelecionada: 1
-  corSelecionada: {r: 1, g: 0.65, b: 0.25, a: 1}
-  velocidadePiscar: 4
---- !u!114 &6815938640463043701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8249452854361745552}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 394a79cbac6d89c43a324edbfa348542, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TankSpown
+  m_EditorClassIdentifier: Assembly-CSharp::TankSpownIA
   pontoSpawn: {fileID: 1185763503955809205}
   prefabTankLeve: {fileID: 4952290172439605243, guid: 59efd1ca1f1f910448edbbb24a21b1b1, type: 3}
   custoPedraTankLeve: 100
   custoMadeiraTankLeve: 100
   custoMetalTankLeve: 100
-  manterMesmoPaiDaBase: 0
+  tempoEntreSpawns: 4
+  usarEspacamentoEntreSpawns: 1
+  distanciaEntreUnidadesSpawn: 2.2
+  quantidadePosicoesPorLinha: 3
+  tagDoTime: Vermelho
+  mostrarLogs: 0
 --- !u!4 &8732515983989682730 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
