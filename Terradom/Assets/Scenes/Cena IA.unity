@@ -15208,6 +15208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 495e6c15564434444906140a596cc9f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoboIA
+  intervaloUpdate: 2
 --- !u!114 &922249174
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15234,7 +15235,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b0a2c906235ef6499b032093c81c54b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoboExecutorIA
-  tempoBaseSoldado: 120
+  tempoBaseSoldado: 60
   maxBaseSoldado: 10
 --- !u!1001 &922846756
 PrefabInstance:
