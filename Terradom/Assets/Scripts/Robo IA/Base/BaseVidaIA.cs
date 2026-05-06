@@ -8,7 +8,7 @@ public class BaseVidaIA : MonoBehaviour
     [System.Serializable]
     private class DanoAutomaticoPorTag
     {
-        public string tagAtacante = "Azul"; // inimigo da IA
+        public string tagAtacante = "Azul";
         public int dano = 1;
         public bool destruirAtacanteAposDano = true;
     }
@@ -23,7 +23,7 @@ public class BaseVidaIA : MonoBehaviour
     [SerializeField] private bool exigirTagPermitidaParaReceberDano = true;
     [SerializeField] private string[] tagsQuePodemCausarDano =
     {
-        "Azul",   // jogador
+        "Azul",
         "Bala"
     };
 
@@ -142,23 +142,32 @@ public class BaseVidaIA : MonoBehaviour
         dano = 0;
         destruir = false;
 
-        // tenta pegar dano do script
-        Component[] comps = atacante.GetComponentsInChildren<Component>();
-
-        foreach (var c in comps)
+        // ETAPA 1: Tenta pegar dano do script do atacante (se configurado)
+        if (procurarDanoNoAtacante)
         {
-            if (TentarLerDano(c, out dano))
-                return true;
+            Component[] comps = atacante.GetComponentsInChildren<Component>();
+
+            foreach (var c in comps)
+            {
+                if (c != null && TentarLerDano(c, out dano))
+                {
+                    destruir = true;
+                    return true;
+                }
+            }
         }
 
-        // fallback por tag
-        foreach (var config in danosAutomaticosPorTag)
+        // ETAPA 2: Fallback por tag (se configurado)
+        if (usarDanoPorTagSeNaoEncontrarDanoNoAtacante || !procurarDanoNoAtacante)
         {
-            if (atacante.CompareTag(config.tagAtacante))
+            foreach (var config in danosAutomaticosPorTag)
             {
-                dano = config.dano;
-                destruir = config.destruirAtacanteAposDano;
-                return true;
+                if (atacante.CompareTag(config.tagAtacante))
+                {
+                    dano = config.dano;
+                    destruir = config.destruirAtacanteAposDano;
+                    return true;
+                }
             }
         }
 

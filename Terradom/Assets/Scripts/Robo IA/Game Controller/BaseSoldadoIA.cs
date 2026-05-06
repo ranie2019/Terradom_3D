@@ -6,73 +6,21 @@ public class BaseSoldadoIA : MonoBehaviour
     private BaseAreaIA baseArea;
     private SoldadoSpownIA soldadoSpawn;
 
-    [Header("Tempo entre bases")]
-    [SerializeField] private float tempoBaseSoldado = 120f;
-
-    [Header("Limite de bases")]
-    [SerializeField] private int maxBaseSoldado = 10;
-
-    private int quantidadeBaseSoldado;
-    private bool setupSoldadoFeito = false;
-
     private void Awake()
     {
         AtualizarReferencias();
     }
 
-    private void Update()
-    {
-        GarantirReferencias();
-
-        // =====================================================
-        // SETUP OBRIGATÓRIO
-        // =====================================================
-        if (!setupSoldadoFeito)
-        {
-            if (CriarBaseSoldado())
-            {
-                quantidadeBaseSoldado++;
-                tempoBaseSoldado = 120f; // Reinicia o tempo
-                setupSoldadoFeito = true;
-            }
-            return;
-        }
-
-        // =====================================================
-        // TIMER SOLDADO (CONTAGEM REGRESSIVA NO PRÓPRIO TEMPO)
-        // =====================================================
-        if (tempoBaseSoldado > 0f)
-        {
-            tempoBaseSoldado -= Time.deltaTime;
-            
-            if (tempoBaseSoldado <= 0f)
-            {
-                tempoBaseSoldado = 0f; // Trava no 0
-                
-                if (quantidadeBaseSoldado < maxBaseSoldado)
-                {
-                    if (CriarBaseSoldado())
-                    {
-                        quantidadeBaseSoldado++;
-                    }
-                }
-                
-                tempoBaseSoldado = 120f; // Reinicia o tempo
-            }
-        }
-    }
-
     // =========================================================
-    // REFERÊNCIAS
+    // REFERÊNCIAS (SEGURAS)
     // =========================================================
-
     public void AtualizarReferencias()
     {
         if (baseArea == null)
-            baseArea = FindObjectOfType<BaseAreaIA>();
+            baseArea = FindFirstObjectByType<BaseAreaIA>();
 
         if (soldadoSpawn == null)
-            soldadoSpawn = FindObjectOfType<SoldadoSpownIA>();
+            soldadoSpawn = FindFirstObjectByType<SoldadoSpownIA>();
     }
 
     private void GarantirReferencias()
@@ -82,19 +30,29 @@ public class BaseSoldadoIA : MonoBehaviour
     }
 
     // =========================================================
-    // BASE SOLDADO
+    // BASE SOLDADO (ÍNDICE 0)
     // =========================================================
-
     public bool CriarBaseSoldado()
     {
-        if (baseArea == null)
-            return false;
+        GarantirReferencias();
 
-        return baseArea.TentarCriarBasePorIndice(0);
+        if (baseArea == null)
+        {
+            Debug.LogError("[BaseSoldadoIA] ❌ BaseAreaIA não encontrada!");
+            return false;
+        }
+
+        bool criada = baseArea.TentarCriarBasePorIndice(0);
+
+        if (criada)
+            Debug.Log("[BaseSoldadoIA] 🏗️ Base Soldado criada com sucesso");
+
+        return criada;
     }
 
     public bool BaseSoldadoExiste()
     {
+        GarantirReferencias();
         return baseArea != null && baseArea.ExisteBasePorIndice(0);
     }
 
@@ -103,12 +61,21 @@ public class BaseSoldadoIA : MonoBehaviour
     // =========================================================
     public bool PodeCriarColetor()
     {
+        GarantirReferencias();
         return soldadoSpawn != null && soldadoSpawn.PodeCriarColetor();
     }
 
     public bool CriarColetor()
     {
-        return soldadoSpawn != null && soldadoSpawn.TentarCriarColetor();
+        GarantirReferencias();
+
+        if (soldadoSpawn == null)
+        {
+            Debug.LogError("[BaseSoldadoIA] ❌ SoldadoSpownIA não encontrado!");
+            return false;
+        }
+
+        return soldadoSpawn.TentarCriarColetor();
     }
 
     // =========================================================
@@ -116,12 +83,21 @@ public class BaseSoldadoIA : MonoBehaviour
     // =========================================================
     public bool PodeCriarSoldado()
     {
+        GarantirReferencias();
         return soldadoSpawn != null && soldadoSpawn.PodeCriarSoldado();
     }
 
     public bool CriarSoldado()
     {
-        return soldadoSpawn != null && soldadoSpawn.TentarCriarSoldado();
+        GarantirReferencias();
+
+        if (soldadoSpawn == null)
+        {
+            Debug.LogError("[BaseSoldadoIA] ❌ SoldadoSpownIA não encontrado!");
+            return false;
+        }
+
+        return soldadoSpawn.TentarCriarSoldado();
     }
 
     // =========================================================
@@ -129,18 +105,20 @@ public class BaseSoldadoIA : MonoBehaviour
     // =========================================================
     public bool PodeCriarGuerreiro()
     {
+        GarantirReferencias();
         return soldadoSpawn != null && soldadoSpawn.PodeCriarGuerreiro();
     }
 
     public bool CriarGuerreiro()
     {
-        return soldadoSpawn != null && soldadoSpawn.TentarCriarGuerreiro();
-    }
+        GarantirReferencias();
 
-    // =========================================================
-    // GETTERS
-    // =========================================================
-    public float GetTempoBaseSoldado() => tempoBaseSoldado;
-    public int GetQuantidadeBaseSoldado() => quantidadeBaseSoldado;
-    public int GetMaxBaseSoldado() => maxBaseSoldado;
+        if (soldadoSpawn == null)
+        {
+            Debug.LogError("[BaseSoldadoIA] ❌ SoldadoSpownIA não encontrado!");
+            return false;
+        }
+
+        return soldadoSpawn.TentarCriarGuerreiro();
+    }
 }

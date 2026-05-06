@@ -1,8 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [DisallowMultipleComponent]
 public class SoldadoSpownIA : MonoBehaviour
 {
+    [Header("Ponto de Spawn (OBRIGATÓRIO)")]
+    [SerializeField] private Transform pontoSpawn;
+
     [Header("Guerreiro")]
     [SerializeField] private GameObject prefabGuerreiro;
     [SerializeField] private int custoPedraGuerreiro = 10;
@@ -24,13 +27,13 @@ public class SoldadoSpownIA : MonoBehaviour
     [SerializeField] private int custoMetalSoldado = 10;
     [SerializeField] private float delaySoldado = 1.2f;
 
-    [Header("Ponto onde a unidade vai nascer")]
-    [SerializeField] private Transform pontoSpawn;
-
     [Header("Evitar nascer um em cima do outro")]
     [SerializeField] private bool usarEspacamentoEntreSpawns = true;
     [SerializeField] private float distanciaEntreUnidadesSpawn = 1.2f;
     [SerializeField] private int quantidadePosicoesPorLinha = 4;
+
+    [Header("Ajuste de altura")]
+    [SerializeField] private float alturaOffset = 0.5f;
 
     [Header("Time")]
     [SerializeField] private string tagDoTime = "Vermelho";
@@ -44,548 +47,183 @@ public class SoldadoSpownIA : MonoBehaviour
 
     private int contadorSpawns;
 
+    // 🔥 CONTROLE DE POSIÇÃO FORÇADA (REVEZAMENTO ENTRE BASES)
+    private Vector3 posicaoForcada;
+    private Quaternion rotacaoForcada;
+    private bool usarPosicaoForcada = false;
+
     // =====================================================================
     // COOLDOWN INDIVIDUAL
     // =====================================================================
 
-    public bool GuerreiroEstaEmCooldown()
-    {
-        return Time.time < proximoSpawnGuerreiroPermitido;
-    }
+    public bool GuerreiroEstaEmCooldown() => Time.time < proximoSpawnGuerreiroPermitido;
+    public bool RecursoEstaEmCooldown() => Time.time < proximoSpawnRecursoPermitido;
+    public bool ColetorEstaEmCooldown() => RecursoEstaEmCooldown();
+    public bool SoldadoEstaEmCooldown() => Time.time < proximoSpawnSoldadoPermitido;
 
-    public bool RecursoEstaEmCooldown()
-    {
-        return Time.time < proximoSpawnRecursoPermitido;
-    }
+    public float TempoRestanteCooldownGuerreiro() => Mathf.Max(0f, proximoSpawnGuerreiroPermitido - Time.time);
+    public float TempoRestanteCooldownRecurso() => Mathf.Max(0f, proximoSpawnRecursoPermitido - Time.time);
+    public float TempoRestanteCooldownColetor() => TempoRestanteCooldownRecurso();
+    public float TempoRestanteCooldownSoldado() => Mathf.Max(0f, proximoSpawnSoldadoPermitido - Time.time);
 
-    public bool ColetorEstaEmCooldown()
-    {
-        return RecursoEstaEmCooldown();
-    }
-
-    public bool SoldadoEstaEmCooldown()
-    {
-        return Time.time < proximoSpawnSoldadoPermitido;
-    }
-
-    public float TempoRestanteCooldownGuerreiro()
-    {
-        return Mathf.Max(0f, proximoSpawnGuerreiroPermitido - Time.time);
-    }
-
-    public float TempoRestanteCooldownRecurso()
-    {
-        return Mathf.Max(0f, proximoSpawnRecursoPermitido - Time.time);
-    }
-
-    public float TempoRestanteCooldownColetor()
-    {
-        return TempoRestanteCooldownRecurso();
-    }
-
-    public float TempoRestanteCooldownSoldado()
-    {
-        return Mathf.Max(0f, proximoSpawnSoldadoPermitido - Time.time);
-    }
-
-    // Compatibilidade com versoes antigas: retorna true se qualquer unidade estiver em cooldown.
-    public bool EstaEmCooldown()
-    {
-        return GuerreiroEstaEmCooldown() || RecursoEstaEmCooldown() || SoldadoEstaEmCooldown();
-    }
+    public bool EstaEmCooldown() => GuerreiroEstaEmCooldown() || RecursoEstaEmCooldown() || SoldadoEstaEmCooldown();
 
     public float TempoRestanteCooldown()
     {
-        float maiorTempo = TempoRestanteCooldownGuerreiro();
-        maiorTempo = Mathf.Max(maiorTempo, TempoRestanteCooldownRecurso());
-        maiorTempo = Mathf.Max(maiorTempo, TempoRestanteCooldownSoldado());
-        return maiorTempo;
-    }
-
-    public bool EstaEmCooldownPorIndice(int indice)
-    {
-        switch (indice)
-        {
-            case 0:
-                return GuerreiroEstaEmCooldown();
-
-            case 1:
-                return RecursoEstaEmCooldown();
-
-            case 2:
-                return SoldadoEstaEmCooldown();
-
-            default:
-                return false;
-        }
-    }
-
-    public float TempoRestanteCooldownPorIndice(int indice)
-    {
-        switch (indice)
-        {
-            case 0:
-                return TempoRestanteCooldownGuerreiro();
-
-            case 1:
-                return TempoRestanteCooldownRecurso();
-
-            case 2:
-                return TempoRestanteCooldownSoldado();
-
-            default:
-                return 0f;
-        }
+        float maior = TempoRestanteCooldownGuerreiro();
+        maior = Mathf.Max(maior, TempoRestanteCooldownRecurso());
+        maior = Mathf.Max(maior, TempoRestanteCooldownSoldado());
+        return maior;
     }
 
     // =====================================================================
-    // VALIDACAO
+    // VALIDAÇÃO
     // =====================================================================
 
-    public bool PodeCriarGuerreiro()
-    {
-        return PodeCriarUnidade(
-            prefabGuerreiro,
-            custoPedraGuerreiro,
-            custoMadeiraGuerreiro,
-            custoMetalGuerreiro,
-            proximoSpawnGuerreiroPermitido
-        );
-    }
-
-    public bool PodeCriarRecurso()
-    {
-        return PodeCriarUnidade(
-            prefabRecurso,
-            custoPedraRecurso,
-            custoMadeiraRecurso,
-            custoMetalRecurso,
-            proximoSpawnRecursoPermitido
-        );
-    }
-
-    public bool PodeCriarColetor()
-    {
-        return PodeCriarRecurso();
-    }
-
-    public bool PodeCriarSoldado()
-    {
-        return PodeCriarUnidade(
-            prefabSoldado,
-            custoPedraSoldado,
-            custoMadeiraSoldado,
-            custoMetalSoldado,
-            proximoSpawnSoldadoPermitido
-        );
-    }
+    public bool PodeCriarGuerreiro() => PodeCriarUnidade(prefabGuerreiro, custoPedraGuerreiro, custoMadeiraGuerreiro, custoMetalGuerreiro, proximoSpawnGuerreiroPermitido);
+    public bool PodeCriarRecurso() => PodeCriarUnidade(prefabRecurso, custoPedraRecurso, custoMadeiraRecurso, custoMetalRecurso, proximoSpawnRecursoPermitido);
+    public bool PodeCriarColetor() => PodeCriarRecurso();
+    public bool PodeCriarSoldado() => PodeCriarUnidade(prefabSoldado, custoPedraSoldado, custoMadeiraSoldado, custoMetalSoldado, proximoSpawnSoldadoPermitido);
 
     // =====================================================================
-    // CRIACAO DAS UNIDADES (VERSOES QUE RETORNAM BOOL)
+    // TENTAR CRIAR (Retorna bool)
     // =====================================================================
 
-    /// <summary>
-    /// Tenta criar um guerreiro. Retorna true se conseguiu.
-    /// </summary>
     public bool TentarCriarGuerreiro()
     {
-        if (!PodeCriarGuerreiro())
-            return false;
-
+        if (!PodeCriarGuerreiro()) return false;
         CriarGuerreiro();
         return true;
     }
 
-    /// <summary>
-    /// Tenta criar um coletor/recurso. Retorna true se conseguiu.
-    /// </summary>
     public bool TentarCriarRecurso()
     {
-        if (!PodeCriarRecurso())
-            return false;
-
+        if (!PodeCriarRecurso()) return false;
         CriarRecurso();
         return true;
     }
 
-    /// <summary>
-    /// Tenta criar um coletor. Retorna true se conseguiu.
-    /// </summary>
-    public bool TentarCriarColetor()
-    {
-        return TentarCriarRecurso();
-    }
+    public bool TentarCriarColetor() => TentarCriarRecurso();
 
-    /// <summary>
-    /// Tenta criar um soldado. Retorna true se conseguiu.
-    /// </summary>
     public bool TentarCriarSoldado()
     {
-        if (!PodeCriarSoldado())
-            return false;
-
+        if (!PodeCriarSoldado()) return false;
         CriarSoldado();
         return true;
     }
 
     // =====================================================================
-    // CRIACAO DAS UNIDADES (ORIGINAIS)
+    // CRIAR UNIDADES
     // =====================================================================
 
     public void CriarGuerreiro()
     {
-        if (CriarUnidade(
-            prefabGuerreiro,
-            custoPedraGuerreiro,
-            custoMadeiraGuerreiro,
-            custoMetalGuerreiro,
-            delayGuerreiro,
-            ref proximoSpawnGuerreiroPermitido
-        ))
-        {
-            // Sucesso
-        }
+        CriarUnidade(prefabGuerreiro, custoPedraGuerreiro, custoMadeiraGuerreiro, custoMetalGuerreiro, delayGuerreiro, ref proximoSpawnGuerreiroPermitido);
     }
 
     public void CriarRecurso()
     {
-        if (CriarUnidade(
-            prefabRecurso,
-            custoPedraRecurso,
-            custoMadeiraRecurso,
-            custoMetalRecurso,
-            delayRecurso,
-            ref proximoSpawnRecursoPermitido
-        ))
-        {
-            // Sucesso
-        }
+        CriarUnidade(prefabRecurso, custoPedraRecurso, custoMadeiraRecurso, custoMetalRecurso, delayRecurso, ref proximoSpawnRecursoPermitido);
     }
 
-    public void CriarColetor()
-    {
-        CriarRecurso();
-    }
+    public void CriarColetor() => CriarRecurso();
 
     public void CriarSoldado()
     {
-        if (CriarUnidade(
-            prefabSoldado,
-            custoPedraSoldado,
-            custoMadeiraSoldado,
-            custoMetalSoldado,
-            delaySoldado,
-            ref proximoSpawnSoldadoPermitido
-        ))
-        {
-            // Sucesso
-        }
+        CriarUnidade(prefabSoldado, custoPedraSoldado, custoMadeiraSoldado, custoMetalSoldado, delaySoldado, ref proximoSpawnSoldadoPermitido);
     }
 
     // =====================================================================
-    // METODOS GENERICOS
-    // 0 = Guerreiro, 1 = Recurso/Coletor, 2 = Soldado
+    // MÉTODOS GENÉRICOS (0=Guerreiro, 1=Recurso, 2=Soldado)
     // =====================================================================
 
     public void CriarPorIndice(int indice)
     {
         switch (indice)
         {
-            case 0:
-                CriarGuerreiro();
-                break;
-
-            case 1:
-                CriarRecurso();
-                break;
-
-            case 2:
-                CriarSoldado();
-                break;
+            case 0: CriarGuerreiro(); break;
+            case 1: CriarRecurso(); break;
+            case 2: CriarSoldado(); break;
         }
     }
 
-    /// <summary>
-    /// Tenta criar por �ndice. Retorna true se conseguiu.
-    /// </summary>
     public bool TentarCriarPorIndice(int indice)
     {
         switch (indice)
         {
-            case 0:
-                return TentarCriarGuerreiro();
-
-            case 1:
-                return TentarCriarRecurso();
-
-            case 2:
-                return TentarCriarSoldado();
-
-            default:
-                return false;
+            case 0: return TentarCriarGuerreiro();
+            case 1: return TentarCriarRecurso();
+            case 2: return TentarCriarSoldado();
+            default: return false;
         }
-    }
-
-    public void CriarUnidadePorIndice(int indice)
-    {
-        CriarPorIndice(indice);
-    }
-
-    public void CriarPrefabPorIndice(int indice)
-    {
-        CriarPorIndice(indice);
-    }
-
-    public void CriarObjetoPorIndice(int indice)
-    {
-        CriarPorIndice(indice);
-    }
-
-    public void CriarUnidade(int indice)
-    {
-        CriarPorIndice(indice);
-    }
-
-    public void CriarPrefab(int indice)
-    {
-        CriarPorIndice(indice);
-    }
-
-    public void Criar(int indice)
-    {
-        CriarPorIndice(indice);
     }
 
     public bool PodeCriarPorIndice(int indice)
     {
         switch (indice)
         {
-            case 0:
-                return PodeCriarGuerreiro();
-
-            case 1:
-                return PodeCriarRecurso();
-
-            case 2:
-                return PodeCriarSoldado();
-
-            default:
-                return false;
+            case 0: return PodeCriarGuerreiro();
+            case 1: return PodeCriarRecurso();
+            case 2: return PodeCriarSoldado();
+            default: return false;
         }
-    }
-
-    public bool PodeCriarUnidadePorIndice(int indice)
-    {
-        return PodeCriarPorIndice(indice);
-    }
-
-    public bool PodeCriarPrefabPorIndice(int indice)
-    {
-        return PodeCriarPorIndice(indice);
-    }
-
-    public bool PodeCriarObjetoPorIndice(int indice)
-    {
-        return PodeCriarPorIndice(indice);
-    }
-
-    public bool PodeCriarUnidade(int indice)
-    {
-        return PodeCriarPorIndice(indice);
-    }
-
-    public bool PodeCriarPrefab(int indice)
-    {
-        return PodeCriarPorIndice(indice);
-    }
-
-    public bool PodeCriar(int indice)
-    {
-        return PodeCriarPorIndice(indice);
-    }
-
-    public bool ExistePrefabPorIndice(int indice)
-    {
-        switch (indice)
-        {
-            case 0:
-                return prefabGuerreiro != null;
-
-            case 1:
-                return prefabRecurso != null;
-
-            case 2:
-                return prefabSoldado != null;
-
-            default:
-                return false;
-        }
-    }
-
-    public bool TemPrefabPorIndice(int indice)
-    {
-        return ExistePrefabPorIndice(indice);
-    }
-
-    public bool ExisteUnidadePorIndice(int indice)
-    {
-        return ExistePrefabPorIndice(indice);
-    }
-
-    public bool TemUnidadePorIndice(int indice)
-    {
-        return ExistePrefabPorIndice(indice);
-    }
-
-    public bool IndiceExiste(int indice)
-    {
-        return ExistePrefabPorIndice(indice);
-    }
-
-    public bool ExisteIndice(int indice)
-    {
-        return ExistePrefabPorIndice(indice);
-    }
-
-    public int GetQuantidadePrefabs()
-    {
-        return 3;
-    }
-
-    public int QuantidadePrefabs()
-    {
-        return GetQuantidadePrefabs();
-    }
-
-    public int GetQuantidadeUnidades()
-    {
-        return GetQuantidadePrefabs();
-    }
-
-    public int QuantidadeUnidades()
-    {
-        return GetQuantidadePrefabs();
-    }
-
-    public int GetTotalPrefabs()
-    {
-        return GetQuantidadePrefabs();
-    }
-
-    public int TotalPrefabs()
-    {
-        return GetQuantidadePrefabs();
     }
 
     // =====================================================================
-    // LOGICA INTERNA (USA GameControllerRecursosIA)
+    // COMPATIBILIDADE (Aliases)
     // =====================================================================
+    public void CriarUnidadePorIndice(int i) => CriarPorIndice(i);
+    public void CriarPrefabPorIndice(int i) => CriarPorIndice(i);
+    public void CriarObjetoPorIndice(int i) => CriarPorIndice(i);
+    public void CriarUnidade(int i) => CriarPorIndice(i);
+    public void CriarPrefab(int i) => CriarPorIndice(i);
+    public void Criar(int i) => CriarPorIndice(i);
 
-    private bool PodeCriarUnidade(
-        GameObject prefab,
-        int custoPedra,
-        int custoMadeira,
-        int custoMetal,
-        float proximoSpawnPermitido
-    )
+    public bool PodeCriarUnidadePorIndice(int i) => PodeCriarPorIndice(i);
+    public bool PodeCriarPrefabPorIndice(int i) => PodeCriarPorIndice(i);
+    public bool PodeCriarObjetoPorIndice(int i) => PodeCriarPorIndice(i);
+    public bool PodeCriarUnidade(int i) => PodeCriarPorIndice(i);
+    public bool PodeCriarPrefab(int i) => PodeCriarPorIndice(i);
+    public bool PodeCriar(int i) => PodeCriarPorIndice(i);
+
+    public bool ExistePrefabPorIndice(int i)
     {
-        if (prefab == null || pontoSpawn == null)
-            return false;
-
-        if (Time.time < proximoSpawnPermitido)
-            return false;
-
-        if (GameControllerRecursosIA.Instance == null)
+        switch (i)
         {
-            if (mostrarLogs)
-                Debug.LogWarning($"[SoldadoSpownIA] GameControllerRecursosIA.Instance � null! Certifique-se de que existe um GameControllerRecursosIA na cena.");
-            return false;
+            case 0: return prefabGuerreiro != null;
+            case 1: return prefabRecurso != null;
+            case 2: return prefabSoldado != null;
+            default: return false;
         }
-
-        return GameControllerRecursosIA.Instance.TemRecursos(
-            custoPedra,
-            custoMadeira,
-            custoMetal
-        );
     }
 
-    private bool CriarUnidade(
-        GameObject prefab,
-        int custoPedra,
-        int custoMadeira,
-        int custoMetal,
-        float delay,
-        ref float proximoSpawnPermitidoRef
-    )
-    {
-        if (!PodeCriarUnidade(prefab, custoPedra, custoMadeira, custoMetal, proximoSpawnPermitidoRef))
-            return false;
+    public bool TemPrefabPorIndice(int i) => ExistePrefabPorIndice(i);
+    public bool ExisteUnidadePorIndice(int i) => ExistePrefabPorIndice(i);
+    public bool TemUnidadePorIndice(int i) => ExistePrefabPorIndice(i);
+    public bool IndiceExiste(int i) => ExistePrefabPorIndice(i);
+    public bool ExisteIndice(int i) => ExistePrefabPorIndice(i);
+    public int GetQuantidadePrefabs() => 3;
+    public int QuantidadePrefabs() => 3;
+    public int GetQuantidadeUnidades() => 3;
+    public int QuantidadeUnidades() => 3;
+    public int GetTotalPrefabs() => 3;
+    public int TotalPrefabs() => 3;
 
-        bool gastou = GameControllerRecursosIA.Instance.TentarGastarRecursos(
-            custoPedra,
-            custoMadeira,
-            custoMetal
-        );
-
-        if (!gastou)
-            return false;
-
-        Vector3 posicaoSpawn = CalcularPosicaoSpawn();
-        Quaternion rotacaoSpawn = pontoSpawn != null ? pontoSpawn.rotation : transform.rotation;
-
-        GameObject obj = GameObject.Find("Clone IA");
-
-        if (obj == null)
-        {
-            obj = new GameObject("Clone IA");
-        }
-
-        Transform pastaClones = obj.transform;
-
-        GameObject novo = Instantiate(
-            prefab,
-            posicaoSpawn,
-            rotacaoSpawn,
-            pastaClones
-        );
-
-        novo.SetActive(true);
-
-        // Define a tag do time da IA
-        if (!string.IsNullOrWhiteSpace(tagDoTime))
-        {
-            try
-            {
-                novo.tag = tagDoTime;
-            }
-            catch
-            {
-                if (mostrarLogs)
-                    Debug.LogWarning($"[SoldadoSpownIA] N�o foi poss�vel definir a tag '{tagDoTime}'. Verifique se a tag existe no projeto.");
-            }
-        }
-
-        AtivarObjetoCompleto(novo);
-
-        contadorSpawns++;
-        proximoSpawnPermitidoRef = Time.time + Mathf.Max(0f, delay);
-
-        if (mostrarLogs)
-            Debug.Log($"[SoldadoSpownIA] Unidade '{prefab.name}' criada com sucesso! Total spawns: {contadorSpawns}");
-
-        return true;
-    }
+    // =====================================================================
+    // CÁLCULO DE POSIÇÃO (GRID NORMAL - QUANDO NÃO TEM FORÇAÇÃO)
+    // =====================================================================
 
     private Vector3 CalcularPosicaoSpawn()
     {
         Transform origem = pontoSpawn != null ? pontoSpawn : transform;
         Vector3 posicao = origem.position;
 
+        posicao.y += alturaOffset;
+
         if (!usarEspacamentoEntreSpawns)
             return posicao;
 
         float distancia = Mathf.Max(0f, distanciaEntreUnidadesSpawn);
-
         if (distancia <= 0f)
             return posicao;
 
@@ -602,11 +240,8 @@ public class SoldadoSpownIA : MonoBehaviour
         direita.y = 0f;
         frente.y = 0f;
 
-        if (direita.sqrMagnitude < 0.001f)
-            direita = Vector3.right;
-
-        if (frente.sqrMagnitude < 0.001f)
-            frente = Vector3.forward;
+        if (direita.sqrMagnitude < 0.001f) direita = Vector3.right;
+        if (frente.sqrMagnitude < 0.001f) frente = Vector3.forward;
 
         direita.Normalize();
         frente.Normalize();
@@ -614,44 +249,135 @@ public class SoldadoSpownIA : MonoBehaviour
         return posicao + direita * deslocamentoLateral + frente * deslocamentoFrente;
     }
 
+    // =====================================================================
+    // LÓGICA INTERNA
+    // =====================================================================
+
+    private bool PodeCriarUnidade(GameObject prefab, int custoPedra, int custoMadeira, int custoMetal, float proximoSpawn)
+    {
+        if (prefab == null) return false;
+        if (pontoSpawn == null && transform == null) return false;
+        if (Time.time < proximoSpawn) return false;
+
+        if (GameControllerRecursosIA.Instance == null)
+        {
+            if (mostrarLogs)
+                Debug.LogWarning("[SoldadoSpownIA] GameControllerRecursosIA.Instance é null!");
+            return false;
+        }
+
+        return GameControllerRecursosIA.Instance.TemRecursos(custoPedra, custoMadeira, custoMetal);
+    }
+
+    private bool CriarUnidade(GameObject prefab, int custoPedra, int custoMadeira, int custoMetal, float delay, ref float proximoSpawnRef)
+    {
+        if (!PodeCriarUnidade(prefab, custoPedra, custoMadeira, custoMetal, proximoSpawnRef))
+            return false;
+
+        if (!GameControllerRecursosIA.Instance.TentarGastarRecursos(custoPedra, custoMadeira, custoMetal))
+            return false;
+
+        // 🔥 USA POSIÇÃO FORÇADA (REVEZAMENTO) OU CALCULADA (NORMAL)
+        Vector3 posicaoSpawn;
+        Quaternion rotacaoSpawn;
+
+        if (usarPosicaoForcada)
+        {
+            posicaoSpawn = posicaoForcada;
+            rotacaoSpawn = rotacaoForcada;
+            usarPosicaoForcada = false; // Reseta para o próximo
+        }
+        else
+        {
+            posicaoSpawn = CalcularPosicaoSpawn();
+            rotacaoSpawn = pontoSpawn != null ? pontoSpawn.rotation : transform.rotation;
+        }
+
+        GameObject obj = GameObject.Find("Clone IA");
+        if (obj == null) obj = new GameObject("Clone IA");
+
+        GameObject novo = Instantiate(prefab, posicaoSpawn, rotacaoSpawn, obj.transform);
+        novo.SetActive(true);
+
+        if (!string.IsNullOrWhiteSpace(tagDoTime))
+        {
+            try { novo.tag = tagDoTime; }
+            catch { }
+        }
+
+        AtivarObjetoCompleto(novo);
+
+        contadorSpawns++;
+        proximoSpawnRef = Time.time + Mathf.Max(0f, delay);
+
+        if (mostrarLogs)
+            Debug.Log($"[SoldadoSpownIA] '{prefab.name}' criado em {posicaoSpawn} | Total: {contadorSpawns}");
+
+        return true;
+    }
+
     private void AtivarObjetoCompleto(GameObject obj)
     {
-        if (obj == null)
-            return;
-
+        if (obj == null) return;
         obj.SetActive(true);
 
-        Transform[] filhos = obj.GetComponentsInChildren<Transform>(true);
+        foreach (var t in obj.GetComponentsInChildren<Transform>(true))
+            t.gameObject.SetActive(true);
 
-        for (int i = 0; i < filhos.Length; i++)
+        foreach (var m in obj.GetComponentsInChildren<MonoBehaviour>(true))
+            m.enabled = true;
+
+        foreach (var c in obj.GetComponentsInChildren<Collider>(true))
+            c.enabled = true;
+
+        foreach (var r in obj.GetComponentsInChildren<Renderer>(true))
+            r.enabled = true;
+    }
+
+    // =====================================================================
+    // DEFINIÇÃO DE PONTO DE SPAWN
+    // =====================================================================
+
+    /// <summary>
+    /// Define apenas a posição do ponto de spawn.
+    /// </summary>
+    public void DefinirPontoSpawn(Vector3 posicao)
+    {
+        if (pontoSpawn == null)
         {
-            if (filhos[i] != null)
-                filhos[i].gameObject.SetActive(true);
+            GameObject novo = new GameObject("PontoSpawnTemp_Soldado");
+            pontoSpawn = novo.transform;
         }
+        pontoSpawn.position = posicao;
+    }
 
-        MonoBehaviour[] scripts = obj.GetComponentsInChildren<MonoBehaviour>(true);
-
-        for (int i = 0; i < scripts.Length; i++)
+    /// <summary>
+    /// Define a posição e rotação do ponto de spawn.
+    /// </summary>
+    public void DefinirPontoSpawn(Vector3 posicao, Quaternion rotacao)
+    {
+        if (pontoSpawn == null)
         {
-            if (scripts[i] != null)
-                scripts[i].enabled = true;
+            GameObject novo = new GameObject("PontoSpawnTemp_Soldado");
+            pontoSpawn = novo.transform;
         }
+        pontoSpawn.position = posicao;
+        pontoSpawn.rotation = rotacao;
+    }
 
-        Collider[] colliders = obj.GetComponentsInChildren<Collider>(true);
+    // =====================================================================
+    // 🔥 FORÇA SPAWN EXATO (USADO PELO ROBOIA PARA REVEZAMENTO)
+    // =====================================================================
 
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            if (colliders[i] != null)
-                colliders[i].enabled = true;
-        }
-
-        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
-
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] != null)
-                renderers[i].enabled = true;
-        }
+    /// <summary>
+    /// Força a próxima unidade a spawnar exatamente nesta posição/rotação.
+    /// Chamado pelo RoboIA para fazer o revezamento entre bases.
+    /// </summary>
+    public void ForcarPosicaoSpawn(Vector3 posicao, Quaternion rotacao)
+    {
+        posicaoForcada = posicao;
+        rotacaoForcada = rotacao;
+        usarPosicaoForcada = true;
     }
 
     private void OnValidate()
@@ -673,5 +399,94 @@ public class SoldadoSpownIA : MonoBehaviour
 
         distanciaEntreUnidadesSpawn = Mathf.Max(0f, distanciaEntreUnidadesSpawn);
         quantidadePosicoesPorLinha = Mathf.Max(1, quantidadePosicoesPorLinha);
+        alturaOffset = Mathf.Max(0f, alturaOffset);
+    }
+
+    // =====================================================================
+    // 🔥 MÉTODOS QUE RECEBEM A BASE (ROBOIA PASSA A BASE)
+    // =====================================================================
+
+    public bool PodeCriarColetorNaBase(Transform baseTransform)
+    {
+        return PodeCriarNaBase(prefabRecurso, custoPedraRecurso, custoMadeiraRecurso, custoMetalRecurso, proximoSpawnRecursoPermitido, baseTransform);
+    }
+
+    public bool TentarCriarColetorNaBase(Transform baseTransform)
+    {
+        if (!PodeCriarColetorNaBase(baseTransform)) return false;
+        CriarNaBase(prefabRecurso, custoPedraRecurso, custoMadeiraRecurso, custoMetalRecurso, delayRecurso, ref proximoSpawnRecursoPermitido, baseTransform);
+        return true;
+    }
+
+    public bool PodeCriarSoldadoNaBase(Transform baseTransform)
+    {
+        return PodeCriarNaBase(prefabSoldado, custoPedraSoldado, custoMadeiraSoldado, custoMetalSoldado, proximoSpawnSoldadoPermitido, baseTransform);
+    }
+
+    public bool TentarCriarSoldadoNaBase(Transform baseTransform)
+    {
+        if (!PodeCriarSoldadoNaBase(baseTransform)) return false;
+        CriarNaBase(prefabSoldado, custoPedraSoldado, custoMadeiraSoldado, custoMetalSoldado, delaySoldado, ref proximoSpawnSoldadoPermitido, baseTransform);
+        return true;
+    }
+
+    public bool PodeCriarGuerreiroNaBase(Transform baseTransform)
+    {
+        return PodeCriarNaBase(prefabGuerreiro, custoPedraGuerreiro, custoMadeiraGuerreiro, custoMetalGuerreiro, proximoSpawnGuerreiroPermitido, baseTransform);
+    }
+
+    public bool TentarCriarGuerreiroNaBase(Transform baseTransform)
+    {
+        if (!PodeCriarGuerreiroNaBase(baseTransform)) return false;
+        CriarNaBase(prefabGuerreiro, custoPedraGuerreiro, custoMadeiraGuerreiro, custoMetalGuerreiro, delayGuerreiro, ref proximoSpawnGuerreiroPermitido, baseTransform);
+        return true;
+    }
+
+    private bool PodeCriarNaBase(GameObject prefab, int custoPedra, int custoMadeira, int custoMetal, float proximoSpawn, Transform baseTransform)
+    {
+        if (prefab == null) return false;
+        if (baseTransform == null) return false;
+        if (Time.time < proximoSpawn) return false;
+
+        if (GameControllerRecursosIA.Instance == null)
+        {
+            if (mostrarLogs) Debug.LogWarning("[SoldadoSpownIA] GameControllerRecursosIA.Instance é null!");
+            return false;
+        }
+
+        return GameControllerRecursosIA.Instance.TemRecursos(custoPedra, custoMadeira, custoMetal);
+    }
+
+    private void CriarNaBase(GameObject prefab, int custoPedra, int custoMadeira, int custoMetal, float delay, ref float proximoSpawnRef, Transform baseTransform)
+    {
+        if (!PodeCriarNaBase(prefab, custoPedra, custoMadeira, custoMetal, proximoSpawnRef, baseTransform))
+            return;
+
+        if (!GameControllerRecursosIA.Instance.TentarGastarRecursos(custoPedra, custoMadeira, custoMetal))
+            return;
+
+        // 🔥 SPAWN EXATAMENTE NA POSIÇÃO DA BASE RECEBIDA
+        Vector3 posicaoSpawn = baseTransform.position;
+        Quaternion rotacaoSpawn = baseTransform.rotation;
+
+        GameObject obj = GameObject.Find("Clone IA");
+        if (obj == null) obj = new GameObject("Clone IA");
+
+        GameObject novo = Instantiate(prefab, posicaoSpawn, rotacaoSpawn, obj.transform);
+        novo.SetActive(true);
+
+        if (!string.IsNullOrWhiteSpace(tagDoTime))
+        {
+            try { novo.tag = tagDoTime; }
+            catch { }
+        }
+
+        AtivarObjetoCompleto(novo);
+
+        contadorSpawns++;
+        proximoSpawnRef = Time.time + Mathf.Max(0f, delay);
+
+        if (mostrarLogs)
+            Debug.Log($"[SoldadoSpownIA] '{prefab.name}' spawnado na base {baseTransform.name} em {posicaoSpawn}");
     }
 }

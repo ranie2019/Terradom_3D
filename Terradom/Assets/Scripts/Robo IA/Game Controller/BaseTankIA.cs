@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 [DisallowMultipleComponent]
 public class BaseTankIA : MonoBehaviour
@@ -6,145 +6,54 @@ public class BaseTankIA : MonoBehaviour
     private BaseAreaIA baseArea;
     private TankSpownIA tankSpawn;
 
-    [Header("Tempo entre bases")]
-    [SerializeField] private float tempoBaseTank = 120f;
-
-    [Header("Limite de bases")]
-    [SerializeField] private int maxBaseTank = 10;
-
-    private int quantidadeBaseTank;
-    private bool setupTankFeito = false;
-
     private void Awake()
     {
         AtualizarReferencias();
-        Debug.Log("[BaseTankIA] Awake - Setup concluído. baseArea=" + (baseArea != null) + " tankSpawn=" + (tankSpawn != null));
-    }
-
-    private void Update()
-    {
-        GarantirReferencias();
-
-        // =====================================================
-        // SETUP OBRIGATÓRIO
-        // =====================================================
-        if (!setupTankFeito)
-        {
-            Debug.Log("[BaseTankIA] Tentando setup inicial...");
-            
-            if (CriarBaseTank())
-            {
-                quantidadeBaseTank++;
-                tempoBaseTank = 120f; // Reinicia o tempo
-                setupTankFeito = true;
-                Debug.Log("[BaseTankIA] Setup inicial CONCLUÍDO! Base tank criada.");
-            }
-            else
-            {
-                Debug.LogWarning("[BaseTankIA] Setup inicial FALHOU! Tentando novamente no próximo frame...");
-            }
-            return;
-        }
-
-        // =====================================================
-        // TIMER TANK (CONTAGEM REGRESSIVA NO PRÓPRIO TEMPO)
-        // =====================================================
-        if (tempoBaseTank > 0f)
-        {
-            tempoBaseTank -= Time.deltaTime;
-            
-            if (tempoBaseTank <= 0f)
-            {
-                tempoBaseTank = 0f; // Trava no 0
-                
-                Debug.Log("[BaseTankIA] Timer zerado! Tentando criar nova base tank...");
-                
-                if (quantidadeBaseTank < maxBaseTank)
-                {
-                    if (CriarBaseTank())
-                    {
-                        quantidadeBaseTank++;
-                        Debug.Log("[BaseTankIA] Nova base tank criada! Total: " + quantidadeBaseTank);
-                    }
-                    else
-                    {
-                        Debug.LogError("[BaseTankIA] FALHA ao criar nova base tank!");
-                    }
-                }
-                else
-                {
-                    Debug.Log("[BaseTankIA] Limite máximo atingido: " + maxBaseTank);
-                }
-                
-                tempoBaseTank = 120f; // Reinicia o tempo
-            }
-        }
     }
 
     // =========================================================
-    // REFERÊNCIAS
+    // REFERÃŠNCIAS (SEGURAS)
     // =========================================================
-
     public void AtualizarReferencias()
     {
         if (baseArea == null)
-        {
-            baseArea = FindObjectOfType<BaseAreaIA>();
-            if (baseArea != null)
-                Debug.Log("[BaseTankIA] BaseAreaIA encontrada!");
-            else
-                Debug.LogError("[BaseTankIA] BaseAreaIA NÃO encontrada na cena!");
-        }
+            baseArea = FindFirstObjectByType<BaseAreaIA>();
 
         if (tankSpawn == null)
-        {
-            tankSpawn = FindObjectOfType<TankSpownIA>();
-            if (tankSpawn != null)
-                Debug.Log("[BaseTankIA] TankSpownIA encontrada!");
-            else
-                Debug.LogError("[BaseTankIA] TankSpownIA NÃO encontrada na cena!");
-        }
+            tankSpawn = FindFirstObjectByType<TankSpownIA>();
     }
 
     private void GarantirReferencias()
     {
         if (baseArea == null || tankSpawn == null)
-        {
-            Debug.LogWarning("[BaseTankIA] Referências perdidas! Tentando recuperar...");
             AtualizarReferencias();
-        }
     }
 
     // =========================================================
-    // BASE TANK
+    // BASE TANK (APENAS EXECUTA)
     // =========================================================
-
     public bool CriarBaseTank()
     {
+        GarantirReferencias();
+
         if (baseArea == null)
         {
-            Debug.LogError("[BaseTankIA] ERRO: baseArea é null ao tentar criar base tank!");
+            Debug.LogError("[BaseTankIA] âŒ BaseAreaIA nÃ£o encontrada!");
             return false;
         }
 
-        Debug.Log("[BaseTankIA] Chamando baseArea.TentarCriarBasePorIndice(1)...");
-        bool resultado = baseArea.TentarCriarBasePorIndice(1);
-        Debug.Log("[BaseTankIA] Resultado de TentarCriarBasePorIndice(1): " + resultado);
-        
-        return resultado;
+        bool criada = baseArea.TentarCriarBasePorIndice(1);
+
+        if (criada)
+            Debug.Log("[BaseTankIA] ðŸ—ï¸ Base Tank criada com sucesso");
+
+        return criada;
     }
 
     public bool BaseTankExiste()
     {
-        if (baseArea == null)
-        {
-            Debug.LogError("[BaseTankIA] ERRO: baseArea é null ao verificar existência!");
-            return false;
-        }
-
-        bool existe = baseArea.ExisteBasePorIndice(1);
-        Debug.Log("[BaseTankIA] Verificando se base tank existe: " + existe);
-        return existe;
+        GarantirReferencias();
+        return baseArea != null && baseArea.ExisteBasePorIndice(1);
     }
 
     // =========================================================
@@ -152,35 +61,20 @@ public class BaseTankIA : MonoBehaviour
     // =========================================================
     public bool PodeCriarTank()
     {
-        if (tankSpawn == null)
-        {
-            Debug.LogError("[BaseTankIA] ERRO: tankSpawn é null!");
-            return false;
-        }
-
-        bool pode = tankSpawn.PodeCriarTank();
-        Debug.Log("[BaseTankIA] Pode criar tank? " + pode);
-        return pode;
+        GarantirReferencias();
+        return tankSpawn != null && tankSpawn.PodeCriarTank();
     }
 
     public bool CriarTank()
     {
+        GarantirReferencias();
+
         if (tankSpawn == null)
         {
-            Debug.LogError("[BaseTankIA] ERRO: tankSpawn é null!");
+            Debug.LogError("[BaseTankIA] âŒ TankSpownIA nÃ£o encontrado!");
             return false;
         }
 
-        Debug.Log("[BaseTankIA] Tentando criar unidade tank...");
-        bool criado = tankSpawn.TentarCriarTank();
-        Debug.Log("[BaseTankIA] Unidade tank criada? " + criado);
-        return criado;
+        return tankSpawn.TentarCriarTank();
     }
-
-    // =========================================================
-    // GETTERS
-    // =========================================================
-    public float GetTempoBaseTank() => tempoBaseTank;
-    public int GetQuantidadeBaseTank() => quantidadeBaseTank;
-    public int GetMaxBaseTank() => maxBaseTank;
 }

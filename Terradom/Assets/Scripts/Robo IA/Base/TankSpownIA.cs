@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [DisallowMultipleComponent]
 public class TankSpownIA : MonoBehaviour
@@ -30,6 +30,11 @@ public class TankSpownIA : MonoBehaviour
 
     private float proximoSpawnPermitido;
     private int contadorSpawns;
+
+    // 🔥 CONTROLE DE POSIÇÃO FORÇADA (REVEZAMENTO ENTRE BASES)
+    private Vector3 posicaoForcada;
+    private Quaternion rotacaoForcada;
+    private bool usarPosicaoForcada = false;
 
     public bool EstaEmCooldown()
     {
@@ -127,7 +132,7 @@ public class TankSpownIA : MonoBehaviour
     }
 
     /// <summary>
-    /// Tenta criar por �ndice. Retorna true se conseguiu.
+    /// Tenta criar por índice. Retorna true se conseguiu.
     /// </summary>
     public bool TentarCriarPorIndice(int indice)
     {
@@ -250,7 +255,7 @@ public class TankSpownIA : MonoBehaviour
         if (GameControllerRecursosIA.Instance == null)
         {
             if (mostrarLogs)
-                Debug.LogWarning($"[TankSpownIA] GameControllerRecursosIA.Instance � null! Certifique-se de que existe um GameControllerRecursosIA na cena.");
+                Debug.LogWarning($"[TankSpownIA] GameControllerRecursosIA.Instance é null! Certifique-se de que existe um GameControllerRecursosIA na cena.");
             return false;
         }
 
@@ -275,8 +280,21 @@ public class TankSpownIA : MonoBehaviour
         if (!gastou)
             return false;
 
-        Vector3 posicaoSpawn = CalcularPosicaoSpawn();
-        Quaternion rotacaoSpawn = pontoSpawn != null ? pontoSpawn.rotation : transform.rotation;
+        // 🔥 USA POSIÇÃO FORÇADA (REVEZAMENTO) OU CALCULADA (NORMAL)
+        Vector3 posicaoSpawn;
+        Quaternion rotacaoSpawn;
+
+        if (usarPosicaoForcada)
+        {
+            posicaoSpawn = posicaoForcada;
+            rotacaoSpawn = rotacaoForcada;
+            usarPosicaoForcada = false; // Reseta para o próximo
+        }
+        else
+        {
+            posicaoSpawn = CalcularPosicaoSpawn();
+            rotacaoSpawn = pontoSpawn != null ? pontoSpawn.rotation : transform.rotation;
+        }
 
         GameObject obj = GameObject.Find("Clone IA");
 
@@ -306,7 +324,7 @@ public class TankSpownIA : MonoBehaviour
             catch
             {
                 if (mostrarLogs)
-                    Debug.LogWarning($"[TankSpownIA] N�o foi poss�vel definir a tag '{tagDoTime}'. Verifique se a tag existe no projeto.");
+                    Debug.LogWarning($"[TankSpownIA] Não foi possível definir a tag '{tagDoTime}'. Verifique se a tag existe no projeto.");
             }
         }
 
@@ -316,7 +334,7 @@ public class TankSpownIA : MonoBehaviour
         proximoSpawnPermitido = Time.time + Mathf.Max(0f, tempoEntreSpawns);
 
         if (mostrarLogs)
-            Debug.Log($"[TankSpownIA] Tank criado com sucesso! Total spawns: {contadorSpawns}");
+            Debug.Log($"[TankSpownIA] Tank criado com sucesso em {posicaoSpawn}! Total spawns: {contadorSpawns}");
 
         return true;
     }
@@ -399,6 +417,52 @@ public class TankSpownIA : MonoBehaviour
         }
     }
 
+    // =====================================================================
+    // DEFINIÇÃO DE PONTO DE SPAWN
+    // =====================================================================
+
+    /// <summary>
+    /// Define apenas a posição do ponto de spawn.
+    /// </summary>
+    public void DefinirPontoSpawn(Vector3 posicao)
+    {
+        if (pontoSpawn == null)
+        {
+            GameObject novo = new GameObject("PontoSpawnTemp_Tank");
+            pontoSpawn = novo.transform;
+        }
+        pontoSpawn.position = posicao;
+    }
+
+    /// <summary>
+    /// Define a posição e rotação do ponto de spawn.
+    /// </summary>
+    public void DefinirPontoSpawn(Vector3 posicao, Quaternion rotacao)
+    {
+        if (pontoSpawn == null)
+        {
+            GameObject novo = new GameObject("PontoSpawnTemp_Tank");
+            pontoSpawn = novo.transform;
+        }
+        pontoSpawn.position = posicao;
+        pontoSpawn.rotation = rotacao;
+    }
+
+    // =====================================================================
+    // 🔥 FORÇA SPAWN EXATO (USADO PELO ROBOIA PARA REVEZAMENTO)
+    // =====================================================================
+
+    /// <summary>
+    /// Força a próxima unidade a spawnar exatamente nesta posição/rotação.
+    /// Chamado pelo RoboIA para fazer o revezamento entre bases.
+    /// </summary>
+    public void ForcarPosicaoSpawn(Vector3 posicao, Quaternion rotacao)
+    {
+        posicaoForcada = posicao;
+        rotacaoForcada = rotacao;
+        usarPosicaoForcada = true;
+    }
+
     private void OnValidate()
     {
         custoPedraTankLeve = Mathf.Max(0, custoPedraTankLeve);
@@ -408,5 +472,63 @@ public class TankSpownIA : MonoBehaviour
         tempoEntreSpawns = Mathf.Max(0f, tempoEntreSpawns);
         distanciaEntreUnidadesSpawn = Mathf.Max(0f, distanciaEntreUnidadesSpawn);
         quantidadePosicoesPorLinha = Mathf.Max(1, quantidadePosicoesPorLinha);
+    }
+
+    // =====================================================================
+    // 🔥 MÉTODOS QUE RECEBEM A BASE (ROBOIA PASSA A BASE)
+    // =====================================================================
+
+    public bool PodeCriarTankNaBase(Transform baseTransform)
+    {
+        if (prefabTankLeve == null) return false;
+        if (baseTransform == null) return false;
+        if (EstaEmCooldown()) return false;
+
+        if (GameControllerRecursosIA.Instance == null)
+        {
+            if (mostrarLogs) Debug.LogWarning("[TankSpownIA] GameControllerRecursosIA.Instance é null!");
+            return false;
+        }
+
+        return GameControllerRecursosIA.Instance.TemRecursos(custoPedraTankLeve, custoMadeiraTankLeve, custoMetalTankLeve);
+    }
+
+    public bool TentarCriarTankNaBase(Transform baseTransform)
+    {
+        if (!PodeCriarTankNaBase(baseTransform)) return false;
+        CriarTankNaBase(baseTransform);
+        return true;
+    }
+
+    public void CriarTankNaBase(Transform baseTransform)
+    {
+        if (!PodeCriarTankNaBase(baseTransform)) return;
+
+        if (!GameControllerRecursosIA.Instance.TentarGastarRecursos(custoPedraTankLeve, custoMadeiraTankLeve, custoMetalTankLeve))
+            return;
+
+        // 🔥 SPAWN EXATAMENTE NA POSIÇÃO DA BASE RECEBIDA
+        Vector3 posicaoSpawn = baseTransform.position;
+        Quaternion rotacaoSpawn = baseTransform.rotation;
+
+        GameObject obj = GameObject.Find("Clone IA");
+        if (obj == null) obj = new GameObject("Clone IA");
+
+        GameObject novo = Instantiate(prefabTankLeve, posicaoSpawn, rotacaoSpawn, obj.transform);
+        novo.SetActive(true);
+
+        if (!string.IsNullOrWhiteSpace(tagDoTime))
+        {
+            try { novo.tag = tagDoTime; }
+            catch { }
+        }
+
+        AtivarObjetoCompleto(novo);
+
+        contadorSpawns++;
+        proximoSpawnPermitido = Time.time + Mathf.Max(0f, tempoEntreSpawns);
+
+        if (mostrarLogs)
+            Debug.Log($"[TankSpownIA] Tank spawnado na base {baseTransform.name} em {posicaoSpawn}");
     }
 }

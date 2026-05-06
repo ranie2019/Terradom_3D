@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [DisallowMultipleComponent]
 public class GameControllerRecursosIA : MonoBehaviour
@@ -6,9 +6,9 @@ public class GameControllerRecursosIA : MonoBehaviour
     public static GameControllerRecursosIA Instance;
 
     [Header("Recursos IA")]
-    public int pedra = 0;
-    public int madeira = 0;
-    public int metal = 0;
+    public int pedra = 1000;
+    public int madeira = 1000;
+    public int metal = 1000;
 
     [Header("Custo Base Soldado")]
     [SerializeField] private int custoPedraBaseSoldado = 100;
