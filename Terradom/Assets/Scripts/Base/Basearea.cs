@@ -10,7 +10,8 @@ public class BaseArea : MonoBehaviour
         Nenhuma,
         Soldado,
         Tank,
-        Aviao
+        Aviao,
+        TorreTerra
     }
 
     [Header("Prefab Base Soldado")]
@@ -22,20 +23,8 @@ public class BaseArea : MonoBehaviour
     [Header("Prefab Base Aviao")]
     [SerializeField] private GameObject prefabBaseAviao;
 
-    [Header("Custo Base Soldado")]
-    [SerializeField] private int custoPedraBaseSoldado = 100;
-    [SerializeField] private int custoMadeiraBaseSoldado = 100;
-    [SerializeField] private int custoMetalBaseSoldado = 100;
-
-    [Header("Custo Base Tank / Veiculo")]
-    [SerializeField] private int custoPedraBaseTank = 100;
-    [SerializeField] private int custoMadeiraBaseTank = 100;
-    [SerializeField] private int custoMetalBaseTank = 100;
-
-    [Header("Custo Base Aviao")]
-    [SerializeField] private int custoPedraBaseAviao = 100;
-    [SerializeField] private int custoMadeiraBaseAviao = 100;
-    [SerializeField] private int custoMetalBaseAviao = 100;
+    [Header("Prefab Torre Terra")]
+    [SerializeField] private GameObject prefabTorreTerra;
 
     [Header("Referencias")]
     [SerializeField] private Camera cameraPrincipal;
@@ -54,6 +43,7 @@ public class BaseArea : MonoBehaviour
     [SerializeField] private GameObject baseSoldadoAtual;
     [SerializeField] private GameObject baseTankAtual;
     [SerializeField] private GameObject baseAviaoAtual;
+    [SerializeField] private GameObject torreTerraAtual;
     [SerializeField] private bool estaPosicionando;
     [SerializeField] private bool podeConstruir;
     [SerializeField] private bool modoRotacao;
@@ -82,6 +72,10 @@ public class BaseArea : MonoBehaviour
         ConfirmarComBotaoEsquerdo();
     }
 
+    // =====================================================================
+    // PUBLICOS — chamados pelos botoes da UI
+    // =====================================================================
+
     public void CriarBaseParaPosicionar()
     {
         CriarBaseSoldadoParaPosicionar();
@@ -89,23 +83,27 @@ public class BaseArea : MonoBehaviour
 
     public void CriarBaseSoldadoParaPosicionar()
     {
+        if (GameControllerRecursos.Instance == null) return;
+
         IniciarPosicionamentoDaBase(
             TipoBaseAtual.Soldado,
             prefabBaseSoldado,
-            custoPedraBaseSoldado,
-            custoMadeiraBaseSoldado,
-            custoMetalBaseSoldado
+            GameControllerRecursos.Instance.GetCustoPedraBaseSoldado(),
+            GameControllerRecursos.Instance.GetCustoMadeiraBaseSoldado(),
+            GameControllerRecursos.Instance.GetCustoMetalBaseSoldado()
         );
     }
 
     public void CriarBaseTankParaPosicionar()
     {
+        if (GameControllerRecursos.Instance == null) return;
+
         IniciarPosicionamentoDaBase(
             TipoBaseAtual.Tank,
             prefabBaseTank,
-            custoPedraBaseTank,
-            custoMadeiraBaseTank,
-            custoMetalBaseTank
+            GameControllerRecursos.Instance.GetCustoPedraBaseVeiculo(),
+            GameControllerRecursos.Instance.GetCustoMadeiraBaseVeiculo(),
+            GameControllerRecursos.Instance.GetCustoMetalBaseVeiculo()
         );
     }
 
@@ -116,23 +114,41 @@ public class BaseArea : MonoBehaviour
 
     public void CriarBaseAviaoParaPosicionar()
     {
+        if (GameControllerRecursos.Instance == null) return;
+
         IniciarPosicionamentoDaBase(
             TipoBaseAtual.Aviao,
             prefabBaseAviao,
-            custoPedraBaseAviao,
-            custoMadeiraBaseAviao,
-            custoMetalBaseAviao
+            GameControllerRecursos.Instance.GetCustoPedraBaseAviao(),
+            GameControllerRecursos.Instance.GetCustoMadeiraBaseAviao(),
+            GameControllerRecursos.Instance.GetCustoMetalBaseAviao()
         );
     }
 
+    public void CriarTorreTerraParaPosicionar()
+    {
+        if (GameControllerRecursos.Instance == null) return;
+
+        IniciarPosicionamentoDaBase(
+            TipoBaseAtual.TorreTerra,
+            prefabTorreTerra,
+            GameControllerRecursos.Instance.GetCustoPedraTorreTerra(),
+            GameControllerRecursos.Instance.GetCustoMadeiraTorreTerra(),
+            GameControllerRecursos.Instance.GetCustoMetalTorreTerra()
+        );
+    }
+
+    // Mantidos para compatibilidade com código externo que chama esses métodos
     public bool PodeCriarBaseSoldado()
     {
-        return TemRecursos(custoPedraBaseSoldado, custoMadeiraBaseSoldado, custoMetalBaseSoldado);
+        return GameControllerRecursos.Instance != null &&
+               GameControllerRecursos.Instance.PodeCriarBaseSoldado();
     }
 
     public bool PodeCriarBaseTank()
     {
-        return TemRecursos(custoPedraBaseTank, custoMadeiraBaseTank, custoMetalBaseTank);
+        return GameControllerRecursos.Instance != null &&
+               GameControllerRecursos.Instance.PodeCriarBaseVeiculo();
     }
 
     public bool PodeCriarBaseVeiculo()
@@ -142,8 +158,19 @@ public class BaseArea : MonoBehaviour
 
     public bool PodeCriarBaseAviao()
     {
-        return TemRecursos(custoPedraBaseAviao, custoMadeiraBaseAviao, custoMetalBaseAviao);
+        return GameControllerRecursos.Instance != null &&
+               GameControllerRecursos.Instance.PodeCriarBaseAviao();
     }
+
+    public bool PodeCriarTorreTerra()
+    {
+        return GameControllerRecursos.Instance != null &&
+               GameControllerRecursos.Instance.PodeCriarTorreTerra();
+    }
+
+    // =====================================================================
+    // PRIVADOS
+    // =====================================================================
 
     private void IniciarPosicionamentoDaBase(
         TipoBaseAtual tipoBase,
@@ -180,14 +207,6 @@ public class BaseArea : MonoBehaviour
         VerificarColisao(novaBase);
     }
 
-    private bool TemRecursos(int custoPedra, int custoMadeira, int custoMetal)
-    {
-        if (GameControllerRecursos.Instance == null)
-            return false;
-
-        return GameControllerRecursos.Instance.TemRecursos(custoPedra, custoMadeira, custoMetal);
-    }
-
     private bool GastarRecursos(int custoPedra, int custoMadeira, int custoMetal)
     {
         if (GameControllerRecursos.Instance == null)
@@ -200,39 +219,27 @@ public class BaseArea : MonoBehaviour
     {
         switch (tipoBaseAtual)
         {
-            case TipoBaseAtual.Soldado:
-                return baseSoldadoAtual;
-
-            case TipoBaseAtual.Tank:
-                return baseTankAtual;
-
-            case TipoBaseAtual.Aviao:
-                return baseAviaoAtual;
-
-            default:
-                return null;
+            case TipoBaseAtual.Soldado:    return baseSoldadoAtual;
+            case TipoBaseAtual.Tank:       return baseTankAtual;
+            case TipoBaseAtual.Aviao:      return baseAviaoAtual;
+            case TipoBaseAtual.TorreTerra: return torreTerraAtual;
+            default:                       return null;
         }
     }
 
     private void DefinirBaseAtual(TipoBaseAtual tipoBase, GameObject novaBase)
     {
         baseSoldadoAtual = null;
-        baseTankAtual = null;
-        baseAviaoAtual = null;
+        baseTankAtual    = null;
+        baseAviaoAtual   = null;
+        torreTerraAtual  = null;
 
         switch (tipoBase)
         {
-            case TipoBaseAtual.Soldado:
-                baseSoldadoAtual = novaBase;
-                break;
-
-            case TipoBaseAtual.Tank:
-                baseTankAtual = novaBase;
-                break;
-
-            case TipoBaseAtual.Aviao:
-                baseAviaoAtual = novaBase;
-                break;
+            case TipoBaseAtual.Soldado:    baseSoldadoAtual = novaBase; break;
+            case TipoBaseAtual.Tank:       baseTankAtual    = novaBase; break;
+            case TipoBaseAtual.Aviao:      baseAviaoAtual   = novaBase; break;
+            case TipoBaseAtual.TorreTerra: torreTerraAtual  = novaBase; break;
         }
     }
 
@@ -244,9 +251,10 @@ public class BaseArea : MonoBehaviour
             Destroy(baseAtual);
 
         baseSoldadoAtual = null;
-        baseTankAtual = null;
-        baseAviaoAtual = null;
-        tipoBaseAtual = TipoBaseAtual.Nenhuma;
+        baseTankAtual    = null;
+        baseAviaoAtual   = null;
+        torreTerraAtual  = null;
+        tipoBaseAtual    = TipoBaseAtual.Nenhuma;
     }
 
     private void AlternarModoComBotaoDireito()
@@ -360,15 +368,16 @@ public class BaseArea : MonoBehaviour
             return;
 
         estaPosicionando = false;
-        podeConstruir = true;
-        modoRotacao = false;
+        podeConstruir    = true;
+        modoRotacao      = false;
 
         AtivarScriptsDaBase(baseAtual);
 
-        tipoBaseAtual = TipoBaseAtual.Nenhuma;
+        tipoBaseAtual    = TipoBaseAtual.Nenhuma;
         baseSoldadoAtual = null;
-        baseTankAtual = null;
-        baseAviaoAtual = null;
+        baseTankAtual    = null;
+        baseAviaoAtual   = null;
+        torreTerraAtual  = null;
     }
 
     private void VerificarColisao(GameObject baseAtual)
@@ -399,20 +408,11 @@ public class BaseArea : MonoBehaviour
         {
             Collider col = colisores[i];
 
-            if (col == null)
-                continue;
-
-            if (col.transform.IsChildOf(baseAtual.transform))
-                continue;
-
-            if (col.gameObject == baseAtual)
-                continue;
-
-            if (EhChao(col))
-                continue;
-
-            if (!bloquearQualquerObjeto && !EhBase(col.transform))
-                continue;
+            if (col == null) continue;
+            if (col.transform.IsChildOf(baseAtual.transform)) continue;
+            if (col.gameObject == baseAtual) continue;
+            if (EhChao(col)) continue;
+            if (!bloquearQualquerObjeto && !EhBase(col.transform)) continue;
 
             podeConstruir = false;
             return;
@@ -433,8 +433,7 @@ public class BaseArea : MonoBehaviour
         {
             Collider col = colliders[i];
 
-            if (col == null)
-                continue;
+            if (col == null) continue;
 
             if (!encontrouCollider)
             {
@@ -452,71 +451,37 @@ public class BaseArea : MonoBehaviour
 
     private bool EhChao(Collider col)
     {
-        if (col == null)
-            return false;
-
-        if (col is TerrainCollider)
-            return true;
-
-        if (col.CompareTag("Terrain"))
-            return true;
-
-        if (col.gameObject.name == "Terrain")
-            return true;
-
+        if (col == null) return false;
+        if (col is TerrainCollider) return true;
+        if (col.CompareTag("Terrain")) return true;
+        if (col.gameObject.name == "Terrain") return true;
         return false;
     }
 
     private bool EhBase(Transform alvo)
     {
-        if (alvo == null)
-            return false;
-
-        if (alvo.name.Contains("Base"))
-            return true;
-
-        if (alvo.root != null && alvo.root.name.Contains("Base"))
-            return true;
-
+        if (alvo == null) return false;
+        if (alvo.name.Contains("Base")) return true;
+        if (alvo.root != null && alvo.root.name.Contains("Base")) return true;
         return false;
     }
 
     private void DesativarScriptsDaBase(GameObject obj)
     {
         MonoBehaviour[] scripts = obj.GetComponentsInChildren<MonoBehaviour>(true);
-
         for (int i = 0; i < scripts.Length; i++)
-        {
-            if (scripts[i] != null)
-                scripts[i].enabled = false;
-        }
+            if (scripts[i] != null) scripts[i].enabled = false;
     }
 
     private void AtivarScriptsDaBase(GameObject obj)
     {
         MonoBehaviour[] scripts = obj.GetComponentsInChildren<MonoBehaviour>(true);
-
         for (int i = 0; i < scripts.Length; i++)
-        {
-            if (scripts[i] != null)
-                scripts[i].enabled = true;
-        }
+            if (scripts[i] != null) scripts[i].enabled = true;
     }
 
     private void OnValidate()
     {
-        custoPedraBaseSoldado = Mathf.Max(0, custoPedraBaseSoldado);
-        custoMadeiraBaseSoldado = Mathf.Max(0, custoMadeiraBaseSoldado);
-        custoMetalBaseSoldado = Mathf.Max(0, custoMetalBaseSoldado);
-
-        custoPedraBaseTank = Mathf.Max(0, custoPedraBaseTank);
-        custoMadeiraBaseTank = Mathf.Max(0, custoMadeiraBaseTank);
-        custoMetalBaseTank = Mathf.Max(0, custoMetalBaseTank);
-
-        custoPedraBaseAviao = Mathf.Max(0, custoPedraBaseAviao);
-        custoMadeiraBaseAviao = Mathf.Max(0, custoMadeiraBaseAviao);
-        custoMetalBaseAviao = Mathf.Max(0, custoMetalBaseAviao);
-
         velocidadeRotacaoMouse = Mathf.Max(0f, velocidadeRotacaoMouse);
         margemColisao = Mathf.Max(0.01f, margemColisao);
     }
@@ -525,17 +490,10 @@ public class BaseArea : MonoBehaviour
     {
         GameObject baseAtual = ObterBaseAtual();
 
-        if (baseAtual == null)
-            return;
-
-        if (!TentarCalcularBoundsDaBase(baseAtual, out Bounds boundsBase))
-            return;
+        if (baseAtual == null) return;
+        if (!TentarCalcularBoundsDaBase(baseAtual, out Bounds boundsBase)) return;
 
         Gizmos.color = podeConstruir ? Color.green : Color.red;
-
-        Gizmos.DrawWireCube(
-            boundsBase.center,
-            boundsBase.size * margemColisao
-        );
+        Gizmos.DrawWireCube(boundsBase.center, boundsBase.size * margemColisao);
     }
 }

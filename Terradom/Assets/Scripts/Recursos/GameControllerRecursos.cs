@@ -27,6 +27,11 @@ public class GameControllerRecursos : MonoBehaviour
     [SerializeField] private int custoMadeiraBaseAviao = 200;
     [SerializeField] private int custoMetalBaseAviao = 200;
 
+    [Header("Custo Torre Terra")]  // <- novo
+    [SerializeField] private int custoPedraTorreTerra = 120;
+    [SerializeField] private int custoMadeiraTorreTerra = 120;
+    [SerializeField] private int custoMetalTorreTerra = 120;
+
     [Header("UI Recursos")]
     [SerializeField] private TMP_Text textoPedra;
     [SerializeField] private TMP_Text textoMadeira;
@@ -36,6 +41,7 @@ public class GameControllerRecursos : MonoBehaviour
     [SerializeField] private Button botaoBaseSoldado;
     [SerializeField] private Button botaoBaseVeiculo;
     [SerializeField] private Button botaoBaseAviao;
+    [SerializeField] private Button botaoTorreTerra;  // <- novo
 
     private void Awake()
     {
@@ -51,17 +57,21 @@ public class GameControllerRecursos : MonoBehaviour
 
     private void OnValidate()
     {
-        custoPedraBaseSoldado = Mathf.Max(0, custoPedraBaseSoldado);
+        custoPedraBaseSoldado   = Mathf.Max(0, custoPedraBaseSoldado);
         custoMadeiraBaseSoldado = Mathf.Max(0, custoMadeiraBaseSoldado);
-        custoMetalBaseSoldado = Mathf.Max(0, custoMetalBaseSoldado);
+        custoMetalBaseSoldado   = Mathf.Max(0, custoMetalBaseSoldado);
 
-        custoPedraBaseVeiculo = Mathf.Max(0, custoPedraBaseVeiculo);
+        custoPedraBaseVeiculo   = Mathf.Max(0, custoPedraBaseVeiculo);
         custoMadeiraBaseVeiculo = Mathf.Max(0, custoMadeiraBaseVeiculo);
-        custoMetalBaseVeiculo = Mathf.Max(0, custoMetalBaseVeiculo);
+        custoMetalBaseVeiculo   = Mathf.Max(0, custoMetalBaseVeiculo);
 
-        custoPedraBaseAviao = Mathf.Max(0, custoPedraBaseAviao);
+        custoPedraBaseAviao   = Mathf.Max(0, custoPedraBaseAviao);
         custoMadeiraBaseAviao = Mathf.Max(0, custoMadeiraBaseAviao);
-        custoMetalBaseAviao = Mathf.Max(0, custoMetalBaseAviao);
+        custoMetalBaseAviao   = Mathf.Max(0, custoMetalBaseAviao);
+
+        custoPedraTorreTerra   = Mathf.Max(0, custoPedraTorreTerra);    // <- novo
+        custoMadeiraTorreTerra = Mathf.Max(0, custoMadeiraTorreTerra);  // <- novo
+        custoMetalTorreTerra   = Mathf.Max(0, custoMetalTorreTerra);    // <- novo
     }
 
     public void AdicionarRecurso(string tagDono, string tipoRecurso, int quantidade)
@@ -94,9 +104,9 @@ public class GameControllerRecursos : MonoBehaviour
         if (!TemRecursos(custoPedra, custoMadeira, custoMetal))
             return false;
 
-        pedra -= custoPedra;
+        pedra   -= custoPedra;
         madeira -= custoMadeira;
-        metal -= custoMetal;
+        metal   -= custoMetal;
 
         AtualizarUI();
         return true;
@@ -108,20 +118,12 @@ public class GameControllerRecursos : MonoBehaviour
 
     public bool PodeCriarBaseSoldado()
     {
-        return TemRecursos(
-            custoPedraBaseSoldado,
-            custoMadeiraBaseSoldado,
-            custoMetalBaseSoldado
-        );
+        return TemRecursos(custoPedraBaseSoldado, custoMadeiraBaseSoldado, custoMetalBaseSoldado);
     }
 
     public bool TentarGastarRecursosDaBaseSoldado()
     {
-        return TentarGastarRecursos(
-            custoPedraBaseSoldado,
-            custoMadeiraBaseSoldado,
-            custoMetalBaseSoldado
-        );
+        return TentarGastarRecursos(custoPedraBaseSoldado, custoMadeiraBaseSoldado, custoMetalBaseSoldado);
     }
 
     // =====================================================================
@@ -130,20 +132,12 @@ public class GameControllerRecursos : MonoBehaviour
 
     public bool PodeCriarBaseVeiculo()
     {
-        return TemRecursos(
-            custoPedraBaseVeiculo,
-            custoMadeiraBaseVeiculo,
-            custoMetalBaseVeiculo
-        );
+        return TemRecursos(custoPedraBaseVeiculo, custoMadeiraBaseVeiculo, custoMetalBaseVeiculo);
     }
 
     public bool TentarGastarRecursosDaBaseVeiculo()
     {
-        return TentarGastarRecursos(
-            custoPedraBaseVeiculo,
-            custoMadeiraBaseVeiculo,
-            custoMetalBaseVeiculo
-        );
+        return TentarGastarRecursos(custoPedraBaseVeiculo, custoMadeiraBaseVeiculo, custoMetalBaseVeiculo);
     }
 
     // =====================================================================
@@ -152,21 +146,31 @@ public class GameControllerRecursos : MonoBehaviour
 
     public bool PodeCriarBaseAviao()
     {
-        return TemRecursos(
-            custoPedraBaseAviao,
-            custoMadeiraBaseAviao,
-            custoMetalBaseAviao
-        );
+        return TemRecursos(custoPedraBaseAviao, custoMadeiraBaseAviao, custoMetalBaseAviao);
     }
 
     public bool TentarGastarRecursosDaBaseAviao()
     {
-        return TentarGastarRecursos(
-            custoPedraBaseAviao,
-            custoMadeiraBaseAviao,
-            custoMetalBaseAviao
-        );
+        return TentarGastarRecursos(custoPedraBaseAviao, custoMadeiraBaseAviao, custoMetalBaseAviao);
     }
+
+    // =====================================================================
+    // TORRE TERRA  <- novo
+    // =====================================================================
+
+    public bool PodeCriarTorreTerra()
+    {
+        return TemRecursos(custoPedraTorreTerra, custoMadeiraTorreTerra, custoMetalTorreTerra);
+    }
+
+    public bool TentarGastarRecursosDaTorreTerra()
+    {
+        return TentarGastarRecursos(custoPedraTorreTerra, custoMadeiraTorreTerra, custoMetalTorreTerra);
+    }
+
+    public int GetCustoPedraTorreTerra()   => custoPedraTorreTerra;
+    public int GetCustoMadeiraTorreTerra() => custoMadeiraTorreTerra;
+    public int GetCustoMetalTorreTerra()   => custoMetalTorreTerra;
 
     // =====================================================================
     // COMPATIBILIDADE COM CODIGOS ANTIGOS
@@ -187,46 +191,32 @@ public class GameControllerRecursos : MonoBehaviour
     // 0 = Base Soldado
     // 1 = Base Veiculo
     // 2 = Base Aviao
+    // 3 = Torre Terra  <- novo
     // =====================================================================
 
     public bool PodeCriarBasePorIndice(int indiceBase)
     {
-        if (indiceBase == 0)
-            return PodeCriarBaseSoldado();
-
-        if (indiceBase == 1)
-            return PodeCriarBaseVeiculo();
-
-        if (indiceBase == 2)
-            return PodeCriarBaseAviao();
-
+        if (indiceBase == 0) return PodeCriarBaseSoldado();
+        if (indiceBase == 1) return PodeCriarBaseVeiculo();
+        if (indiceBase == 2) return PodeCriarBaseAviao();
+        if (indiceBase == 3) return PodeCriarTorreTerra();  // <- novo
         return false;
     }
 
     public bool TentarGastarRecursosDaBasePorIndice(int indiceBase)
     {
-        if (indiceBase == 0)
-            return TentarGastarRecursosDaBaseSoldado();
-
-        if (indiceBase == 1)
-            return TentarGastarRecursosDaBaseVeiculo();
-
-        if (indiceBase == 2)
-            return TentarGastarRecursosDaBaseAviao();
-
+        if (indiceBase == 0) return TentarGastarRecursosDaBaseSoldado();
+        if (indiceBase == 1) return TentarGastarRecursosDaBaseVeiculo();
+        if (indiceBase == 2) return TentarGastarRecursosDaBaseAviao();
+        if (indiceBase == 3) return TentarGastarRecursosDaTorreTerra();  // <- novo
         return false;
     }
 
     public void AtualizarUI()
     {
-        if (textoPedra != null)
-            textoPedra.text = pedra.ToString();
-
-        if (textoMadeira != null)
-            textoMadeira.text = madeira.ToString();
-
-        if (textoMetal != null)
-            textoMetal.text = metal.ToString();
+        if (textoPedra != null)   textoPedra.text   = pedra.ToString();
+        if (textoMadeira != null) textoMadeira.text = madeira.ToString();
+        if (textoMetal != null)   textoMetal.text   = metal.ToString();
 
         AtualizarBotoesBase();
         AtualizarBotoesProducao();
@@ -234,14 +224,10 @@ public class GameControllerRecursos : MonoBehaviour
 
     private void AtualizarBotoesBase()
     {
-        if (botaoBaseSoldado != null)
-            botaoBaseSoldado.interactable = PodeCriarBaseSoldado();
-
-        if (botaoBaseVeiculo != null)
-            botaoBaseVeiculo.interactable = PodeCriarBaseVeiculo();
-
-        if (botaoBaseAviao != null)
-            botaoBaseAviao.interactable = PodeCriarBaseAviao();
+        if (botaoBaseSoldado != null) botaoBaseSoldado.interactable = PodeCriarBaseSoldado();
+        if (botaoBaseVeiculo != null) botaoBaseVeiculo.interactable = PodeCriarBaseVeiculo();
+        if (botaoBaseAviao   != null) botaoBaseAviao.interactable   = PodeCriarBaseAviao();
+        if (botaoTorreTerra  != null) botaoTorreTerra.interactable  = PodeCriarTorreTerra();  // <- novo
     }
 
     private void AtualizarBotoesProducao()
@@ -249,48 +235,15 @@ public class GameControllerRecursos : MonoBehaviour
         BotoesProducaoUnidades.AtualizarTodos();
     }
 
-    public int GetCustoPedraBaseSoldado()
-    {
-        return custoPedraBaseSoldado;
-    }
+    public int GetCustoPedraBaseSoldado()   => custoPedraBaseSoldado;
+    public int GetCustoMadeiraBaseSoldado() => custoMadeiraBaseSoldado;
+    public int GetCustoMetalBaseSoldado()   => custoMetalBaseSoldado;
 
-    public int GetCustoMadeiraBaseSoldado()
-    {
-        return custoMadeiraBaseSoldado;
-    }
+    public int GetCustoPedraBaseVeiculo()   => custoPedraBaseVeiculo;
+    public int GetCustoMadeiraBaseVeiculo() => custoMadeiraBaseVeiculo;
+    public int GetCustoMetalBaseVeiculo()   => custoMetalBaseVeiculo;
 
-    public int GetCustoMetalBaseSoldado()
-    {
-        return custoMetalBaseSoldado;
-    }
-
-    public int GetCustoPedraBaseVeiculo()
-    {
-        return custoPedraBaseVeiculo;
-    }
-
-    public int GetCustoMadeiraBaseVeiculo()
-    {
-        return custoMadeiraBaseVeiculo;
-    }
-
-    public int GetCustoMetalBaseVeiculo()
-    {
-        return custoMetalBaseVeiculo;
-    }
-
-    public int GetCustoPedraBaseAviao()
-    {
-        return custoPedraBaseAviao;
-    }
-
-    public int GetCustoMadeiraBaseAviao()
-    {
-        return custoMadeiraBaseAviao;
-    }
-
-    public int GetCustoMetalBaseAviao()
-    {
-        return custoMetalBaseAviao;
-    }
+    public int GetCustoPedraBaseAviao()   => custoPedraBaseAviao;
+    public int GetCustoMadeiraBaseAviao() => custoMadeiraBaseAviao;
+    public int GetCustoMetalBaseAviao()   => custoMetalBaseAviao;
 }
