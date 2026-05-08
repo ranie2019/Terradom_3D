@@ -3,9 +3,7 @@
 [DisallowMultipleComponent]
 public class RoboIA : MonoBehaviour
 {
-    private BaseAreaIA baseArea;
-    private SoldadoSpownIA soldadoSpawn;
-    private TankSpownIA tankSpawn;
+    private RoboCriar roboCriar;
 
     [Header("Controle Geral")]
     [SerializeField] private float intervalo = 1f;
@@ -20,124 +18,178 @@ public class RoboIA : MonoBehaviour
     [SerializeField] private int maxBaseTank = 10;
     [SerializeField] private float timerBaseTank;
 
+    [Header("Torre Terra")]
+    [SerializeField] private float tempoTorreTerra = 90f;
+    [SerializeField] private int maxTorreTerra = 5;
+    [SerializeField] private float timerTorreTerra;
+
     private float proximoUpdate;
 
     private int quantidadeBaseSoldado;
     private int quantidadeBaseTank;
+    private int quantidadeTorreTerra;
 
     private int etapaUnidade = 0;
 
     private const int INDICE_BASE_SOLDADO = 0;
-    private const int INDICE_BASE_TANK = 1;
+    private const int INDICE_BASE_TANK    = 1;
+    private const int INDICE_TORRE_TERRA  = 3;
 
-    private enum TipoBaseAtual
-    {
-        Nenhuma,
-        Soldado,
-        Tank
-    }
-
+    private enum TipoBaseAtual { Nenhuma, Soldado, Tank, TorreTerra }
     private TipoBaseAtual baseAtual = TipoBaseAtual.Soldado;
     private bool aguardandoBase = false;
 
     private int indiceBaseSoldadoAtual = 0;
-    private int indiceBaseTankAtual = 0;
+    private int indiceBaseTankAtual    = 0;
 
     private void Start()
     {
-        baseArea = FindFirstObjectByType<BaseAreaIA>();
-        soldadoSpawn = FindFirstObjectByType<SoldadoSpownIA>();
-        tankSpawn = FindFirstObjectByType<TankSpownIA>();
+        roboCriar = FindFirstObjectByType<RoboCriar>();
 
-        if (baseArea == null)
+        if (roboCriar == null)
         {
-            Debug.LogError("[RoboIA] BaseAreaIA não encontrada!");
+            Debug.LogError("[RoboIA] ❌ RoboCriar não encontrado!");
             return;
         }
 
-        quantidadeBaseSoldado = baseArea.ContarBasesPorIndice(INDICE_BASE_SOLDADO);
-        quantidadeBaseTank = baseArea.ContarBasesPorIndice(INDICE_BASE_TANK);
-
         timerBaseSoldado = tempoBaseSoldado;
-        timerBaseTank = tempoBaseTank;
+        timerBaseTank    = tempoBaseTank;
+        timerTorreTerra  = tempoTorreTerra;
 
         Debug.Log("=== ROBO IA INICIADO ===");
     }
 
     private void Update()
     {
-        if (baseArea == null) return;
+        if (!RoboCriarAtivo()) return;
         if (Time.time < proximoUpdate) return;
         proximoUpdate = Time.time + intervalo;
 
         AtualizarBases();
-        CriarUnidades();
+        OrdenarUnidades();
     }
+
+    private bool RoboCriarAtivo() => roboCriar != null && roboCriar.isActiveAndEnabled;
+
+    // =========================================================
+    // BASES — RoboIA decide, RoboCriar executa
+    // =========================================================
 
     private void AtualizarBases()
     {
+        // Lê quantidade real da cena a cada tick
+        quantidadeBaseSoldado = roboCriar.ContarBaseSoldado();
+        quantidadeBaseTank    = roboCriar.ContarBaseTank();
+        quantidadeTorreTerra  = roboCriar.ContarTorreTerra();
+
+        // Define próxima base se nenhuma em andamento
         if (baseAtual == TipoBaseAtual.Nenhuma)
         {
-            if (quantidadeBaseSoldado < maxBaseSoldado)
-                baseAtual = TipoBaseAtual.Soldado;
-            else if (quantidadeBaseTank < maxBaseTank)
-                baseAtual = TipoBaseAtual.Tank;
+            if      (quantidadeBaseSoldado < maxBaseSoldado) baseAtual = TipoBaseAtual.Soldado;
+            else if (quantidadeBaseTank    < maxBaseTank)    baseAtual = TipoBaseAtual.Tank;
+            else if (quantidadeTorreTerra  < maxTorreTerra)  baseAtual = TipoBaseAtual.TorreTerra;
         }
 
         if (baseAtual == TipoBaseAtual.Soldado)
         {
-            if (timerBaseSoldado > 0f)
+            // Já no máximo — passa pra próxima sem pausar unidades
+            if (quantidadeBaseSoldado >= maxBaseSoldado)
             {
-                timerBaseSoldado -= intervalo;
-                if (timerBaseSoldado < 0f) timerBaseSoldado = 0f;
+                baseAtual      = TipoBaseAtual.Tank;
+                aguardandoBase = false;
+                return;
             }
-            else
+
+            TickTimer(ref timerBaseSoldado);
+
+            if (timerBaseSoldado <= 0f)
             {
                 aguardandoBase = true;
 
-                if (baseArea.TentarCriarBasePorIndice(INDICE_BASE_SOLDADO))
+                if (roboCriar.CriarBaseSoldado())
                 {
-                    quantidadeBaseSoldado++;
+                    // Criou com sucesso — reinicia timer, avança tipo, libera unidades
                     timerBaseSoldado = tempoBaseSoldado;
-                    baseAtual = TipoBaseAtual.Tank;
-                    aguardandoBase = false;
-
-                    Debug.Log($"[RoboIA] 🏗️ Base Soldado criada ({quantidadeBaseSoldado}/{maxBaseSoldado})");
+                    baseAtual        = TipoBaseAtual.Tank;
+                    aguardandoBase   = false;
                 }
             }
         }
         else if (baseAtual == TipoBaseAtual.Tank)
         {
-            if (timerBaseTank > 0f)
+            if (quantidadeBaseTank >= maxBaseTank)
             {
-                timerBaseTank -= intervalo;
-                if (timerBaseTank < 0f) timerBaseTank = 0f;
+                baseAtual      = TipoBaseAtual.TorreTerra;
+                aguardandoBase = false;
+                return;
             }
-            else
+
+            TickTimer(ref timerBaseTank);
+
+            if (timerBaseTank <= 0f)
             {
                 aguardandoBase = true;
 
-                if (baseArea.TentarCriarBasePorIndice(INDICE_BASE_TANK))
+                if (roboCriar.CriarBaseTank())
                 {
-                    quantidadeBaseTank++;
-                    timerBaseTank = tempoBaseTank;
-                    baseAtual = TipoBaseAtual.Soldado;
+                    timerBaseTank  = tempoBaseTank;
+                    baseAtual      = TipoBaseAtual.TorreTerra;
                     aguardandoBase = false;
+                }
+            }
+        }
+        else if (baseAtual == TipoBaseAtual.TorreTerra)
+        {
+            if (quantidadeTorreTerra >= maxTorreTerra)
+            {
+                baseAtual      = TipoBaseAtual.Soldado;
+                aguardandoBase = false;
+                return;
+            }
 
-                    Debug.Log($"[RoboIA] 🏗️ Base Tank criada ({quantidadeBaseTank}/{maxBaseTank})");
+            TickTimer(ref timerTorreTerra);
+
+            if (timerTorreTerra <= 0f)
+            {
+                aguardandoBase = true;
+
+                if (roboCriar.CriarTorreTerra())
+                {
+                    timerTorreTerra = tempoTorreTerra;
+                    baseAtual       = TipoBaseAtual.Soldado;
+                    aguardandoBase  = false;
                 }
             }
         }
     }
 
-    private void CriarUnidades()
+    private void TickTimer(ref float timer)
+    {
+        if (timer > 0f)
+        {
+            timer -= intervalo;
+            if (timer < 0f) timer = 0f;
+        }
+    }
+
+    // =========================================================
+    // UNIDADES — RoboIA decide, RoboCriar executa
+    // =========================================================
+
+    private void OrdenarUnidades()
     {
         if (aguardandoBase) return;
 
         bool criado = false;
 
-        Transform[] basesSoldado = baseArea.ObterBasesPorIndice(INDICE_BASE_SOLDADO);
-        Transform[] basesTank = baseArea.ObterBasesPorIndice(INDICE_BASE_TANK);
+        Transform[] basesSoldado = roboCriar.ObterBasesSoldado();
+        Transform[] basesTank    = roboCriar.ObterBasesTank();
+
+        // Sem base tank — pula etapa tank e continua com soldado
+        if (etapaUnidade == 3 && (basesTank.Length == 0 || !roboCriar.TankSpawnDisponivel()))
+        {
+            etapaUnidade = 0;
+        }
 
         switch (etapaUnidade)
         {
@@ -147,133 +199,72 @@ public class RoboIA : MonoBehaviour
             {
                 if (basesSoldado.Length == 0) break;
 
-                int indiceBase = indiceBaseSoldadoAtual % basesSoldado.Length;
-                Transform baseEscolhida = basesSoldado[indiceBase];
+                int indice      = indiceBaseSoldadoAtual % basesSoldado.Length;
+                Transform base_ = basesSoldado[indice];
+                Transform spawn = roboCriar.EncontrarPontoSpawn(base_, "Soldado");
 
-                // 🔥 ENCONTRA O PONTO DE SPAWN DENTRO DA BASE
-                Transform pontoSpawnDaBase = EncontrarPontoSpawn(baseEscolhida, "Soldado");
+                if (etapaUnidade == 0 && roboCriar.PodeCriarColetorNaBase(spawn))
+                    criado = roboCriar.CriarColetorNaBase(spawn);
+                else if (etapaUnidade == 1 && roboCriar.PodeCriarSoldadoNaBase(spawn))
+                    criado = roboCriar.CriarSoldadoNaBase(spawn);
+                else if (etapaUnidade == 2 && roboCriar.PodeCriarGuerreiroNaBase(spawn))
+                    criado = roboCriar.CriarGuerreiroNaBase(spawn);
 
-                if (etapaUnidade == 0 && soldadoSpawn.PodeCriarColetorNaBase(pontoSpawnDaBase))
-                    criado = soldadoSpawn.TentarCriarColetorNaBase(pontoSpawnDaBase);
-                else if (etapaUnidade == 1 && soldadoSpawn.PodeCriarSoldadoNaBase(pontoSpawnDaBase))
-                    criado = soldadoSpawn.TentarCriarSoldadoNaBase(pontoSpawnDaBase);
-                else if (etapaUnidade == 2 && soldadoSpawn.PodeCriarGuerreiroNaBase(pontoSpawnDaBase))
-                    criado = soldadoSpawn.TentarCriarGuerreiroNaBase(pontoSpawnDaBase);
-
-                if (criado)
-                {
-                    indiceBaseSoldadoAtual++;
-                    Debug.Log($"[RoboIA] 🎯 Unidade na Base Soldado #{indiceBase + 1} | Spawn: {pontoSpawnDaBase.position}");
-                }
-
+                if (criado) indiceBaseSoldadoAtual++;
                 break;
             }
 
             case 3: // Tank
             {
-                if (basesTank.Length == 0) break;
+                if (basesTank.Length == 0) { etapaUnidade = 0; break; }
 
-                int indiceBase = indiceBaseTankAtual % basesTank.Length;
-                Transform baseEscolhida = basesTank[indiceBase];
+                int indice      = indiceBaseTankAtual % basesTank.Length;
+                Transform base_ = basesTank[indice];
+                Transform spawn = roboCriar.EncontrarPontoSpawn(base_, "Tank");
 
-                // 🔥 ENCONTRA O PONTO DE SPAWN DENTRO DA BASE
-                Transform pontoSpawnDaBase = EncontrarPontoSpawn(baseEscolhida, "Tank");
+                if (roboCriar.PodeCriarTankNaBase(spawn))
+                    criado = roboCriar.CriarTankNaBase(spawn);
 
-                if (tankSpawn.PodeCriarTankNaBase(pontoSpawnDaBase))
-                    criado = tankSpawn.TentarCriarTankNaBase(pontoSpawnDaBase);
-
-                if (criado)
-                {
-                    indiceBaseTankAtual++;
-                    Debug.Log($"[RoboIA] 🎯 Tank na Base Tank #{indiceBase + 1} | Spawn: {pontoSpawnDaBase.position}");
-                }
-
+                if (criado) indiceBaseTankAtual++;
                 break;
             }
         }
 
-        if (criado)
-        {
-            etapaUnidade = (etapaUnidade + 1) % 4;
-        }
+        if (criado) etapaUnidade = (etapaUnidade + 1) % 4;
     }
 
-    // 🔥 PROCURA O PONTO DE SPAWN DENTRO DA BASE
-    private Transform EncontrarPontoSpawn(Transform baseTransform, string tipo)
-    {
-        // Procura por nome: "Spawn", "PontoSpawn", "SpawnPoint", "SpawnSoldado", "SpawnTank"
-        string[] nomesPossiveis = {
-            "Spawn" + tipo,
-            "PontoSpawn" + tipo,
-            "SpawnPoint" + tipo,
-            "Spawn_" + tipo,
-            "Ponto_Spawn_" + tipo,
-            "Spawn",
-            "PontoSpawn",
-            "SpawnPoint"
-        };
-
-        foreach (string nome in nomesPossiveis)
-        {
-            Transform encontrado = baseTransform.Find(nome);
-            if (encontrado != null)
-            {
-                Debug.Log($"[RoboIA] ✅ Ponto de spawn '{nome}' encontrado em {baseTransform.name} | Pos: {encontrado.position}");
-                return encontrado;
-            }
-        }
-
-        // Se não encontrar por nome, procura recursivamente
-        Transform spawnEncontrado = ProcurarSpawnRecursivo(baseTransform);
-        if (spawnEncontrado != null)
-        {
-            Debug.Log($"[RoboIA] ✅ Ponto de spawn encontrado recursivamente: {spawnEncontrado.name} | Pos: {spawnEncontrado.position}");
-            return spawnEncontrado;
-        }
-
-        // Fallback: usa a própria base (mas loga aviso)
-        Debug.LogWarning($"[RoboIA] ⚠️ Nenhum ponto de spawn encontrado na base {baseTransform.name}! Usando posição da base.");
-        return baseTransform;
-    }
-
-    private Transform ProcurarSpawnRecursivo(Transform pai)
-    {
-        foreach (Transform filho in pai)
-        {
-            string nomeLower = filho.name.ToLower();
-            if (nomeLower.Contains("spawn") || nomeLower.Contains("ponto"))
-            {
-                return filho;
-            }
-
-            Transform encontrado = ProcurarSpawnRecursivo(filho);
-            if (encontrado != null)
-                return encontrado;
-        }
-        return null;
-    }
+    // =========================================================
+    // DEBUG
+    // =========================================================
 
     private void OnGUI()
     {
+        if (!RoboCriarAtivo())
+        {
+            GUI.Label(new Rect(10, 10, 300, 30), "[RoboIA] ⏸️ RoboCriar desativado");
+            return;
+        }
+
         GUIStyle style = new GUIStyle();
         style.fontSize = 16;
         style.normal.textColor = Color.green;
 
-        Transform[] basesSoldado = baseArea != null ? baseArea.ObterBasesPorIndice(INDICE_BASE_SOLDADO) : new Transform[0];
-        Transform[] basesTank = baseArea != null ? baseArea.ObterBasesPorIndice(INDICE_BASE_TANK) : new Transform[0];
+        Transform[] basesSoldado = roboCriar.ObterBasesSoldado();
+        Transform[] basesTank    = roboCriar.ObterBasesTank();
 
         int soldadoAtual = basesSoldado.Length > 0 ? (indiceBaseSoldadoAtual % basesSoldado.Length) + 1 : 0;
-        int tankAtual = basesTank.Length > 0 ? (indiceBaseTankAtual % basesTank.Length) + 1 : 0;
+        int tankAtual    = basesTank.Length    > 0 ? (indiceBaseTankAtual    % basesTank.Length)    + 1 : 0;
 
-        string debug = $"BASE SOLDADO: {quantidadeBaseSoldado}/{maxBaseSoldado} | Timer: {timerBaseSoldado:F0}\n";
-        debug += $"BASE TANK: {quantidadeBaseTank}/{maxBaseTank} | Timer: {timerBaseTank:F0}\n";
-        debug += $"Construindo: {baseAtual}\n";
-        debug += $"Produção: {(aguardandoBase ? "PAUSADA" : "ATIVA")}\n";
-        debug += $"Próxima Unidade: {etapaUnidade}\n";
+        string debug = $"BASE SOLDADO:  {quantidadeBaseSoldado}/{maxBaseSoldado} | Timer: {timerBaseSoldado:F0}\n";
+        debug += $"BASE TANK:     {quantidadeBaseTank}/{maxBaseTank} | Timer: {timerBaseTank:F0}\n";
+        debug += $"TORRE TERRA:   {quantidadeTorreTerra}/{maxTorreTerra} | Timer: {timerTorreTerra:F0}\n";
+        debug += $"Construindo:   {baseAtual}\n";
+        debug += $"Produção:      {(aguardandoBase ? "PAUSADA" : "ATIVA")}\n";
+        debug += $"Próx. Unidade: {etapaUnidade}\n";
         debug += $"---\n";
         debug += $"Bases Soldado: {basesSoldado.Length} | Rodízio: #{soldadoAtual}\n";
-        debug += $"Bases Tank: {basesTank.Length} | Rodízio: #{tankAtual}";
+        debug += $"Bases Tank:    {basesTank.Length}    | Rodízio: #{tankAtual}";
 
-        GUI.Label(new Rect(10, 10, 500, 250), debug, style);
+        GUI.Label(new Rect(10, 10, 500, 280), debug, style);
     }
 }

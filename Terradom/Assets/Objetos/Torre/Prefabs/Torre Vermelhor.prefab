@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1817416151391403695}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Spawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 5131584910036368946}
   - component: {fileID: 2975051326833357496}
   - component: {fileID: 4005446715831730353}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SM_Turret_low.002
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -153,7 +153,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6289208881991466143}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cabeca
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -187,7 +187,7 @@ GameObject:
   - component: {fileID: 2472366273107722476}
   - component: {fileID: 9010927464466834941}
   - component: {fileID: 7403018380156509415}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Torre Vermelhor
   m_TagString: Vermelho
   m_Icon: {fileID: 0}
@@ -262,6 +262,7 @@ MonoBehaviour:
   prefabBala: {fileID: 1369670887755148727, guid: 436be975e042b7748b29c6f7f81ede5a, type: 3}
   velocidadeBala: 1
   tirosPorSegundo: 1
+  prioridade: 0
   velocidadeMin: 10
   velocidadeMax: 30
   tempoTrocaMin: 1
@@ -278,7 +279,7 @@ GameObject:
   - component: {fileID: 7836267148929908525}
   - component: {fileID: 5024968660438502100}
   - component: {fileID: 6954759352112133145}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SM_Turret_low
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -391,7 +392,7 @@ GameObject:
   - component: {fileID: 7035947654913563436}
   - component: {fileID: 734380035970614364}
   - component: {fileID: 3630635609871082050}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cabeca
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -505,7 +506,7 @@ GameObject:
   - component: {fileID: 7372564149993360405}
   - component: {fileID: 249006157000299085}
   - component: {fileID: 977714321265295447}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SM_Turret_low.009
   m_TagString: Untagged
   m_Icon: {fileID: 0}

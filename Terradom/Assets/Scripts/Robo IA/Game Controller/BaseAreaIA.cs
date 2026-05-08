@@ -4,14 +4,26 @@ using System.Collections.Generic;
 [DisallowMultipleComponent]
 public class BaseAreaIA : MonoBehaviour
 {
+    [System.Serializable]
+    private class BaseInimiga
+    {
+        public Transform transform;
+        [Min(5f)] public float distanciaMinima = 25f;
+    }
+
     [Header("Prefabs")]
     [SerializeField] private GameObject prefabBaseSoldado;
     [SerializeField] private GameObject prefabBaseTank;
     [SerializeField] private GameObject prefabBaseAviao;
+    [SerializeField] private GameObject prefabTorreTerra;
 
     [Header("Área de Spawn")]
     [SerializeField] private float raioSpawn = 30f;
     [SerializeField] private LayerMask camadaBloqueio = ~0;
+
+    [Header("Ponto de Referência")]
+    [Tooltip("Arraste aqui a primeira Base Soldado da cena. Novas bases serão geradas ao redor deste ponto.")]
+    [SerializeField] private Transform pontoReferencia;
 
     [Header("Limite do Terreno")]
     [SerializeField] private Terrain terrain;
@@ -23,19 +35,26 @@ public class BaseAreaIA : MonoBehaviour
     [SerializeField] private float distanciaMinimaEntreBases = 30f;
 
     [Header("Evitar inimigo")]
-    [SerializeField] private Transform baseInimiga;
-    [SerializeField] private float distanciaMinimaDoInimigo = 25f;
+    [SerializeField] private BaseInimiga[] basesInimigas;
 
     private Transform pastaBases;
 
     private void Awake()
     {
-        GameObject pasta = GameObject.Find("Clone IA");
-        if (pasta == null)
-            pasta = new GameObject("Clone IA");
+        GarantirPastaBases();
+    }
 
+    private void GarantirPastaBases()
+    {
+        GameObject pasta = GameObject.Find("Clone Bases IA");
+        if (pasta == null) pasta = new GameObject("Clone Bases IA");
         pastaBases = pasta.transform;
     }
+
+    // =========================================================
+    // PUBLICO
+    // 0 = Soldado | 1 = Tank | 2 = Aviao | 3 = Torre Terra
+    // =========================================================
 
     public bool TentarCriarBasePorIndice(int indice)
     {
@@ -44,125 +63,151 @@ public class BaseAreaIA : MonoBehaviour
             case 0: return TentarCriarBaseSoldado();
             case 1: return TentarCriarBaseTank();
             case 2: return TentarCriarBaseAviao();
+            case 3: return TentarCriarTorreTerra();
         }
         return false;
     }
 
     public bool TentarCriarBaseSoldado()
     {
-        return CriarBase(
-            prefabBaseSoldado,
-            "BaseSoldado",
+        return CriarBase(prefabBaseSoldado, "BaseSoldado",
             () => GameControllerRecursosIA.Instance.PodeCriarBaseSoldado(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseSoldado()
-        );
+            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseSoldado());
     }
 
     public bool TentarCriarBaseTank()
     {
-        return CriarBase(
-            prefabBaseTank,
-            "BaseTank",
+        return CriarBase(prefabBaseTank, "BaseTank",
             () => GameControllerRecursosIA.Instance.PodeCriarBaseVeiculo(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseVeiculo()
-        );
+            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseVeiculo());
     }
 
     public bool TentarCriarBaseAviao()
     {
-        return CriarBase(
-            prefabBaseAviao,
-            "BaseAviao",
+        return CriarBase(prefabBaseAviao, "BaseAviao",
             () => GameControllerRecursosIA.Instance.PodeCriarBaseAviao(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseAviao()
-        );
+            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseAviao());
     }
+
+    public bool TentarCriarTorreTerra()
+    {
+        return CriarBase(prefabTorreTerra, "TorreTerra",
+            () => GameControllerRecursosIA.Instance.PodeCriarTorreTerra(),
+            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreTerra());
+    }
+
+    // =========================================================
+    // PRIVADO
+    // =========================================================
 
     private bool CriarBase(GameObject prefab, string layerName,
         System.Func<bool> podeCriar,
         System.Func<bool> gastarRecursos)
     {
-        if (prefab == null) return false;
-        if (GameControllerRecursosIA.Instance == null) return false;
-
-        Vector3 pos = GerarPosicaoValida();
-        if (pos == Vector3.zero)
+        if (prefab == null)
         {
-            Debug.LogWarning("[BaseAreaIA] ❌ Sem espaço para criar base");
+            Debug.LogWarning($"[BaseAreaIA] ❌ Prefab '{layerName}' não atribuído no Inspector!");
             return false;
         }
 
+        if (GameControllerRecursosIA.Instance == null)
+        {
+            Debug.LogWarning("[BaseAreaIA] ❌ GameControllerRecursosIA.Instance é null!");
+            return false;
+        }
+
+        // Verifica recurso ANTES de gerar posição
         if (!podeCriar()) return false;
+
+        if (!TentarGerarPosicaoValida(out Vector3 pos))
+        {
+            Debug.LogWarning($"[BaseAreaIA] ❌ Sem espaço para criar '{layerName}'");
+            return false;
+        }
+
         if (!gastarRecursos()) return false;
 
         InstanciarBase(prefab, pos, layerName);
-
         return true;
     }
 
     private void InstanciarBase(GameObject prefab, Vector3 pos, string layerName)
     {
+        if (pastaBases == null) GarantirPastaBases();
+
         GameObject obj = Instantiate(prefab, pos, Quaternion.identity, pastaBases);
         obj.name = prefab.name;
 
         int layer = LayerMask.NameToLayer(layerName);
-        AplicarLayerRecursivo(obj, layer);
+        if (layer == -1)
+            Debug.LogWarning($"[BaseAreaIA] ⚠️ Layer '{layerName}' não existe! Crie em Project Settings > Tags and Layers.");
+        else
+            AplicarLayerRecursivo(obj, layer);
     }
 
     private void AplicarLayerRecursivo(GameObject obj, int layer)
     {
-        if (layer != -1)
-            obj.layer = layer;
-
+        if (obj == null) return;
+        obj.layer = layer;
         for (int i = 0; i < obj.transform.childCount; i++)
-        {
             AplicarLayerRecursivo(obj.transform.GetChild(i).gameObject, layer);
-        }
     }
 
-    private Vector3 GerarPosicaoValida()
+    private bool TentarGerarPosicaoValida(out Vector3 posicaoFinal)
     {
+        posicaoFinal = Vector3.zero;
+
+        // Centro de referência — usa ponto configurado no Inspector
+        // Se não tiver, tenta usar o próprio transform como fallback
+        Vector3 centroReferencia = pontoReferencia != null
+            ? pontoReferencia.position
+            : transform.position;
+
+        // Tentativa 1: ao redor do ponto de referência
         for (int i = 0; i < 20; i++)
         {
-            Vector3 pos = transform.position +
-                new Vector3(
-                    Random.Range(-raioSpawn, raioSpawn),
-                    0,
-                    Random.Range(-raioSpawn, raioSpawn)
-                );
+            Vector3 pos = centroReferencia + new Vector3(
+                Random.Range(-raioSpawn, raioSpawn), 0,
+                Random.Range(-raioSpawn, raioSpawn));
 
             if (PosicaoValida(pos))
-                return AjustarAlturaTerreno(pos);
+            {
+                posicaoFinal = AjustarAlturaTerreno(pos);
+                return true;
+            }
         }
+
+        // Tentativa 2: ao redor de bases existentes
+        if (pastaBases == null) GarantirPastaBases();
 
         for (int i = 0; i < pastaBases.childCount; i++)
         {
             Transform baseExistente = pastaBases.GetChild(i);
+            if (baseExistente == null) continue;
 
             for (int j = 0; j < 10; j++)
             {
-                Vector3 pos = baseExistente.position +
-                    new Vector3(
-                        Random.Range(-raioSpawn, raioSpawn),
-                        0,
-                        Random.Range(-raioSpawn, raioSpawn)
-                    );
+                Vector3 pos = baseExistente.position + new Vector3(
+                    Random.Range(-raioSpawn, raioSpawn), 0,
+                    Random.Range(-raioSpawn, raioSpawn));
 
                 if (PosicaoValida(pos))
-                    return AjustarAlturaTerreno(pos);
+                {
+                    posicaoFinal = AjustarAlturaTerreno(pos);
+                    return true;
+                }
             }
         }
 
         Debug.LogWarning("[BaseAreaIA] ❌ Nenhuma posição válida encontrada");
-        return Vector3.zero;
+        return false;
     }
 
     private bool PosicaoValida(Vector3 pos)
     {
-        // 🔥 BLOQUEIO FORA DO TERRAIN
         if (terrain != null)
         {
-            Vector3 tPos = terrain.transform.position;
+            Vector3 tPos  = terrain.transform.position;
             Vector3 tSize = terrain.terrainData.size;
 
             if (pos.x < tPos.x || pos.x > tPos.x + tSize.x ||
@@ -170,118 +215,103 @@ public class BaseAreaIA : MonoBehaviour
                 return false;
         }
 
-        // colisão física
-        Collider[] cols = Physics.OverlapSphere(
-            pos,
-            margemColisao,
-            camadaBloqueio,
-            QueryTriggerInteraction.Ignore
-        );
-
+        Collider[] cols = Physics.OverlapSphere(pos, margemColisao, camadaBloqueio, QueryTriggerInteraction.Ignore);
         for (int i = 0; i < cols.Length; i++)
         {
             if (cols[i] == null) continue;
-
-            if (cols[i].gameObject.layer == LayerMask.NameToLayer("Default"))
-                continue;
-
+            if (cols[i].gameObject.layer == LayerMask.NameToLayer("Default")) continue;
             return false;
         }
 
-        // distância entre bases
         Collider[] nearby = Physics.OverlapSphere(pos, distanciaMinimaEntreBases);
-
         for (int i = 0; i < nearby.Length; i++)
         {
             if (nearby[i] == null) continue;
-
             int layer = nearby[i].gameObject.layer;
 
             if (layer == LayerMask.NameToLayer("BaseSoldado") ||
-                layer == LayerMask.NameToLayer("BaseTank") ||
-                layer == LayerMask.NameToLayer("BaseAviao"))
+                layer == LayerMask.NameToLayer("BaseTank")    ||
+                layer == LayerMask.NameToLayer("BaseAviao")   ||
+                layer == LayerMask.NameToLayer("TorreTerra"))
                 return false;
         }
 
-        // evitar inimigo
-        if (baseInimiga != null &&
-            Vector3.Distance(pos, baseInimiga.position) < distanciaMinimaDoInimigo)
-            return false;
+        if (basesInimigas != null)
+        {
+            foreach (BaseInimiga inimiga in basesInimigas)
+            {
+                if (inimiga == null || inimiga.transform == null) continue;
+                if (Vector3.Distance(pos, inimiga.transform.position) < inimiga.distanciaMinima)
+                    return false;
+            }
+        }
 
         return true;
     }
 
-    // 🔥 AJUSTA ALTURA NO TERRAIN
     private Vector3 AjustarAlturaTerreno(Vector3 pos)
     {
         if (terrain == null) return pos;
-
         float y = terrain.SampleHeight(pos) + terrain.transform.position.y;
         pos.y = y;
         return pos;
     }
 
+    // =========================================================
+    // CONSULTAS
+    // =========================================================
+
     public int ContarBasesPorIndice(int indice)
     {
-        string layerName = "";
+        if (pastaBases == null) GarantirPastaBases();
 
-        switch (indice)
-        {
-            case 0: layerName = "BaseSoldado"; break;
-            case 1: layerName = "BaseTank"; break;
-            case 2: layerName = "BaseAviao"; break;
-        }
+        int layer = LayerMask.NameToLayer(IndiceParaLayerName(indice));
+        if (layer == -1) return 0;
 
-        int layer = LayerMask.NameToLayer(layerName);
         int count = 0;
-
-        for (int i = 0; i < pastaBases.childCount; i++)
-        {
-            GameObject obj = pastaBases.GetChild(i).gameObject;
-
-            if (obj.layer == layer)
-                count++;
-        }
-
-        return count;
-    }
-
-    public bool ExisteBasePorIndice(int indice)
-    {
-        return ContarBasesPorIndice(indice) > 0;
-    }
-
-    public Transform[] ObterBasesPorIndice(int indice)
-    {
-        string layerName = "";
-
-        switch (indice)
-        {
-            case 0: layerName = "BaseSoldado"; break;
-            case 1: layerName = "BaseTank"; break;
-            case 2: layerName = "BaseAviao"; break;
-        }
-
-        int layer = LayerMask.NameToLayer(layerName);
-
-        List<Transform> lista = new List<Transform>();
-
         for (int i = 0; i < pastaBases.childCount; i++)
         {
             Transform t = pastaBases.GetChild(i);
+            if (t != null && t.gameObject.layer == layer) count++;
+        }
+        return count;
+    }
 
-            if (t.gameObject.layer == layer)
+    public bool ExisteBasePorIndice(int indice) => ContarBasesPorIndice(indice) > 0;
+
+    public Transform[] ObterBasesPorIndice(int indice)
+    {
+        if (pastaBases == null) GarantirPastaBases();
+
+        int layer = LayerMask.NameToLayer(IndiceParaLayerName(indice));
+        if (layer == -1) return new Transform[0];
+
+        List<Transform> lista = new List<Transform>();
+        for (int i = 0; i < pastaBases.childCount; i++)
+        {
+            Transform t = pastaBases.GetChild(i);
+            if (t != null && t.gameObject.layer == layer)
                 lista.Add(t);
         }
-
         return lista.ToArray();
+    }
+
+    private string IndiceParaLayerName(int indice)
+    {
+        switch (indice)
+        {
+            case 0: return "BaseSoldado";
+            case 1: return "BaseTank";
+            case 2: return "BaseAviao";
+            case 3: return "TorreTerra";
+            default: return "";
+        }
     }
 
     private void OnValidate()
     {
-        raioSpawn = Mathf.Max(5f, raioSpawn);
-        margemColisao = Mathf.Max(0.5f, margemColisao);
-        distanciaMinimaEntreBases = Mathf.Max(10f, distanciaMinimaEntreBases);
-        distanciaMinimaDoInimigo = Mathf.Max(5f, distanciaMinimaDoInimigo);
+        raioSpawn                 = Mathf.Max(5f,   raioSpawn);
+        margemColisao             = Mathf.Max(0.5f, margemColisao);
+        distanciaMinimaEntreBases = Mathf.Max(10f,  distanciaMinimaEntreBases);
     }
 }

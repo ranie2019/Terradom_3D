@@ -296,11 +296,11 @@ public class TankSpownIA : MonoBehaviour
             rotacaoSpawn = pontoSpawn != null ? pontoSpawn.rotation : transform.rotation;
         }
 
-        GameObject obj = GameObject.Find("Clone IA");
+        GameObject obj = GameObject.Find("Clone Unidades IA");
 
         if (obj == null)
         {
-            obj = new GameObject("Clone IA");
+            obj = new GameObject("Clone Unidades IA");
         }
 
         Transform pastaClones = obj.transform;
@@ -511,8 +511,8 @@ public class TankSpownIA : MonoBehaviour
         Vector3 posicaoSpawn = baseTransform.position;
         Quaternion rotacaoSpawn = baseTransform.rotation;
 
-        GameObject obj = GameObject.Find("Clone IA");
-        if (obj == null) obj = new GameObject("Clone IA");
+        GameObject obj = GameObject.Find("Clone Unidades IA");
+        if (obj == null) obj = new GameObject("Clone Unidades IA");
 
         GameObject novo = Instantiate(prefabTankLeve, posicaoSpawn, rotacaoSpawn, obj.transform);
         novo.SetActive(true);

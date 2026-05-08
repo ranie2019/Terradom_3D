@@ -293,8 +293,8 @@ public class SoldadoSpownIA : MonoBehaviour
             rotacaoSpawn = pontoSpawn != null ? pontoSpawn.rotation : transform.rotation;
         }
 
-        GameObject obj = GameObject.Find("Clone IA");
-        if (obj == null) obj = new GameObject("Clone IA");
+        GameObject obj = GameObject.Find("Clone Unidades IA");
+        if (obj == null) obj = new GameObject("Clone Unidades IA");
 
         GameObject novo = Instantiate(prefab, posicaoSpawn, rotacaoSpawn, obj.transform);
         novo.SetActive(true);
@@ -469,8 +469,8 @@ public class SoldadoSpownIA : MonoBehaviour
         Vector3 posicaoSpawn = baseTransform.position;
         Quaternion rotacaoSpawn = baseTransform.rotation;
 
-        GameObject obj = GameObject.Find("Clone IA");
-        if (obj == null) obj = new GameObject("Clone IA");
+        GameObject obj = GameObject.Find("Clone Unidades IA");
+        if (obj == null) obj = new GameObject("Clone Unidades IA");
 
         GameObject novo = Instantiate(prefab, posicaoSpawn, rotacaoSpawn, obj.transform);
         novo.SetActive(true);

@@ -14400,37 +14400,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6367345787111269243, guid: 701b8baa1b09a9548a505af20cd298bb, type: 3}
   m_PrefabInstance: {fileID: 856374025}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &868101885
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 868101886}
-  m_Layer: 0
-  m_Name: Clone Unidades IA
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &868101886
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 868101885}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &870565871
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15422,15 +15391,15 @@ MonoBehaviour:
   prefabBaseTank: {fileID: 8249452854361745552, guid: bb2bf2684b15c6543830239f5da5c745, type: 3}
   prefabBaseAviao: {fileID: 8440675772621300434, guid: 04848e3037586c24abed8d58859f0480, type: 3}
   prefabTorreTerra: {fileID: 2955571549254343254, guid: a4b40808f9917814d9c820998f1fea86, type: 3}
-  raioSpawn: 500
+  raioSpawn: 50
   camadaBloqueio:
     serializedVersion: 2
     m_Bits: 4294967295
-  pontoReferencia: {fileID: 1672257480}
   terrain: {fileID: 450572200}
   margemColisao: 0.95
   distanciaMinimaEntreBases: 100
-  basesInimigas: []
+  baseInimiga: {fileID: 0}
+  distanciaMinimaDoInimigo: 25
 --- !u!114 &922249173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15444,14 +15413,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoboIA
   intervalo: 1
-  tempoBaseSoldado: 10
+  tempoBaseSoldado: 20
   maxBaseSoldado: 10
   timerBaseSoldado: 0
-  tempoBaseTank: 10
+  tempoBaseTank: 20
   maxBaseTank: 10
   timerBaseTank: 0
-  tempoTorreTerra: 10
-  maxTorreTerra: 15
+  tempoTorreTerra: 20
+  maxTorreTerra: 5
   timerTorreTerra: 0
 --- !u!114 &922249174
 MonoBehaviour:
@@ -19809,7 +19778,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6802509303515661813, guid: 3888eff745f7d5a49a6c35ea822d7088, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 50
+      value: 58.9
       objectReference: {fileID: 0}
     - target: {fileID: 6802509303515661813, guid: 3888eff745f7d5a49a6c35ea822d7088, type: 3}
       propertyPath: m_LocalPosition.y
@@ -19817,7 +19786,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6802509303515661813, guid: 3888eff745f7d5a49a6c35ea822d7088, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 430
+      value: 404.2
       objectReference: {fileID: 0}
     - target: {fileID: 6802509303515661813, guid: 3888eff745f7d5a49a6c35ea822d7088, type: 3}
       propertyPath: m_LocalRotation.w
@@ -20366,7 +20335,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1193728828}
   m_Layer: 0
-  m_Name: Clone Bases IA
+  m_Name: Clone IA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36660,4 +36629,3 @@ SceneRoots:
   - {fileID: 79771919}
   - {fileID: 922249171}
   - {fileID: 1193728828}
-  - {fileID: 868101886}
