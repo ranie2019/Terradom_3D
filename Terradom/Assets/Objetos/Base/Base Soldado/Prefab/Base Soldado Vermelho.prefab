@@ -265,10 +265,7 @@ MonoBehaviour:
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 1
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
-  danosAutomaticosPorTag:
-  - tagAtacante: Bala
-    dano: 1
-    destruirAtacanteAposDano: 1
+  danosAutomaticosPorTag: []
   receberImpactoEmCollidersFilhos: 1
 --- !u!114 &6471754032522877703
 MonoBehaviour:
@@ -282,6 +279,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6f7d1c917a31d3469f613e52b220d91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoldadoSpownIA
+  pontoSpawn: {fileID: 7553590036095631742}
   prefabGuerreiro: {fileID: 693426419382440785, guid: 26341861a3111a1459f048146f64e0fe, type: 3}
   custoPedraGuerreiro: 10
   custoMadeiraGuerreiro: 10
@@ -297,10 +295,10 @@ MonoBehaviour:
   custoMadeiraSoldado: 50
   custoMetalSoldado: 50
   delaySoldado: 1.2
-  pontoSpawn: {fileID: 7553590036095631742}
   usarEspacamentoEntreSpawns: 1
   distanciaEntreUnidadesSpawn: 1.2
   quantidadePosicoesPorLinha: 4
+  alturaOffset: 0.5
   tagDoTime: Vermelho
   mostrarLogs: 0
 --- !u!1 &6252068582237215293

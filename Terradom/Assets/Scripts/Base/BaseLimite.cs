@@ -40,6 +40,9 @@ public class BaseLimite : MonoBehaviour
     private float timerPiscar;
     private Vector3 posicaoBase;
     
+    // Flag para saber se foi desregistrado temporariamente
+    private bool desregistradoTemporariamente = false;
+    
     private void Awake()
     {
         // Procura o Terrain se não foi atribuído
@@ -51,7 +54,8 @@ public class BaseLimite : MonoBehaviour
             tagBase = gameObject.tag;
         
         // Registra esta base no dicionário global
-        RegistrarBase();
+        if (!desregistradoTemporariamente)
+            RegistrarBase();
         
         // Cria os materiais e meshes para visualização
         CriarMateriais();
@@ -62,6 +66,18 @@ public class BaseLimite : MonoBehaviour
         
         if (debugLogs)
             Debug.Log($"[BaseLimite] Base registrada com tag '{tagBase}'. Total bases desta tag: {ObterTotalBasesDaTag()}");
+    }
+    
+    private void OnEnable()
+    {
+        // Quando reativado (após posicionamento), registra novamente
+        if (desregistradoTemporariamente)
+        {
+            desregistradoTemporariamente = false;
+            RegistrarBase();
+            if (debugLogs)
+                Debug.Log($"[BaseLimite] Base re-registrada após posicionamento. Tag: '{tagBase}'");
+        }
     }
     
     private void OnDestroy()
@@ -96,6 +112,19 @@ public class BaseLimite : MonoBehaviour
     // =========================================================
     // REGISTRO GLOBAL
     // =========================================================
+    
+    /// <summary>
+    /// Remove temporariamente esta base do dicionário global.
+    /// Usado durante o posicionamento (ghost) para que a base
+    /// não se conte como área válida antes de ser confirmada.
+    /// </summary>
+    public void DesregistrarTemporariamente()
+    {
+        desregistradoTemporariamente = true;
+        RemoverBase();
+        if (debugLogs)
+            Debug.Log($"[BaseLimite] Base '{gameObject.name}' desregistrada temporariamente para posicionamento");
+    }
     
     private void RegistrarBase()
     {
@@ -480,8 +509,9 @@ public class BaseLimite : MonoBehaviour
         // Atualiza tag
         tagBase = novaTag;
         
-        // Registra com a nova tag
-        RegistrarBase();
+        // Registra com a nova tag (se não estiver desregistrado temporariamente)
+        if (!desregistradoTemporariamente)
+            RegistrarBase();
     }
     
     private void OnValidate()
@@ -490,5 +520,17 @@ public class BaseLimite : MonoBehaviour
         velocidadePiscar = Mathf.Max(0.1f, velocidadePiscar);
         alturaVisualizacao = Mathf.Max(0.01f, alturaVisualizacao);
         segmentosCirculo = Mathf.Clamp(segmentosCirculo, 16, 128);
+
+        // Reconstrói materiais e meshes quando qualquer valor muda no Inspector
+        if (!Application.isPlaying || meshCirculo == null)
+            return;
+
+        if (materialArea != null) { Destroy(materialArea); materialArea = null; }
+        if (materialBorda != null) { Destroy(materialBorda); materialBorda = null; }
+        if (meshCirculo  != null) { Destroy(meshCirculo);   meshCirculo  = null; }
+        if (meshBorda    != null) { Destroy(meshBorda);     meshBorda    = null; }
+
+        CriarMateriais();
+        CriarMeshes();
     }
 }

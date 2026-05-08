@@ -187,15 +187,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -53.931496
+      value: 29.91782
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.000011421947
+      value: -0.000035733276
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -205.47078
+      value: -337.67886
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -232,6 +232,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_Name
       value: Base Soldado Azul
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_TagString
+      value: Azul
       objectReference: {fileID: 0}
     - target: {fileID: 1187636320423006750, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -400,11 +404,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 60
-  tagBase: Vermelho
+  raioArea: 70
+  tagBase: Azul
   mostrarArea: 1
-  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
-  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
+  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
   velocidadePiscar: 2
   alturaVisualizacao: 0.1
   segmentosCirculo: 64

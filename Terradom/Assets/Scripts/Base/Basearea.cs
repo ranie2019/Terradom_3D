@@ -52,6 +52,9 @@ public class BaseArea : MonoBehaviour
     [SerializeField] private bool podeConstruir;
     [SerializeField] private bool modoRotacao;
 
+    // FIX: Evita que o mesmo click que abre o posicionamento confirme a base no mesmo frame
+    private int frameInicioPositionamento = -1;
+
     private void Awake()
     {
         if (cameraPrincipal == null)
@@ -199,12 +202,23 @@ public class BaseArea : MonoBehaviour
         novaBase.name = prefabEscolhido.name;
         novaBase.SetActive(true);
 
+        // FIX: Não destroi o BaseLimite do prefab (isso apagava os valores configurados).
+        // Apenas retira do registro global durante o posicionamento para que o ghost
+        // não se conte como área válida, e desativa o visual.
+        BaseLimite baseLimiteGhost = novaBase.GetComponent<BaseLimite>();
+        if (baseLimiteGhost != null)
+        {
+            baseLimiteGhost.DesregistrarTemporariamente();
+            baseLimiteGhost.enabled = false;
+        }
+
         tipoBaseAtual = tipoBase;
         DefinirBaseAtual(tipoBase, novaBase);
 
         estaPosicionando = true;
         podeConstruir = false;
         modoRotacao = false;
+        frameInicioPositionamento = Time.frameCount; // FIX: marca o frame de inicio
 
         DesativarScriptsDaBase(novaBase);
         PosicionarBaseNoCentroDaTela(novaBase);
@@ -355,6 +369,11 @@ public class BaseArea : MonoBehaviour
         if (!Mouse.current.leftButton.wasPressedThisFrame)
             return;
 
+        // FIX: Ignora o click do mesmo frame que iniciou o posicionamento.
+        // Sem isso, o click no botao da UI confirma a base instantaneamente.
+        if (Time.frameCount <= frameInicioPositionamento)
+            return;
+
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
@@ -391,20 +410,30 @@ public class BaseArea : MonoBehaviour
         torreTerraAtual  = null;
     }
 
-    // NOVO MÉTODO: Adiciona o componente BaseLimite
+    // Ativa e registra o BaseLimite após a base ser confirmada
     private void AdicionarBaseLimite(GameObject baseObj)
     {
         if (baseObj == null)
             return;
 
         BaseLimite baseLimite = baseObj.GetComponent<BaseLimite>();
+
         if (baseLimite == null)
+        {
+            // Prefab nao tem BaseLimite: cria um novo (valores default do codigo)
             baseLimite = baseObj.AddComponent<BaseLimite>();
-    
-        // Configura com a tag do jogador
+        }
+        else
+        {
+            // Prefab JA tem BaseLimite com valores salvos: so reativa.
+            // NAO recria via AddComponent para preservar raio, cor, etc. do prefab.
+            baseLimite.enabled = true;
+        }
+
+        // Registra com a tag correta do jogador
         baseLimite.SetTagBase(tagDoJogador);
-    
-        Debug.Log($"[BaseArea] ✅ BaseLimite adicionado à base {baseObj.name} com tag '{tagDoJogador}'");
+
+        Debug.Log($"[BaseArea] ✅ BaseLimite ativado na base {baseObj.name} com tag '{tagDoJogador}'");
     }
 
     private void VerificarColisao(GameObject baseAtual)
@@ -417,7 +446,10 @@ public class BaseArea : MonoBehaviour
 
         if (!TentarCalcularBoundsDaBase(baseAtual, out Bounds boundsBase))
         {
-            podeConstruir = true;
+            // FIX: mesmo sem bounds, ainda precisa checar o limite de área.
+            // Antes retornava true diretamente, pulando a verificação abaixo.
+            podeConstruir = true; // sem colisores = sem obstaculos, assume livre
+            VerificarLimiteDeArea(baseAtual);
             return;
         }
 
@@ -444,8 +476,12 @@ public class BaseArea : MonoBehaviour
             return;
         }
 
-        // <- NOVO: só permite construir dentro da área de limite da tag do jogador
-        // Verifica apenas se está dentro da área (ignora distância de inimigos durante posicionamento)
+        // Só verifica o limite se passou pela checagem de colisão
+        VerificarLimiteDeArea(baseAtual);
+    }
+
+    private void VerificarLimiteDeArea(GameObject baseAtual)
+    {
         if (!BaseLimite.PosicaoDentroDeArea(tagDoJogador, baseAtual.transform.position))
         {
             // Se não tem nenhuma base ainda (primeira construção), permite em qualquer lugar
@@ -453,7 +489,10 @@ public class BaseArea : MonoBehaviour
             {
                 podeConstruir = false;
             }
-            // else: primeira base, permite construir
+            else
+            {
+                podeConstruir = true; // primeira base, pode construir em qualquer lugar
+            }
         }
     }
 

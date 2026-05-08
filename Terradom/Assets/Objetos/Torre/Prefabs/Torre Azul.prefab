@@ -225,11 +225,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 30
-  tagBase: Vermelho
+  raioArea: 35
+  tagBase: Azul
   mostrarArea: 1
-  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
-  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
+  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
   velocidadePiscar: 2
   alturaVisualizacao: 0.05
   segmentosCirculo: 64
