@@ -265,6 +265,6 @@ public class RoboIA : MonoBehaviour
         debug += $"Bases Soldado: {basesSoldado.Length} | Rodízio: #{soldadoAtual}\n";
         debug += $"Bases Tank:    {basesTank.Length}    | Rodízio: #{tankAtual}";
 
-        GUI.Label(new Rect(10, 10, 500, 280), debug, style);
+        GUI.Label(new Rect(Screen.width - 250, 10, 500, 280), debug, style);
     }
 }

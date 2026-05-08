@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
@@ -11,6 +12,20 @@ public class ColetorAI : MonoBehaviour
         Arvore,
         Metal
     }
+
+    // =========================================================
+    // SISTEMA DE DISTRIBUIÇÃO INTELIGENTE (ESTÁTICO)
+    // =========================================================
+    private static readonly Dictionary<TipoRecurso, int> coletoresPorTipo = new Dictionary<TipoRecurso, int>();
+    private static readonly Dictionary<Transform, int> alvosReservados = new Dictionary<Transform, int>();
+    
+    [Header("Distribuição Inteligente")]
+    [SerializeField] private float pesoConcorrenciaTipo = 5f;
+    [SerializeField] private float pesoReservaAlvo = 10f;
+
+    private TipoRecurso tipoRegistrado = TipoRecurso.Nenhum;
+    private Transform alvoReservado = null;
+    private bool registrosAtivos = false;
 
     [Header("Vida")]
     [SerializeField] private int vidaMaxima = 10;
@@ -84,6 +99,10 @@ public class ColetorAI : MonoBehaviour
     [SerializeField] private bool debugCortaAtivo;
     [SerializeField] private bool debugDesviando;
     [SerializeField] private string debugMotivoDesvio;
+    [SerializeField] private int debugColetoresPedra;
+    [SerializeField] private int debugColetoresArvore;
+    [SerializeField] private int debugColetoresMetal;
+    [SerializeField] private int debugAlvosReservadosTotal;
 
     private Rigidbody rb;
 
@@ -141,6 +160,14 @@ public class ColetorAI : MonoBehaviour
         ultimaPosicaoVerificacaoTravado = transform.position;
         proximaVerificacaoTravado = Time.time + intervaloVerificarTravado;
 
+        // Inicializa contadores para todos os tipos de recurso
+        foreach (TipoRecurso tipo in System.Enum.GetValues(typeof(TipoRecurso)))
+        {
+            if (tipo == TipoRecurso.Nenhum) continue;
+            if (!coletoresPorTipo.ContainsKey(tipo))
+                coletoresPorTipo[tipo] = 0;
+        }
+
         if (debugLogs)
         {
             Debug.Log($"[ColetorAI] Animator encontrado: {animator != null}");
@@ -170,6 +197,80 @@ public class ColetorAI : MonoBehaviour
         VerificarSeFicouTravado();
     }
 
+    private void OnDestroy()
+    {
+        LiberarRegistros();
+    }
+
+    // =========================================================
+    // SISTEMA DE REGISTRO DE COLETORES (CORRIGIDO)
+    // =========================================================
+
+    private void LiberarRegistros()
+    {
+        if (!registrosAtivos)
+            return;
+
+        registrosAtivos = false;
+
+        // Libera tipo
+        if (tipoRegistrado != TipoRecurso.Nenhum)
+        {
+            if (coletoresPorTipo.ContainsKey(tipoRegistrado))
+            {
+                coletoresPorTipo[tipoRegistrado] = Mathf.Max(0, coletoresPorTipo[tipoRegistrado] - 1);
+                if (debugLogs)
+                    Debug.Log($"[ColetorAI] Liberado registro de {tipoRegistrado}. Total: {coletoresPorTipo[tipoRegistrado]}");
+            }
+            tipoRegistrado = TipoRecurso.Nenhum;
+        }
+
+        // Libera reserva do alvo
+        if (alvoReservado != null)
+        {
+            if (alvosReservados.ContainsKey(alvoReservado))
+            {
+                alvosReservados[alvoReservado] = Mathf.Max(0, alvosReservados[alvoReservado] - 1);
+                if (alvosReservados[alvoReservado] <= 0)
+                    alvosReservados.Remove(alvoReservado);
+                
+                if (debugLogs)
+                    Debug.Log($"[ColetorAI] Liberada reserva de {alvoReservado.name}");
+            }
+            alvoReservado = null;
+        }
+    }
+
+    private void RegistrarNovoAlvo(Transform novoAlvo, TipoRecurso novoTipo)
+    {
+        // Primeiro libera registros antigos
+        LiberarRegistros();
+
+        if (novoAlvo == null || novoTipo == TipoRecurso.Nenhum)
+            return;
+
+        registrosAtivos = true;
+        alvoReservado = novoAlvo;
+        tipoRegistrado = novoTipo;
+
+        // Registra tipo
+        if (!coletoresPorTipo.ContainsKey(novoTipo))
+            coletoresPorTipo[novoTipo] = 0;
+        coletoresPorTipo[novoTipo]++;
+
+        // Registra reserva do alvo (com contagem para evitar duplicatas)
+        if (!alvosReservados.ContainsKey(novoAlvo))
+            alvosReservados[novoAlvo] = 0;
+        alvosReservados[novoAlvo]++;
+
+        if (debugLogs)
+            Debug.Log($"[ColetorAI] Registrado em {novoTipo}. Total no tipo: {coletoresPorTipo[novoTipo]}, Reservas deste alvo: {alvosReservados[novoAlvo]}");
+    }
+
+    // =========================================================
+    // SISTEMA DE ALVO INTELIGENTE (CORRIGIDO)
+    // =========================================================
+
     private void AtualizarAlvo()
     {
         bool alvoAindaValido = AlvoEhValido();
@@ -179,6 +280,7 @@ public class ColetorAI : MonoBehaviour
 
         if (!alvoAindaValido)
         {
+            LiberarRegistros();
             alvoAtual = null;
             colliderAlvoAtual = null;
             tipoRecursoAtual = TipoRecurso.Nenhum;
@@ -199,7 +301,7 @@ public class ColetorAI : MonoBehaviour
         Transform melhorTransform = null;
         Collider melhorCollider = null;
         TipoRecurso melhorTipo = TipoRecurso.Nenhum;
-        float melhorDistancia = float.MaxValue;
+        float melhorScore = float.MinValue;
 
         for (int i = 0; i < hits.Length; i++)
         {
@@ -222,21 +324,59 @@ public class ColetorAI : MonoBehaviour
             if (!EstaNoCampoDeVisao(ponto))
                 continue;
 
-            float distancia = DistanciaPlano(transform.position, ponto);
+            float score = CalcularScoreAlvo(recurso, ponto, tipoEncontrado);
 
-            if (distancia < melhorDistancia)
+            if (score > melhorScore)
             {
-                melhorDistancia = distancia;
+                melhorScore = score;
                 melhorTransform = recurso;
                 melhorCollider = hit;
                 melhorTipo = tipoEncontrado;
             }
         }
 
-        alvoAtual = melhorTransform;
-        colliderAlvoAtual = melhorCollider;
-        tipoRecursoAtual = melhorTipo;
+        // Atualiza alvo e registros (só se mudou)
+        if (melhorTransform != alvoAtual)
+        {
+            alvoAtual = melhorTransform;
+            colliderAlvoAtual = melhorCollider;
+            tipoRecursoAtual = melhorTipo;
+
+            RegistrarNovoAlvo(melhorTransform, melhorTipo);
+        }
     }
+
+    private float CalcularScoreAlvo(Transform recurso, Vector3 ponto, TipoRecurso tipo)
+    {
+        float distancia = DistanciaPlano(transform.position, ponto);
+
+        // Penalidade por distância — mais longe = pior
+        float scoreDistancia = -distancia;
+
+        // Penalidade por concorrência de tipo — mais coletores no tipo = pior
+        int coletoresNoTipo = coletoresPorTipo.ContainsKey(tipo) ? coletoresPorTipo[tipo] : 0;
+        
+        // Não penaliza se este coletor já está registrado neste tipo
+        if (tipo == tipoRegistrado && registrosAtivos)
+            coletoresNoTipo = Mathf.Max(0, coletoresNoTipo - 1);
+        
+        float scoreTipo = -coletoresNoTipo * pesoConcorrenciaTipo;
+
+        // Penalidade se este objeto específico já está reservado por outros coletores
+        int reservas = alvosReservados.ContainsKey(recurso) ? alvosReservados[recurso] : 0;
+        
+        // Não penaliza se a reserva é do próprio coletor
+        if (recurso == alvoReservado && registrosAtivos)
+            reservas = Mathf.Max(0, reservas - 1);
+        
+        float scoreReserva = -reservas * pesoReservaAlvo;
+
+        return scoreDistancia + scoreTipo + scoreReserva;
+    }
+
+    // =========================================================
+    // CONTROLE DE ESTADO
+    // =========================================================
 
     private void ControlarEstado()
     {
@@ -474,8 +614,6 @@ public class ColetorAI : MonoBehaviour
         if (recurso == null || tipo == TipoRecurso.Nenhum)
             return false;
 
-        // Recurso não deve ser tratado como obstáculo comum,
-        // senão o coletor fica desviando justamente do objeto que precisa coletar.
         return true;
     }
 
@@ -614,6 +752,7 @@ public class ColetorAI : MonoBehaviour
         {
             alvoIgnoradoTemporariamente = alvoAtual;
             ignorarAlvoAte = Time.time + tempoIgnorarAlvoAposBater;
+            LiberarRegistros();
             alvoAtual = null;
             colliderAlvoAtual = null;
             tipoRecursoAtual = TipoRecurso.Nenhum;
@@ -643,11 +782,17 @@ public class ColetorAI : MonoBehaviour
         if (recurso == null || tipoEncontrado == TipoRecurso.Nenhum)
             return false;
 
+        // Não assume se já está reservado por OUTRO coletor (contagem > 0 e não é o próprio)
+        if (alvosReservados.ContainsKey(recurso) && alvosReservados[recurso] > 0 && recurso != alvoReservado)
+            return false;
+
         alvoAtual = recurso;
         colliderAlvoAtual = col;
         tipoRecursoAtual = tipoEncontrado;
         alvoIgnoradoTemporariamente = null;
         ignorarAlvoAte = 0f;
+
+        RegistrarNovoAlvo(recurso, tipoEncontrado);
 
         Vector3 pontoAlvo = GetPontoAlvoAtual();
         float distancia = DistanciaPlano(transform.position, pontoAlvo);
@@ -892,6 +1037,8 @@ public class ColetorAI : MonoBehaviour
         if (animator != null && animMortoExiste)
             animator.SetBool(paramMorto, true);
 
+        LiberarRegistros();
+
         Destroy(gameObject, 0.2f);
     }
 
@@ -1077,6 +1224,11 @@ public class ColetorAI : MonoBehaviour
         }
 
         debugDesviando = EstaDesviando();
+        
+        debugColetoresPedra = coletoresPorTipo.ContainsKey(TipoRecurso.Pedra) ? coletoresPorTipo[TipoRecurso.Pedra] : 0;
+        debugColetoresArvore = coletoresPorTipo.ContainsKey(TipoRecurso.Arvore) ? coletoresPorTipo[TipoRecurso.Arvore] : 0;
+        debugColetoresMetal = coletoresPorTipo.ContainsKey(TipoRecurso.Metal) ? coletoresPorTipo[TipoRecurso.Metal] : 0;
+        debugAlvosReservadosTotal = alvosReservados.Count;
     }
 
     private void OnValidate()
@@ -1110,6 +1262,9 @@ public class ColetorAI : MonoBehaviour
         distanciaAcao = Mathf.Max(0.1f, distanciaAcao);
         distanciaSairDaAcao = Mathf.Max(distanciaAcao, distanciaSairDaAcao);
         tempoEntreAcoes = Mathf.Max(0.01f, tempoEntreAcoes);
+        
+        pesoConcorrenciaTipo = Mathf.Max(0f, pesoConcorrenciaTipo);
+        pesoReservaAlvo = Mathf.Max(0f, pesoReservaAlvo);
     }
 
     private void OnDrawGizmosSelected()

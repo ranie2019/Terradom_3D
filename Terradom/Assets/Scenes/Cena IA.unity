@@ -1494,6 +1494,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 80354634}
   m_CullTransparentMesh: 1
+--- !u!1001 &85495825
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5981386159099598770, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_Name
+      value: Coletor Vermelho
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 22.223278
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 12.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 427.21143
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6024234320738842933, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9536cdb3e3f7dfd4caf8a84bf461659c, type: 3}
 --- !u!1001 &86287898
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2866,6 +2923,63 @@ Transform:
   - {fileID: 1466765540}
   m_Father: {fileID: 1129313452}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &174644207
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1644270781630906693, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_Name
+      value: Coletor Azul
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.251609
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 8.93
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -334
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1687145964157993802, guid: eed938288b1520948a728152ba161b55, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: eed938288b1520948a728152ba161b55, type: 3}
 --- !u!1001 &189239772
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36661,3 +36775,5 @@ SceneRoots:
   - {fileID: 922249171}
   - {fileID: 1193728828}
   - {fileID: 868101886}
+  - {fileID: 85495825}
+  - {fileID: 174644207}
