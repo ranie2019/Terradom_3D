@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 
@@ -13,6 +13,10 @@ public class BaseArea : MonoBehaviour
         Aviao,
         TorreTerra
     }
+
+    [Header("Limite de Construção")]
+    [SerializeField] private string tagDoJogador = "Azul";
+    [SerializeField] private float distanciaMinimaEntreBases = 30f;
 
     [Header("Prefab Base Soldado")]
     [SerializeField] private GameObject prefabBaseSoldado;
@@ -73,7 +77,7 @@ public class BaseArea : MonoBehaviour
     }
 
     // =====================================================================
-    // PUBLICOS � chamados pelos botoes da UI
+    // PUBLICOS — chamados pelos botoes da UI
     // =====================================================================
 
     public void CriarBaseParaPosicionar()
@@ -138,7 +142,7 @@ public class BaseArea : MonoBehaviour
         );
     }
 
-    // Mantidos para compatibilidade com c�digo externo que chama esses m�todos
+    // Mantidos para compatibilidade com código externo que chama esses métodos
     public bool PodeCriarBaseSoldado()
     {
         return GameControllerRecursos.Instance != null &&
@@ -360,6 +364,8 @@ public class BaseArea : MonoBehaviour
         TravarBase();
     }
 
+    // No método TravarBase(), adicione o código no final:
+
     private void TravarBase()
     {
         GameObject baseAtual = ObterBaseAtual();
@@ -373,11 +379,32 @@ public class BaseArea : MonoBehaviour
 
         AtivarScriptsDaBase(baseAtual);
 
+        // =========================================
+        // NOVO: Adiciona BaseLimite automaticamente
+        // =========================================
+        AdicionarBaseLimite(baseAtual);
+
         tipoBaseAtual    = TipoBaseAtual.Nenhuma;
         baseSoldadoAtual = null;
         baseTankAtual    = null;
         baseAviaoAtual   = null;
         torreTerraAtual  = null;
+    }
+
+    // NOVO MÉTODO: Adiciona o componente BaseLimite
+    private void AdicionarBaseLimite(GameObject baseObj)
+    {
+        if (baseObj == null)
+            return;
+
+        BaseLimite baseLimite = baseObj.GetComponent<BaseLimite>();
+        if (baseLimite == null)
+            baseLimite = baseObj.AddComponent<BaseLimite>();
+    
+        // Configura com a tag do jogador
+        baseLimite.SetTagBase(tagDoJogador);
+    
+        Debug.Log($"[BaseArea] ✅ BaseLimite adicionado à base {baseObj.name} com tag '{tagDoJogador}'");
     }
 
     private void VerificarColisao(GameObject baseAtual)
@@ -407,7 +434,6 @@ public class BaseArea : MonoBehaviour
         for (int i = 0; i < colisores.Length; i++)
         {
             Collider col = colisores[i];
-
             if (col == null) continue;
             if (col.transform.IsChildOf(baseAtual.transform)) continue;
             if (col.gameObject == baseAtual) continue;
@@ -416,6 +442,18 @@ public class BaseArea : MonoBehaviour
 
             podeConstruir = false;
             return;
+        }
+
+        // <- NOVO: só permite construir dentro da área de limite da tag do jogador
+        // Verifica apenas se está dentro da área (ignora distância de inimigos durante posicionamento)
+        if (!BaseLimite.PosicaoDentroDeArea(tagDoJogador, baseAtual.transform.position))
+        {
+            // Se não tem nenhuma base ainda (primeira construção), permite em qualquer lugar
+            if (BaseLimite.TemAreaDisponivel(tagDoJogador))
+            {
+                podeConstruir = false;
+            }
+            // else: primeira base, permite construir
         }
     }
 

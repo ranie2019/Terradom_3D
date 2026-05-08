@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 1511802248872784762}
   - component: {fileID: 5752608116523594969}
   - component: {fileID: 4133196453005495604}
+  - component: {fileID: 2745125019665326399}
   m_Layer: 0
   m_Name: Torre Azul
   m_TagString: Azul
@@ -212,6 +213,30 @@ MonoBehaviour:
   velocidadeMax: 30
   tempoTrocaMin: 1
   tempoTrocaMax: 3
+--- !u!114 &2745125019665326399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5942075334214147743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
+  raioArea: 30
+  tagBase: Vermelho
+  mostrarArea: 1
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  velocidadePiscar: 2
+  alturaVisualizacao: 0.05
+  segmentosCirculo: 64
+  terrain: {fileID: 0}
+  debugLogs: 0
+  mostrarConexoes: 1
+  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &6781804924343510973
 GameObject:
   m_ObjectHideFlags: 0

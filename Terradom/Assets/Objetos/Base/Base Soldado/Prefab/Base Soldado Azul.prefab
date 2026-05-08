@@ -187,15 +187,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -53.931496
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.000005278004
+      value: 0.000011421947
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -43
+      value: -205.47078
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -276,6 +276,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5575174474816835353}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1935020810970182642}
   m_SourcePrefab: {fileID: 100100000, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
 --- !u!1 &6137437102736351055 stripped
 GameObject:
@@ -345,19 +348,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b33c6b9ae9d9ec49b33b402382a7893, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoldadoSpown
-  pontoSpawn: {fileID: 1337511218094973280}
   prefabGuerreiro: {fileID: 7232638899730246449, guid: 1f133781c4bbbe34bb91a2bed9569c02, type: 3}
-  prefabRecurso: {fileID: 1644270781630906693, guid: eed938288b1520948a728152ba161b55, type: 3}
-  prefabSoldado: {fileID: 9054462154329564230, guid: 75f0311f5bdecc74b87e5908f7f38e6d, type: 3}
   custoPedraGuerreiro: 10
   custoMadeiraGuerreiro: 10
   custoMetalGuerreiro: 10
+  delayGuerreiro: 1.2
+  prefabRecurso: {fileID: 1644270781630906693, guid: eed938288b1520948a728152ba161b55, type: 3}
   custoPedraRecurso: 20
   custoMadeiraRecurso: 20
   custoMetalRecurso: 20
+  delayRecurso: 1.2
+  prefabSoldado: {fileID: 9054462154329564230, guid: 75f0311f5bdecc74b87e5908f7f38e6d, type: 3}
   custoPedraSoldado: 50
   custoMadeiraSoldado: 50
   custoMetalSoldado: 50
+  delaySoldado: 1.2
+  pontoSpawn: {fileID: 1337511218094973280}
+  usarEspacamentoEntreSpawns: 1
+  distanciaEntreUnidadesSpawn: 1.2
+  quantidadePosicoesPorLinha: 4
   manterMesmoPaiDaBase: 0
 --- !u!114 &5575174474816835353
 MonoBehaviour:
@@ -379,6 +388,30 @@ MonoBehaviour:
   piscarQuandoSelecionada: 1
   corSelecionada: {r: 1, g: 0.65, b: 0.25, a: 1}
   velocidadePiscar: 4
+--- !u!114 &1935020810970182642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6137437102736351055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
+  raioArea: 60
+  tagBase: Vermelho
+  mostrarArea: 1
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  velocidadePiscar: 2
+  alturaVisualizacao: 0.1
+  segmentosCirculo: 64
+  terrain: {fileID: 0}
+  debugLogs: 0
+  mostrarConexoes: 1
+  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!4 &6802509303515661813 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}

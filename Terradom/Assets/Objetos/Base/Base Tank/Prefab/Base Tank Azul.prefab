@@ -53,15 +53,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 31
+      value: 39.558407
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.000016492148
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -41
+      value: -215.23537
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalRotation.w
@@ -138,6 +138,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6815938640463043701}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7702245591794354870}
   m_SourcePrefab: {fileID: 100100000, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
 --- !u!1 &8249452854361745552 stripped
 GameObject:
@@ -237,6 +240,30 @@ MonoBehaviour:
   distanciaEntreUnidadesSpawn: 2.2
   quantidadePosicoesPorLinha: 3
   manterMesmoPaiDaBase: 0
+--- !u!114 &7702245591794354870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8249452854361745552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
+  raioArea: 60
+  tagBase: Vermelho
+  mostrarArea: 1
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.039215688}
+  corBorda: {r: 0.2, g: 0.31827828, b: 0.8, a: 0.039215688}
+  velocidadePiscar: 2
+  alturaVisualizacao: 0.1
+  segmentosCirculo: 64
+  terrain: {fileID: 0}
+  debugLogs: 0
+  mostrarConexoes: 1
+  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!4 &8732515983989682730 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
