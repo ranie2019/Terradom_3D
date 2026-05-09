@@ -45,6 +45,9 @@ public class BaseVida : MonoBehaviour
     [Header("Colliders em filhos")]
     [SerializeField] private bool receberImpactoEmCollidersFilhos = true;
 
+    [Header("Barra de Vida")]
+    [SerializeField] private BarraVidaUI barraVidaUI;
+
     [Header("Debug")]
     [SerializeField] private bool mostrarDebugDano = false;
 
@@ -63,6 +66,13 @@ public class BaseVida : MonoBehaviour
             vidaAtual = vidaMaxima;
         else
             vidaAtual = Mathf.Clamp(vidaAtual, 0, vidaMaxima);
+
+        // CONFIGURA A BARRA
+        if (barraVidaUI != null)
+        {
+            barraVidaUI.Configurar(vidaMaxima);
+            barraVidaUI.AtualizarVida(vidaAtual);
+        }
     }
 
     private void OnEnable()
@@ -141,11 +151,19 @@ public class BaseVida : MonoBehaviour
             return;
 
         vidaAtual = Mathf.Clamp(vidaAtual + valor, 0, vidaMaxima);
+
+        // ATUALIZA BARRA
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
     }
 
     public void RestaurarVidaTotal()
     {
         vidaAtual = vidaMaxima;
+
+        // ATUALIZA BARRA
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
     }
 
     public int GetVidaAtual()
@@ -447,6 +465,10 @@ public class BaseVida : MonoBehaviour
 
         vidaAtual -= dano;
         vidaAtual = Mathf.Max(vidaAtual, 0);
+
+        // ATUALIZA BARRA
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
 
         if (mostrarDebugDano)
         {
