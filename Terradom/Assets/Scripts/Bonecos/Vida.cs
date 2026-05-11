@@ -14,14 +14,13 @@ public class Vida : MonoBehaviour
     [SerializeField] private BarraVidaUI barraVidaUI;
 
     [Header("Dano por colisão")]
-    [Tooltip("Tags das ESPADAS que podem causar dano nesse boneco.")]
-    public string[] tagsEspadaQueDano = new string[] { "espada vermelho" };
+    [Tooltip("Tags que causar dano.")]
+    public string[] tagsQueCausanDano = new string[] { "" };
 
     [Tooltip("Cooldown para não perder múltiplas vidas num encostão só")]
     public float cooldownDano = 0.25f;
 
-    [Header("Ignorar dano quando o HIT for nesses objetos")]
-    public Transform[] ignorarSeAtingirEsses;
+
 
     private float proximoDanoPermitido;
 
@@ -90,21 +89,19 @@ public class Vida : MonoBehaviour
         if (!TemTagDeEspadaValida(atacante.tag))
             return;
 
-        // Ignora espada/escudo próprio
-        if (AtingiuAreaIgnorada(this.transform))
-            return;
+
 
         AplicarDano(1);
     }
 
     private bool TemTagDeEspadaValida(string tagAtacante)
     {
-        if (tagsEspadaQueDano == null)
+        if (tagsQueCausanDano == null)
             return false;
 
-        for (int i = 0; i < tagsEspadaQueDano.Length; i++)
+        for (int i = 0; i < tagsQueCausanDano.Length; i++)
         {
-            string t = tagsEspadaQueDano[i];
+            string t = tagsQueCausanDano[i];
 
             if (!string.IsNullOrWhiteSpace(t) && tagAtacante == t)
                 return true;
@@ -113,27 +110,6 @@ public class Vida : MonoBehaviour
         return false;
     }
 
-    private bool AtingiuAreaIgnorada(Transform parteAtingida)
-    {
-        if (ignorarSeAtingirEsses == null || ignorarSeAtingirEsses.Length == 0)
-            return false;
-
-        if (!parteAtingida)
-            return false;
-
-        for (int i = 0; i < ignorarSeAtingirEsses.Length; i++)
-        {
-            Transform ig = ignorarSeAtingirEsses[i];
-
-            if (!ig)
-                continue;
-
-            if (parteAtingida == ig || parteAtingida.IsChildOf(ig))
-                return true;
-        }
-
-        return false;
-    }
 
     // =========================
     // DANO

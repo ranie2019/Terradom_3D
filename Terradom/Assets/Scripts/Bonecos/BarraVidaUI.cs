@@ -8,11 +8,20 @@ public class BarraVidaUI : MonoBehaviour
     private float vidaMaxima;
     private float vidaAtual;
 
+    private void Awake()
+    {
+        // Desativa raycast em todas as imagens para não bloquear cliques na base
+        foreach (Image img in GetComponentsInChildren<Image>(true))
+            img.raycastTarget = false;
+
+        GraphicRaycaster gr = GetComponent<GraphicRaycaster>();
+        if (gr != null) gr.enabled = false;
+    }
+
     public void Configurar(float vida)
     {
         vidaMaxima = vida;
         vidaAtual = vida;
-
         AtualizarBarra();
     }
 
@@ -30,9 +39,9 @@ public class BarraVidaUI : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (Camera.main != null)
-        {
-            transform.forward = Camera.main.transform.forward;
-        }
+        if (Camera.main == null) return;
+
+        // Sempre olha para a câmera
+        transform.forward = Camera.main.transform.forward;
     }
 }

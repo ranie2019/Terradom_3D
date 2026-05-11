@@ -138,7 +138,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjetilDistancia
   dano: 5
-  velocidade: 70
+  velocidade: 250
   tempoDeVida: 10
   mirarComAlturaDoAlvo: 0
   tagsQueRecebemDano:

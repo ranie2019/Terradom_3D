@@ -1701,7 +1701,7 @@ MonoBehaviour:
   - Vermelho
   ignorarLayersAereasNaVisaoTerrestre: 1
   usarVisaoAerea: 1
-  raioVisaoAerea: 100
+  raioVisaoAerea: 300
   layersAvioesInimigos:
     serializedVersion: 2
     m_Bits: 0
@@ -1761,11 +1761,9 @@ MonoBehaviour:
   vidaMax: 25
   vidaAtual: 25
   barraVidaUI: {fileID: 1985955594154041999}
-  tagsEspadaQueDano:
-  - espada vermelho
-  - Bala
+  tagsQueCausanDano:
+  - 
   cooldownDano: 0.25
-  ignorarSeAtingirEsses: []
 --- !u!1 &5198013775936986468
 GameObject:
   m_ObjectHideFlags: 0
