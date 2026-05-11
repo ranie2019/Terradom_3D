@@ -1,20 +1,33 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Sistema de armamento do avião.
+/// SISTEMA DE ARMAMENTO DO AVIÃO.
+///
+/// Fluxo simplificado e direto:
+///   1. AviaoControler ativa este componente junto com AviaoVisao (fase Patrulha).
+///   2. AviaoVisao já faz a filtragem por CONE FRONTAL — só reporta alvo
+///      quando o inimigo está à frente do avião.
+///   3. Assim que AviaoVisao.AlvoAtual != null, este script dispara:
+///        • Míssil  — lançado com cooldown, enquanto houver estoque.
+///        • Metralhadora — disparada continuamente na cadência configurada.
+///   4. Sem cone de mira secundário — a detecção do AviaoVisao já é a mira.
+///
 /// Componente PASSIVO — não se auto-inicializa.
-/// O AviaoControler é responsável por habilitar este componente
-/// apenas quando o avião atingir altitude segura.
+/// O AviaoControler é responsável por habilitar este componente.
 /// </summary>
 [DisallowMultipleComponent]
 public class AviaoAtaque : MonoBehaviour
 {
     // =====================================================================
-    // INSPECTOR
+    // INSPECTOR — REFERÊNCIAS
     // =====================================================================
 
     [Header("Referência da visão")]
     [SerializeField] private AviaoVisao aviaoVisao;
+
+    // =====================================================================
+    // INSPECTOR — METRALHADORA
+    // =====================================================================
 
     [Header("Metralhadora — 2 canos")]
     [SerializeField] private Transform  spawnMetralhadora1;
@@ -22,21 +35,30 @@ public class AviaoAtaque : MonoBehaviour
     [SerializeField] private GameObject prefabBalaMetralhadora;
     [SerializeField] private float      intervaloMetralhadora = 0.12f;
 
+    // =====================================================================
+    // INSPECTOR — MÍSSEIS
+    // =====================================================================
+
     [Header("Mísseis — slots acoplados ao avião")]
+    [Tooltip("Os GameObjects de mísseis já posicionados no avião (até 8 slots)")]
     [SerializeField] private GameObject[] slotsMisseis = new GameObject[8];
     [SerializeField] private float        intervaloMissel = 2f;
 
-    [Header("Ataque")]
-    [SerializeField] private bool  atacarAutomaticamente    = true;
-    [SerializeField] private float toleranciaMiraParaAtirar = 8f;
-    [SerializeField] private float alcanceMetralhadora      = 40f;
-    [SerializeField] private float alcanceMissel            = 70f;
+    // =====================================================================
+    // INSPECTOR — FILTRO MÍSSIL
+    // =====================================================================
 
-    [Header("Filtro míssil — pai + filho")]
-    [SerializeField] private string[] tagsInimigoPai               = { "Vermelho" };
-    [SerializeField] private string[] tagsFilhoApenasMetralhadora   = { "Soldado", "Guerreiro", "Coletor" };
+    [Header("Filtro míssil")]
+    [Tooltip("Tags do PAI que confirmam que o objeto é inimigo")]
+    [SerializeField] private string[] tagsInimigoPai = { "Vermelho" };
+    [Tooltip("Tags do FILHO que indicam unidade pequena — só metralhadora, sem míssil")]
+    [SerializeField] private string[] tagsFilhoApenasMetralhadora = { "Soldado", "Guerreiro", "Coletor" };
 
-    [Header("Debug")]
+    // =====================================================================
+    // INSPECTOR — DEBUG
+    // =====================================================================
+
+    [Header("Debug — somente leitura")]
     [SerializeField] private bool desenharGizmosNoEditor = true;
     [SerializeField] private int  misseisRestantes       = 8;
 
@@ -58,7 +80,7 @@ public class AviaoAtaque : MonoBehaviour
     public bool TemAlvo()             => alvoAtual != null;
 
     // =====================================================================
-    // AWAKE — apenas referências e contagem de mísseis
+    // AWAKE
     // =====================================================================
 
     private void Awake()
@@ -70,12 +92,12 @@ public class AviaoAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // OnEnable — chamado quando AviaoControler faz enabled = true
+    // OnEnable — AviaoControler ativa junto com AviaoVisao (fase Patrulha)
     // =====================================================================
 
     private void OnEnable()
     {
-        // Cooldown inicial para estabilizar antes do primeiro disparo
+        // Cooldown de segurança ao ativar — evita rajada imediata
         proximoTiroMetralhadora = Time.time + 1f;
         proximoLancamentoMissel = Time.time + 1f;
         alvoAtual               = null;
@@ -89,31 +111,18 @@ public class AviaoAtaque : MonoBehaviour
 
     private void Update()
     {
-        AtualizarAlvoAtual();
+        // Obtém o alvo direto do AviaoVisao.
+        // O cone frontal já foi aplicado lá — se há alvo, está à frente do avião.
+        alvoAtual = (aviaoVisao != null && aviaoVisao.TemAlvo) ? aviaoVisao.AlvoAtual : null;
 
-        if (alvoAtual == null || !atacarAutomaticamente) return;
+        if (alvoAtual == null) return;
 
-        float distancia       = Vector3.Distance(transform.position, alvoAtual.position);
-        bool  misselPermitido = PodeUsarMissel(alvoAtual);
-
-        if (misselPermitido && misseisRestantes > 0 && distancia <= alcanceMissel)
+        // ── Míssil ────────────────────────────────────────────────────────
+        if (PodeUsarMissel(alvoAtual) && misseisRestantes > 0)
             TentarLancarMissel();
 
-        if (distancia <= alcanceMetralhadora)
-            TentarAtirarMetralhadora();
-    }
-
-    // =====================================================================
-    // ALVO
-    // =====================================================================
-
-    private void AtualizarAlvoAtual()
-    {
-        alvoAtual = null;
-
-        if (aviaoVisao == null || !aviaoVisao.TemAlvo) return;
-
-        alvoAtual = aviaoVisao.AlvoAtual;
+        // ── Metralhadora ──────────────────────────────────────────────────
+        TentarAtirarMetralhadora();
     }
 
     // =====================================================================
@@ -127,11 +136,10 @@ public class AviaoAtaque : MonoBehaviour
         Transform spawn = ObterSpawnMetralhadoraAtual();
         if (spawn == null || prefabBalaMetralhadora == null) return;
 
-        Vector3 pontoMira = ObterPontoMira(alvoAtual);
-        if (!MiraAlinhada(spawn.position, pontoMira, toleranciaMiraParaAtirar)) return;
-
-        Vector3    direcao = (pontoMira - spawn.position).normalized;
-        Quaternion rot     = Quaternion.LookRotation(direcao, Vector3.up);
+        // Dispara na direção do centro de massa do alvo
+        Vector3    pontoMira = ObterPontoMira(alvoAtual);
+        Vector3    direcao   = (pontoMira - spawn.position).normalized;
+        Quaternion rot       = Quaternion.LookRotation(direcao, Vector3.up);
 
         Instantiate(prefabBalaMetralhadora, spawn.position, rot);
 
@@ -157,19 +165,16 @@ public class AviaoAtaque : MonoBehaviour
         int slotIndex = EncontrarSlotMisselDisponivel();
         if (slotIndex < 0) return;
 
-        Vector3 pontoMira = ObterPontoMira(alvoAtual);
-        Vector3 posSlot   = slotsMisseis[slotIndex].transform.position;
-
-        if (!MiraAlinhada(posSlot, pontoMira, toleranciaMiraParaAtirar * 3f)) return;
-
         GameObject missel = slotsMisseis[slotIndex];
         missel.transform.SetParent(null);
         missel.SendMessage("Lancar", alvoAtual, SendMessageOptions.DontRequireReceiver);
 
-        slotsMisseis[slotIndex]  = null;
+        slotsMisseis[slotIndex] = null;
         misseisRestantes--;
 
         proximoLancamentoMissel = Time.time + Mathf.Max(0.1f, intervaloMissel);
+
+        Debug.Log($"[AviaoAtaque] {gameObject.name} — míssil lançado! Restantes: {misseisRestantes}", this);
     }
 
     private int EncontrarSlotMisselDisponivel()
@@ -188,14 +193,13 @@ public class AviaoAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // VALIDAÇÃO — pai inimigo + filho unidade pequena
+    // FILTRO DE MÍSSIL
     // =====================================================================
 
     private bool PodeUsarMissel(Transform alvo)
     {
         if (alvo == null) return true;
-        bool paiEhInimigo = ObjetoOuAncestralTemTag(alvo, tagsInimigoPai);
-        if (!paiEhInimigo) return true;
+        if (!ObjetoOuAncestralTemTag(alvo, tagsInimigoPai)) return true;
         return !FilhoTemTag(alvo, tagsFilhoApenasMetralhadora);
     }
 
@@ -216,10 +220,8 @@ public class AviaoAtaque : MonoBehaviour
     private bool FilhoTemTag(Transform alvo, string[] tags)
     {
         if (alvo == null || tags == null) return false;
-
         Transform raiz = alvo;
         while (raiz.parent != null) raiz = raiz.parent;
-
         foreach (Transform filho in raiz.GetComponentsInChildren<Transform>(true))
         {
             if (filho == raiz) continue;
@@ -233,12 +235,6 @@ public class AviaoAtaque : MonoBehaviour
     // =====================================================================
     // AUXILIARES
     // =====================================================================
-
-    private bool MiraAlinhada(Vector3 origemPos, Vector3 pontoMira, float tolerancia)
-    {
-        Vector3 direcaoAlvo = (pontoMira - origemPos).normalized;
-        return Vector3.Angle(transform.forward, direcaoAlvo) <= tolerancia;
-    }
 
     private Vector3 ObterPontoMira(Transform alvo)
     {
@@ -254,11 +250,8 @@ public class AviaoAtaque : MonoBehaviour
 
     private void OnValidate()
     {
-        intervaloMetralhadora    = Mathf.Max(0.02f, intervaloMetralhadora);
-        intervaloMissel          = Mathf.Max(0.1f,  intervaloMissel);
-        toleranciaMiraParaAtirar = Mathf.Clamp(toleranciaMiraParaAtirar, 1f, 45f);
-        alcanceMetralhadora      = Mathf.Max(1f, alcanceMetralhadora);
-        alcanceMissel            = Mathf.Max(1f, alcanceMissel);
+        intervaloMetralhadora = Mathf.Max(0.02f, intervaloMetralhadora);
+        intervaloMissel       = Mathf.Max(0.1f,  intervaloMissel);
     }
 
     // =====================================================================
@@ -269,34 +262,32 @@ public class AviaoAtaque : MonoBehaviour
     {
         if (!desenharGizmosNoEditor) return;
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, alcanceMetralhadora);
+        // Slots de mísseis
+        Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.8f);
+        foreach (GameObject slot in slotsMisseis)
+            if (slot != null)
+                Gizmos.DrawSphere(slot.transform.position, 0.2f);
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, alcanceMissel);
+        // Linha até o alvo
+        if (alvoAtual != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position, ObterPontoMira(alvoAtual));
+            Gizmos.DrawSphere(ObterPontoMira(alvoAtual), 0.5f);
+        }
 
+        // Spawns da metralhadora
         if (spawnMetralhadora1 != null)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawLine(spawnMetralhadora1.position,
-                            spawnMetralhadora1.position + transform.forward * 3f);
+                            spawnMetralhadora1.position + transform.forward * 4f);
         }
         if (spawnMetralhadora2 != null)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawLine(spawnMetralhadora2.position,
-                            spawnMetralhadora2.position + transform.forward * 3f);
-        }
-
-        Gizmos.color = Color.red;
-        foreach (GameObject slot in slotsMisseis)
-            if (slot != null)
-                Gizmos.DrawSphere(slot.transform.position, 0.2f);
-
-        if (alvoAtual != null)
-        {
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawLine(transform.position, alvoAtual.position);
+                            spawnMetralhadora2.position + transform.forward * 4f);
         }
     }
 }

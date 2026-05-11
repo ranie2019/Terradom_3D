@@ -3,27 +3,33 @@
 /// <summary>
 /// ORQUESTRADOR CENTRAL DO AVIÃO.
 ///
-/// Controla a sequência de fases em ordem de prioridade.
-/// Apenas UMA fase roda por vez — todas as outras ficam desativadas.
+/// Controla a sequência de fases em ordem de prioridade estrita.
+/// Apenas os componentes da fase atual ficam habilitados.
 ///
-/// COMO ADICIONAR UMA NOVA FASE NO FUTURO:
-///   1. Adicione o valor no enum Fase
-///   2. Adicione o componente no Inspector e em DesativarTudo()
-///   3. Em IniciarFase(), adicione o case com o que ativar
-///   4. Em ChecarTransicao(), adicione a condição de conclusão
+/// Fases em ordem:
+///   1. Garagem  — move até o ponto de decolagem e rotaciona para a pista
+///   2. Voo      — rolagem, decolagem e subida até alturaTransicaoPatrulha
+///   3. Patrulha — AviaoVisao assume o movimento + AviaoAtaque fica ativo
+///
+/// AviaoAtaque é ativado JUNTO com AviaoVisao na fase Patrulha.
+/// Ele fica passivo enquanto AviaoVisao não reportar um alvo.
+///
+/// SETUP (Script Execution Order recomendado):
+///   AviaoControler = -200
+///   AviaoVoo       = -100
 /// </summary>
 [DisallowMultipleComponent]
 public class AviaoControler : MonoBehaviour
 {
     // =====================================================================
-    // FASES — em ordem de execução
+    // FASES
     // =====================================================================
 
     public enum Fase
     {
-        Garagem,    // 1°: move até o ponto de decolagem e rotaciona
-        Voo,        // 2°: rolagem na pista, decolagem e subida
-        // Patrulha // 3°: (futuro)
+        Garagem,    // 1°: posiciona o avião na cabeceira da pista
+        Voo,        // 2°: rolagem + decolagem + subida
+        Patrulha,   // 3°: AviaoVisao + AviaoAtaque ativos
     }
 
     // =====================================================================
@@ -33,13 +39,12 @@ public class AviaoControler : MonoBehaviour
     [Header("Componentes")]
     [SerializeField] private AviaoGaragem aviaoGaragem;
     [SerializeField] private AviaoVoo     aviaoVoo;
+    [SerializeField] private AviaoVisao   aviaoVisao;
+    [SerializeField] private AviaoAtaque  aviaoAtaque;
 
-    // Adicione os próximos aqui:
-    // [SerializeField] private AviaoVisao  aviaoVisao;
-
-    [Header("Voo")]
-    [Tooltip("Altura acima do terrain para considerar decolagem concluída")]
-    [SerializeField] private float alturaSegura = 25f;
+    [Header("Transição Voo → Patrulha")]
+    [Tooltip("Altura acima do terrain (metros) para desligar AviaoVoo e ligar AviaoVisao + AviaoAtaque")]
+    [SerializeField] private float alturaTransicaoPatrulha = 100f;
 
     [Header("Estado — somente leitura")]
     [SerializeField] private Fase  faseAtual;
@@ -55,9 +60,11 @@ public class AviaoControler : MonoBehaviour
     // PROPRIEDADES PÚBLICAS
     // =====================================================================
 
-    public Fase    FaseAtual      => faseAtual;
-    public AviaoVoo Voo           => aviaoVoo;
-    public bool    Operacional    => faseAtual == Fase.Voo; // expanda conforme as fases crescerem
+    public Fase       FaseAtual          => faseAtual;
+    public float      AlturaAcimaTerrain => alturaAcimaTerrain;
+    public AviaoVisao Visao              => aviaoVisao;
+    public AviaoAtaque Ataque            => aviaoAtaque;
+    public bool       EmPatrulha         => faseAtual == Fase.Patrulha;
 
     // =====================================================================
     // AWAKE — desativa tudo antes de qualquer outro script rodar
@@ -65,12 +72,22 @@ public class AviaoControler : MonoBehaviour
 
     private void Awake()
     {
+        // Auto-referências
+        if (aviaoGaragem == null) aviaoGaragem = GetComponent<AviaoGaragem>();
+        if (aviaoVoo     == null) aviaoVoo     = GetComponent<AviaoVoo>();
+        if (aviaoVisao   == null) aviaoVisao   = GetComponent<AviaoVisao>();
+        if (aviaoAtaque  == null) aviaoAtaque  = GetComponent<AviaoAtaque>();
+
         terrainRef = Terrain.activeTerrain;
+
+        // CRÍTICO: desativa TUDO antes de qualquer Update rodar.
+        // Isso garante que Garagem, Voo, Visao e Ataque não executam
+        // código ao mesmo tempo e causam o comportamento errático.
         DesativarTudo();
     }
 
     // =====================================================================
-    // START — inicia a primeira fase
+    // START — inicia a primeira fase após o Awake de todos os scripts
     // =====================================================================
 
     private void Start()
@@ -79,7 +96,7 @@ public class AviaoControler : MonoBehaviour
     }
 
     // =====================================================================
-    // UPDATE
+    // UPDATE — monitora transições entre fases
     // =====================================================================
 
     private void Update()
@@ -99,19 +116,29 @@ public class AviaoControler : MonoBehaviour
 
         switch (fase)
         {
+            // ── GARAGEM ───────────────────────────────────────────────────
             case Fase.Garagem:
-                if (aviaoGaragem != null) aviaoGaragem.enabled = true;
+                if (aviaoGaragem != null)
+                    aviaoGaragem.enabled = true;
                 break;
 
+            // ── VOO ───────────────────────────────────────────────────────
             case Fase.Voo:
-                if (aviaoVoo != null) aviaoVoo.enabled = true;
+                if (aviaoVoo != null)
+                    aviaoVoo.enabled = true;
                 break;
 
-            // Adicione os próximos cases aqui:
-            // case Fase.Patrulha:
-            //     if (aviaoVisao != null) aviaoVisao.enabled = true;
-            //     break;
+            // ── PATRULHA ─────────────────────────────────────────────────
+            // AviaoVoo fica DESLIGADO — AviaoVisao assume o movimento.
+            // AviaoAtaque é ativado JUNTO: fica em standby até AviaoVisao
+            // detectar um inimigo e AviaoAtaque confirmar mira alinhada.
+            case Fase.Patrulha:
+                if (aviaoVisao  != null) aviaoVisao.enabled  = true;
+                if (aviaoAtaque != null) aviaoAtaque.enabled = true;
+                break;
         }
+
+        Debug.Log($"[AviaoControler] {gameObject.name} → Fase: {fase}", this);
     }
 
     // =====================================================================
@@ -122,23 +149,26 @@ public class AviaoControler : MonoBehaviour
     {
         switch (faseAtual)
         {
+            // Garagem se desabilita sozinho quando conclui → inicia Voo
             case Fase.Garagem:
-                // AviaoGaragem se desabilita sozinho ao terminar
-                if (aviaoGaragem != null && !aviaoGaragem.enabled)
+                if (aviaoGaragem == null || !aviaoGaragem.enabled)
                     IniciarFase(Fase.Voo);
                 break;
 
+            // Avião atingiu altitude de transição em estado EmVoo → inicia Patrulha
             case Fase.Voo:
-                // Aguarda o avião estar no ar e acima da altitude segura
                 if (aviaoVoo != null
                     && aviaoVoo.EstadoAtual == AviaoVoo.EstadoVoo.EmVoo
-                    && alturaAcimaTerrain >= alturaSegura)
+                    && alturaAcimaTerrain  >= alturaTransicaoPatrulha)
                 {
-                    // IniciarFase(Fase.Patrulha); // próxima fase quando existir
+                    IniciarFase(Fase.Patrulha);
                 }
                 break;
 
-            // Adicione os próximos cases aqui
+            // Na Patrulha o AviaoVisao e o AviaoAtaque gerenciam tudo.
+            // Sem transição automática a partir daqui.
+            case Fase.Patrulha:
+                break;
         }
     }
 
@@ -150,9 +180,8 @@ public class AviaoControler : MonoBehaviour
     {
         if (aviaoGaragem != null) aviaoGaragem.enabled = false;
         if (aviaoVoo     != null) aviaoVoo.enabled     = false;
-
-        // Adicione os próximos componentes aqui:
-        // if (aviaoVisao != null) aviaoVisao.enabled = false;
+        if (aviaoVisao   != null) aviaoVisao.enabled   = false;
+        if (aviaoAtaque  != null) aviaoAtaque.enabled  = false;
     }
 
     // =====================================================================
@@ -161,15 +190,19 @@ public class AviaoControler : MonoBehaviour
 
     private void AtualizarAltura()
     {
-        if (aviaoVoo != null && aviaoVoo.enabled)
+        // Durante o Voo usa AviaoVoo diretamente (mais preciso)
+        if (faseAtual == Fase.Voo && aviaoVoo != null && aviaoVoo.enabled)
         {
             alturaAcimaTerrain = aviaoVoo.AlturaAcimaTerrain;
             return;
         }
 
-        // Fallback por raycast quando AviaoVoo não está ativo
+        // Fallback: raycast com tag "Terrain"
         if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, 800f))
-            alturaAcimaTerrain = transform.position.y - hit.point.y;
+        {
+            if (hit.collider.CompareTag("Terrain"))
+                alturaAcimaTerrain = transform.position.y - hit.point.y;
+        }
     }
 
     // =====================================================================
@@ -178,15 +211,16 @@ public class AviaoControler : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (!Application.isPlaying || terrainRef == null) return;
+        if (terrainRef == null) return;
 
-        float alturaTerrain = terrainRef.SampleHeight(transform.position)
-                            + terrainRef.transform.position.y;
-        float yLinha = alturaTerrain + alturaSegura;
-        Vector3 p    = transform.position;
+        float   hTerrain = terrainRef.SampleHeight(transform.position)
+                         + terrainRef.transform.position.y;
+        float   yLinha   = hTerrain + alturaTransicaoPatrulha;
+        Vector3 p        = transform.position;
 
-        Gizmos.color = faseAtual == Fase.Voo ? Color.green : Color.yellow;
-        Gizmos.DrawLine(new Vector3(p.x - 15f, yLinha, p.z),
-                        new Vector3(p.x + 15f, yLinha, p.z));
+        // Linha horizontal indicando a altitude de transição
+        Gizmos.color = faseAtual == Fase.Patrulha ? Color.green : Color.yellow;
+        Gizmos.DrawLine(new Vector3(p.x - 20f, yLinha, p.z),
+                        new Vector3(p.x + 20f, yLinha, p.z));
     }
 }

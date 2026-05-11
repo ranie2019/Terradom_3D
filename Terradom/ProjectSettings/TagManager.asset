@@ -16,6 +16,9 @@ TagManager:
   - Bala
   - Espada
   - Missel
+  - espada azul
+  - espada vermelho
+  - PontoDecolagem
   layers:
   - Default
   - TransparentFX
