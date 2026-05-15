@@ -157,6 +157,23 @@ public class AviaoVisao : MonoBehaviour
     public bool           EmAtaque           => estadoAtual == EstadoVisao.EmAtaque;
     public Vector3        PontoNavegacaoAtual => wpAtual;
 
+    /// <summary>
+    /// Ângulo em graus entre o nariz do avião (origemVisao.forward) e a direção ao alvo atual.
+    /// Retorna 180f quando não há alvo.
+    /// Usado pelo AviaoAtaque para só disparar quando o nariz estiver apontado para o inimigo.
+    /// </summary>
+    public float AnguloParaAlvo
+    {
+        get
+        {
+            if (alvoAtual == null) return 180f;
+            Vector3 forward = origemVisao != null ? origemVisao.forward : transform.forward;
+            Vector3 origem  = origemVisao != null ? origemVisao.position : transform.position;
+            Vector3 dir     = (alvoAtual.position - origem).normalized;
+            return Vector3.Angle(forward, dir);
+        }
+    }
+
     // =====================================================================
     // AWAKE
     // =====================================================================

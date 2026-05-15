@@ -1,0 +1,261 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4840641413619857205
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1118707593915796884}
+  - component: {fileID: 1020839755389479990}
+  m_Layer: 9
+  m_Name: 5
+  m_TagString: Missel
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1118707593915796884
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4840641413619857205}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 507.8801, y: 80.77419, z: -32.7564}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 212032297877582260}
+  - {fileID: 3388800649207699669}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1020839755389479990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4840641413619857205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba7b537c7ba32c44aa5a07415e98d234, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Missel
+  velocidade: 150
+  aceleracao: 50
+  velocidadeMaxima: 300
+  taxaCurvaGrausPorSeg: 70
+  tempoDeVida: 10
+  dano: 50
+  destruirMesmoSemDano: 1
+  tagsQueRecebemDano:
+  - Vermelho
+  - Azul
+  aplicarDanoEmBaseVida: 1
+  baseVidaIgnoraTagDoAlvo: 1
+  forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
+  aplicarDanoEmVida: 1
+  aplicarDanoPorMetodos: 1
+  camadasDeImpacto:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  detectarTriggers: 0
+  raioDeteccao: 0.4
+  margemDeteccao: 0.1
+  prefabExplosao: {fileID: 100010, guid: e0609132424a24844b1d53ad3d704fd9, type: 3}
+  efeitoSomenteNoImpacto: 0
+  alinharExplosaoComNormal: 0
+  tempoParaDestruirExplosao: 4
+  spawnRastro: {fileID: 3388800649207699669}
+  rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
+  tempoRastroAposDestruir: 3
+--- !u!1 &7575142829795365453
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3388800649207699669}
+  m_Layer: 9
+  m_Name: Smoke (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3388800649207699669
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7575142829795365453}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -4.357881e-33, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -119.4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1118707593915796884}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7834380984932983121
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 212032297877582260}
+  - component: {fileID: 5010057225610049160}
+  - component: {fileID: 2050911453409879474}
+  - component: {fileID: 4132636182037826275}
+  - component: {fileID: 7960703288576461374}
+  m_Layer: 9
+  m_Name: missil_mid_3
+  m_TagString: Missel
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &212032297877582260
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7834380984932983121}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: -3.6556554e-26, z: 3.6556554e-26, w: 0.7071068}
+  m_LocalPosition: {x: -0.000030517578, y: 0, z: -0.00017547609}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1118707593915796884}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &5010057225610049160
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7834380984932983121}
+  m_Mesh: {fileID: -2507425251197644035, guid: 41c64cadaabf4674aa43006707dcf44f, type: 3}
+--- !u!23 &2050911453409879474
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7834380984932983121}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 69b6d5bc175e9544db4413f5ab40fccc, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &4132636182037826275
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7834380984932983121}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -2507425251197644035, guid: 41c64cadaabf4674aa43006707dcf44f, type: 3}
+--- !u!114 &7960703288576461374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7834380984932983121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba7b537c7ba32c44aa5a07415e98d234, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Missel
+  velocidade: 1
+  aceleracao: 20
+  velocidadeMaxima: 80
+  taxaCurvaGrausPorSeg: 70
+  tempoDeVida: 8
+  dano: 50
+  destruirMesmoSemDano: 1
+  tagsQueRecebemDano:
+  - Vermelho
+  - Azul
+  aplicarDanoEmBaseVida: 1
+  baseVidaIgnoraTagDoAlvo: 1
+  forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
+  aplicarDanoEmVida: 1
+  aplicarDanoPorMetodos: 1
+  camadasDeImpacto:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  detectarTriggers: 0
+  raioDeteccao: 0.4
+  margemDeteccao: 0.1
+  prefabExplosao: {fileID: 100010, guid: e0609132424a24844b1d53ad3d704fd9, type: 3}
+  efeitoSomenteNoImpacto: 0
+  alinharExplosaoComNormal: 0
+  tempoParaDestruirExplosao: 4
+  spawnRastro: {fileID: 0}
+  rastroFumaca: {fileID: 0}
+  tempoRastroAposDestruir: 3

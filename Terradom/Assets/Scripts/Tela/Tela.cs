@@ -20,6 +20,12 @@ public class Tela : MonoBehaviour
     public float limiteMinZ = -60f;
     public float limiteMaxZ = 60f;
 
+    [Header("Posição Inicial")]
+    [Tooltip("Posição em que a câmera estará ao dar Play. Deixe (0,0,0) para manter a posição atual do objeto na cena.")]
+    [SerializeField] private Vector3 posicaoInicial = Vector3.zero;
+    [Tooltip("Se marcado, aplica a posicaoInicial ao dar Play. Desmarque para manter a posição definida no Editor.")]
+    [SerializeField] private bool aplicarPosicaoInicial = true;
+
     [Header("Canvas")]
     [SerializeField] private Canvas canvasUI;
 
@@ -30,6 +36,9 @@ public class Tela : MonoBehaviour
         cam = GetComponent<Camera>();
         ConfigurarCanvas();
         CorrigirLimitesInvertidos();
+
+        if (aplicarPosicaoInicial)
+            transform.position = posicaoInicial;
     }
 
     private void Update()
@@ -42,7 +51,6 @@ public class Tela : MonoBehaviour
     {
         if (canvasUI == null || cam == null)
             return;
-
         if (canvasUI.renderMode == RenderMode.ScreenSpaceCamera)
             canvasUI.worldCamera = cam;
     }
@@ -51,10 +59,8 @@ public class Tela : MonoBehaviour
     {
         if (limiteMinX > limiteMaxX)
             Trocar(ref limiteMinX, ref limiteMaxX);
-
         if (limiteMinZ > limiteMaxZ)
             Trocar(ref limiteMinZ, ref limiteMaxZ);
-
         if (limiteAproximacaoY > limiteAfastamentoY)
             Trocar(ref limiteAproximacaoY, ref limiteAfastamentoY);
     }
@@ -63,36 +69,26 @@ public class Tela : MonoBehaviour
     {
         if (Keyboard.current == null)
             return;
-
         Vector3 direcao = ObterDirecaoTeclado();
-
         if (direcao.sqrMagnitude < 0.0001f)
             return;
-
         direcao.Normalize();
-
         Vector3 novaPos = transform.position + direcao * velocidadeMovimento * Time.deltaTime;
         novaPos = AplicarLimitesXZ(novaPos);
-
         transform.position = novaPos;
     }
 
     private Vector3 ObterDirecaoTeclado()
     {
         Vector3 direcao = Vector3.zero;
-
         if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed)
             direcao.z += 1f;
-
         if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed)
             direcao.z -= 1f;
-
         if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed)
             direcao.x += 1f;
-
         if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
             direcao.x -= 1f;
-
         return direcao;
     }
 
@@ -100,17 +96,12 @@ public class Tela : MonoBehaviour
     {
         if (Mouse.current == null)
             return;
-
         float scroll = Mouse.current.scroll.ReadValue().y;
-
         if (Mathf.Abs(scroll) < 0.01f)
             return;
-
         Vector3 novaPos = transform.position;
-
         novaPos.y -= scroll * velocidadeZoom * Time.deltaTime;
         novaPos.y = Mathf.Clamp(novaPos.y, limiteAproximacaoY, limiteAfastamentoY);
-
         transform.position = novaPos;
     }
 
@@ -118,10 +109,8 @@ public class Tela : MonoBehaviour
     {
         if (!usarLimites)
             return pos;
-
         pos.x = Mathf.Clamp(pos.x, limiteMinX, limiteMaxX);
         pos.z = Mathf.Clamp(pos.z, limiteMinZ, limiteMaxZ);
-
         return pos;
     }
 

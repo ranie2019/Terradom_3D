@@ -248,6 +248,10 @@ MonoBehaviour:
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
   aplicarDanoEmVida: 1
   aplicarDanoPorMetodos: 1
+  prefabEfeitoImpacto: {fileID: 100002, guid: fc7f8379080d0a844ad699b91bfd56f0, type: 3}
+  tocarEfeitoSomenteNoImpacto: 1
+  alinharEfeitoComNormal: 1
+  tempoParaDestruirEfeito: 3
 --- !u!65 &2252570494790206988
 BoxCollider:
   m_ObjectHideFlags: 0

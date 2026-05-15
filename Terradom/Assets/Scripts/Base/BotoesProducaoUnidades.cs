@@ -151,9 +151,9 @@ public class BotoesProducaoUnidades : MonoBehaviour
             return;
         }
 
-        bool baseSoldados = EhBaseDeSoldados(spawn);
-        bool baseVeiculos = EhBaseDeVeiculos(spawn);
-        bool baseAerea = EhBaseAerea(spawn);
+        bool baseAerea    = EhBaseAerea(spawn);
+        bool baseVeiculos = !baseAerea && EhBaseDeVeiculos(spawn);
+        bool baseSoldados = !baseAerea && !baseVeiculos;
 
         AtualizarBotaoProducao(
             botaoGuerreiro,

@@ -1,4 +1,4 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 [DisallowMultipleComponent]
@@ -16,6 +16,7 @@ public class BaseAreaIA : MonoBehaviour
     [SerializeField] private GameObject prefabBaseTank;
     [SerializeField] private GameObject prefabBaseAviao;
     [SerializeField] private GameObject prefabTorreTerra;
+    [SerializeField] private GameObject prefabTorreAr;
 
     [Header("Área de Spawn")]
     [SerializeField] private float raioSpawn = 30f;
@@ -53,7 +54,7 @@ public class BaseAreaIA : MonoBehaviour
 
     // =========================================================
     // PUBLICO
-    // 0 = Soldado | 1 = Tank | 2 = Aviao | 3 = Torre Terra
+    // 0 = Soldado | 1 = Tank | 2 = Aviao | 3 = Torre Terra | 4 = Torre Ar
     // =========================================================
 
     public bool TentarCriarBasePorIndice(int indice)
@@ -64,6 +65,7 @@ public class BaseAreaIA : MonoBehaviour
             case 1: return TentarCriarBaseTank();
             case 2: return TentarCriarBaseAviao();
             case 3: return TentarCriarTorreTerra();
+            case 4: return TentarCriarTorreAr();
         }
         return false;
     }
@@ -94,6 +96,13 @@ public class BaseAreaIA : MonoBehaviour
         return CriarBase(prefabTorreTerra, "TorreTerra",
             () => GameControllerRecursosIA.Instance.PodeCriarTorreTerra(),
             () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreTerra());
+    }
+
+    public bool TentarCriarTorreAr()
+    {
+        return CriarBase(prefabTorreAr, "TorreAr",
+            () => GameControllerRecursosIA.Instance.PodeCriarTorreAr(),
+            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreAr());
     }
 
     // =========================================================
@@ -232,7 +241,8 @@ public class BaseAreaIA : MonoBehaviour
             if (layer == LayerMask.NameToLayer("BaseSoldado") ||
                 layer == LayerMask.NameToLayer("BaseTank")    ||
                 layer == LayerMask.NameToLayer("BaseAviao")   ||
-                layer == LayerMask.NameToLayer("TorreTerra"))
+                layer == LayerMask.NameToLayer("TorreTerra") ||
+                layer == LayerMask.NameToLayer("TorreAr"))
                 return false;
         }
 
@@ -259,6 +269,7 @@ public class BaseAreaIA : MonoBehaviour
 
     // =========================================================
     // CONSULTAS
+    // 0 = Soldado | 1 = Tank | 2 = Aviao | 3 = Torre Terra | 4 = Torre Ar
     // =========================================================
 
     public int ContarBasesPorIndice(int indice)
@@ -304,6 +315,7 @@ public class BaseAreaIA : MonoBehaviour
             case 1: return "BaseTank";
             case 2: return "BaseAviao";
             case 3: return "TorreTerra";
+            case 4: return "TorreAr";
             default: return "";
         }
     }

@@ -31,11 +31,22 @@ public class ProjetilDistancia : MonoBehaviour
     [SerializeField] private bool aplicarDanoEmVida = true;
     [SerializeField] private bool aplicarDanoPorMetodos = true;
 
+    [Header("Efeito ao ser destruido")]
+    [SerializeField] private GameObject prefabEfeitoImpacto;
+    [SerializeField] private bool tocarEfeitoSomenteNoImpacto = true;   // false = toca também ao expirar por tempo
+    [SerializeField] private bool alinharEfeitoComNormal = true;        // rotaciona o efeito com a normal da superficie
+    [SerializeField] private float tempoParaDestruirEfeito = 3f;        // 0 = não destrói automaticamente
+
     private Transform alvo;
     private Rigidbody rb;
     private Vector3 direcaoInicial;
     private bool jaColidiu;
     private bool direcaoDefinida;
+
+    // Guarda a posição e normal do último impacto para usar no OnDestroy
+    private Vector3 posicaoImpacto;
+    private Vector3 normalImpacto;
+    private bool houveImpacto;
 
     public void Configurar(Transform novoAlvo, int novoDano, float novaVelocidade)
     {
@@ -59,6 +70,9 @@ public class ProjetilDistancia : MonoBehaviour
 
         if (direcaoInicial.sqrMagnitude < 0.001f)
             direcaoInicial = transform.forward.normalized;
+
+        // Inicializa normal padrão (contrária à direção do projétil)
+        normalImpacto = -direcaoInicial;
 
         Destroy(gameObject, tempoDeVida);
     }
@@ -125,12 +139,17 @@ public class ProjetilDistancia : MonoBehaviour
 
         if (TentarDetectarImpacto(origem, direcao, distanciaMovimento, out RaycastHit hit))
         {
-            Vector3 posicaoImpacto = hit.point;
+            Vector3 pontoImpacto = hit.point;
 
-            if (posicaoImpacto == Vector3.zero)
-                posicaoImpacto = origem + direcao * hit.distance;
+            if (pontoImpacto == Vector3.zero)
+                pontoImpacto = origem + direcao * hit.distance;
 
-            transform.position = posicaoImpacto;
+            // Salva dados do impacto para o OnDestroy
+            posicaoImpacto = pontoImpacto;
+            normalImpacto  = hit.normal.sqrMagnitude > 0.001f ? hit.normal : -direcao;
+            houveImpacto   = true;
+
+            transform.position = pontoImpacto;
             ColidiuComCollider(hit.collider);
             return;
         }
@@ -208,6 +227,14 @@ public class ProjetilDistancia : MonoBehaviour
         if (collision == null || collision.collider == null)
             return;
 
+        // Captura a normal do contato físico
+        if (collision.contactCount > 0)
+        {
+            posicaoImpacto = collision.contacts[0].point;
+            normalImpacto  = collision.contacts[0].normal;
+            houveImpacto   = true;
+        }
+
         ColidiuComCollider(collision.collider);
     }
 
@@ -252,6 +279,39 @@ public class ProjetilDistancia : MonoBehaviour
         else
             jaColidiu = false;
     }
+
+    // =====================================================================
+    // EFEITO AO SER DESTRUIDO
+    // =====================================================================
+
+    private void OnDestroy()
+    {
+        // Se só toca no impacto e não houve impacto (expirou por tempo), ignora
+        if (tocarEfeitoSomenteNoImpacto && !houveImpacto)
+            return;
+
+        SpawnarEfeito();
+    }
+
+    private void SpawnarEfeito()
+    {
+        if (prefabEfeitoImpacto == null)
+            return;
+
+        Vector3 posicao = houveImpacto ? posicaoImpacto : transform.position;
+
+        Quaternion rotacao = Quaternion.identity;
+
+        if (alinharEfeitoComNormal && normalImpacto.sqrMagnitude > 0.001f)
+            rotacao = Quaternion.LookRotation(normalImpacto, Vector3.up);
+
+        GameObject efeito = Instantiate(prefabEfeitoImpacto, posicao, rotacao);
+
+        if (tempoParaDestruirEfeito > 0f)
+            Destroy(efeito, tempoParaDestruirEfeito);
+    }
+
+    // =====================================================================
 
     private bool TentarAplicarDano(Transform transformAtingido)
     {
@@ -456,5 +516,6 @@ public class ProjetilDistancia : MonoBehaviour
         tempoDeVida = Mathf.Max(0.05f, tempoDeVida);
         raioDeteccaoImpacto = Mathf.Max(0.01f, raioDeteccaoImpacto);
         margemDeteccaoImpacto = Mathf.Max(0f, margemDeteccaoImpacto);
+        tempoParaDestruirEfeito = Mathf.Max(0f, tempoParaDestruirEfeito);
     }
 }

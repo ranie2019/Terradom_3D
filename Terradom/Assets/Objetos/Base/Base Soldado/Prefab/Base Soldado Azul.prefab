@@ -454,15 +454,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -58.89909
+      value: -86.94021
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.00003673867
+      value: -0.00002702702
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 141.68982
+      value: -379.45013
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -675,7 +675,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 70
+  raioArea: 100
   tagBase: Azul
   mostrarArea: 1
   corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}

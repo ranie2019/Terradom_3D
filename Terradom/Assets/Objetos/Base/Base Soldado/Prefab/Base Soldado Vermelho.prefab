@@ -338,6 +338,7 @@ MonoBehaviour:
   - Azul
   - Bala
   - Espada
+  - Missel
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 1
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1

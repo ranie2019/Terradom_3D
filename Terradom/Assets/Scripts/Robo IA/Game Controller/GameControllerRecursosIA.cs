@@ -30,6 +30,11 @@ public class GameControllerRecursosIA : MonoBehaviour
     [SerializeField] private int custoMadeiraTorreTerra = 120;
     [SerializeField] private int custoMetalTorreTerra = 120;
 
+    [Header("Custo Torre Ar")]
+    [SerializeField] private int custoPedraTorreAr  = 200;
+    [SerializeField] private int custoMadeiraTorreAr = 200;
+    [SerializeField] private int custoMetalTorreAr   = 200;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -101,8 +106,19 @@ public class GameControllerRecursosIA : MonoBehaviour
     public int GetCustoMetalTorreTerra()   => custoMetalTorreTerra;
 
     // =========================================================
+    // TORRE AR
+    // =========================================================
+
+    public bool PodeCriarTorreAr() => TemRecursos(custoPedraTorreAr, custoMadeiraTorreAr, custoMetalTorreAr);
+    public bool TentarGastarRecursosDaTorreAr() => TentarGastarRecursos(custoPedraTorreAr, custoMadeiraTorreAr, custoMetalTorreAr);
+
+    public int GetCustoPedraTorreAr()   => custoPedraTorreAr;
+    public int GetCustoMadeiraTorreAr() => custoMadeiraTorreAr;
+    public int GetCustoMetalTorreAr()   => custoMetalTorreAr;
+
+    // =========================================================
     // INDICE
-    // 0 = Soldado | 1 = Veiculo | 2 = Aviao | 3 = Torre Terra
+    // 0 = Soldado | 1 = Veiculo | 2 = Aviao | 3 = Torre Terra | 4 = Torre Ar
     // =========================================================
 
     public bool PodeCriarBasePorIndice(int indice)
@@ -111,6 +127,7 @@ public class GameControllerRecursosIA : MonoBehaviour
         if (indice == 1) return PodeCriarBaseVeiculo();
         if (indice == 2) return PodeCriarBaseAviao();
         if (indice == 3) return PodeCriarTorreTerra();
+        if (indice == 4) return PodeCriarTorreAr();
         return false;
     }
 
@@ -120,6 +137,7 @@ public class GameControllerRecursosIA : MonoBehaviour
         if (indice == 1) return TentarGastarRecursosDaBaseVeiculo();
         if (indice == 2) return TentarGastarRecursosDaBaseAviao();
         if (indice == 3) return TentarGastarRecursosDaTorreTerra();
+        if (indice == 4) return TentarGastarRecursosDaTorreAr();
         return false;
     }
 
@@ -140,5 +158,9 @@ public class GameControllerRecursosIA : MonoBehaviour
         custoPedraTorreTerra   = Mathf.Max(0, custoPedraTorreTerra);
         custoMadeiraTorreTerra = Mathf.Max(0, custoMadeiraTorreTerra);
         custoMetalTorreTerra   = Mathf.Max(0, custoMetalTorreTerra);
+
+        custoPedraTorreAr  = Mathf.Max(0, custoPedraTorreAr);
+        custoMadeiraTorreAr = Mathf.Max(0, custoMadeiraTorreAr);
+        custoMetalTorreAr   = Mathf.Max(0, custoMetalTorreAr);
     }
 }

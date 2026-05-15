@@ -1586,7 +1586,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f5da760e63b1c142abc29bc9f2f9b4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankLeve
-  velocidadeFrente: 10
+  velocidadeFrente: 20
   aceleracao: 15
   distanciaEntreEixos: 2.5
   anguloMaximoDirecao: 32
@@ -1625,12 +1625,12 @@ MonoBehaviour:
     m_Bits: 4294967295
   detectarTriggers: 0
   distanciaSensorFrontal: 10
-  raioSensorFrontal: 2.03
-  alturaSensor: 0
-  offsetFrenteSensor: 1.76
-  anguloSensoresLaterais: 34.9
-  tempoManterDesvio: 1.56
-  tempoRetoAposDesvio: 0.9
+  raioSensorFrontal: 2
+  alturaSensor: 2.2
+  offsetFrenteSensor: 4
+  anguloSensoresLaterais: 50
+  tempoManterDesvio: 1.5
+  tempoRetoAposDesvio: 1
   reduzirVelocidadeAoDesviar: 1
   velocidadeDuranteDesvio: 2.8
   velocidadeMinimaDesvio: 1.2
@@ -1694,9 +1694,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankVisao
   origemVisao: {fileID: 8556418976620853741}
-  alturaOrigemVisao: 0
+  alturaOrigemVisao: 2
   usarVisaoTerrestre: 1
-  raioVisaoTerrestre: 40
+  raioVisaoTerrestre: 60
   tagsInimigosTerrestres:
   - Vermelho
   ignorarLayersAereasNaVisaoTerrestre: 1
@@ -1704,7 +1704,7 @@ MonoBehaviour:
   raioVisaoAerea: 300
   layersAvioesInimigos:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   aviaoTambemPrecisaTerTag: 1
   tagsInimigosAereos:
   - Vermelho
@@ -1734,17 +1734,35 @@ MonoBehaviour:
   anguloMaximoZ: 45
   velocidadeGiroZ: 120
   inverterElevacaoZ: 0
-  atacarAutomaticamente: 1
   atacarAlvoTerrestre: 1
-  atacarAlvoAereo: 1
+  atacarAutomaticamente: 1
   prefabBala: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
   intervaloEntreTiros: 0.5
   velocidadeBala: 80
   tempoVidaBala: 10
   toleranciaMiraParaAtirar: 6
   alturaExtraMiraAlvo: 0.2
+  miraAereaGiroY360: {fileID: 7824499784419276503}
+  miraAereaElevacaoZ: {fileID: 691902807334229308}
+  spawnBalaAerea: {fileID: 8781663301846283919}
+  eixoFrenteDaMiraAerea: 0
+  velocidadeGiroYAerea: 270
+  anguloMinimoZAerea: 10
+  anguloMaximoZAerea: 85
+  velocidadeGiroZAerea: 200
+  inverterElevacaoZAerea: 0
+  atacarAlvoAereo: 1
+  atacarAutomaticamenteAerea: 1
+  prefabBalaAerea: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
+  intervaloEntreTirosAerea: 0.4
+  velocidadeBalaAerea: 45
+  tempoVidaBalaAerea: 6
+  toleranciaMiraParaAtirarAerea: 10
+  alturaExtraMiraAlvoAerea: 0
   centralizarMiraSemAlvo: 1
   velocidadeCentralizarSemAlvo: 90
+  centralizarMiraAereaSemAlvo: 1
+  velocidadeCentralizarAereaSemAlvo: 120
   desenharLinhaMiraNoEditor: 1
 --- !u!114 &8610520208465946372
 MonoBehaviour:
@@ -1762,7 +1780,7 @@ MonoBehaviour:
   vidaAtual: 25
   barraVidaUI: {fileID: 1985955594154041999}
   tagsQueCausanDano:
-  - 
+  - Vermelho
   cooldownDano: 0.25
 --- !u!1 &5198013775936986468
 GameObject:
@@ -2228,7 +2246,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7152569832035814246}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.025186395, z: -0, w: 0.99968284}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 5.0715203, y: 9.692541, z: 2.779945}
   m_LocalScale: {x: 1, y: 1, z: 1.0000001}
   m_ConstrainProportionsScale: 0
@@ -2239,7 +2257,7 @@ Transform:
   - {fileID: 364323560044538992}
   - {fileID: 7773702090806362802}
   m_Father: {fileID: 8556418976620853741}
-  m_LocalEulerAnglesHint: {x: 0, y: 2.886, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7499783140827583448
 MeshFilter:
   m_ObjectHideFlags: 0

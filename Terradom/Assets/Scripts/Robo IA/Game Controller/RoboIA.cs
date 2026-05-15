@@ -10,37 +10,48 @@ public class RoboIA : MonoBehaviour
 
     [Header("Base Soldado")]
     [SerializeField] private float tempoBaseSoldado = 120f;
-    [SerializeField] private int maxBaseSoldado = 10;
+    [SerializeField] private int   maxBaseSoldado   = 10;
     [SerializeField] private float timerBaseSoldado;
 
     [Header("Base Tank")]
     [SerializeField] private float tempoBaseTank = 120f;
-    [SerializeField] private int maxBaseTank = 10;
+    [SerializeField] private int   maxBaseTank   = 10;
     [SerializeField] private float timerBaseTank;
+
+    [Header("Base Avião")]
+    [SerializeField] private float tempoBaseAviao = 150f;
+    [SerializeField] private int   maxBaseAviao   = 5;
+    [SerializeField] private float timerBaseAviao;
 
     [Header("Torre Terra")]
     [SerializeField] private float tempoTorreTerra = 90f;
-    [SerializeField] private int maxTorreTerra = 5;
+    [SerializeField] private int   maxTorreTerra   = 5;
     [SerializeField] private float timerTorreTerra;
+
+    [Header("Torre Ar")]
+    [SerializeField] private float tempoTorreAr = 90f;
+    [SerializeField] private int   maxTorreAr   = 5;
+    [SerializeField] private float timerTorreAr;
 
     private float proximoUpdate;
 
     private int quantidadeBaseSoldado;
     private int quantidadeBaseTank;
+    private int quantidadeBaseAviao;
     private int quantidadeTorreTerra;
+    private int quantidadeTorreAr;
 
+    // etapaUnidade: 0=Coletor 1=Soldado 2=Guerreiro 3=Tank 4=F-16
     private int etapaUnidade = 0;
+    private const int TOTAL_ETAPAS = 5;
 
-    private const int INDICE_BASE_SOLDADO = 0;
-    private const int INDICE_BASE_TANK    = 1;
-    private const int INDICE_TORRE_TERRA  = 3;
-
-    private enum TipoBaseAtual { Nenhuma, Soldado, Tank, TorreTerra }
-    private TipoBaseAtual baseAtual = TipoBaseAtual.Soldado;
-    private bool aguardandoBase = false;
+    private enum TipoBaseAtual { Nenhuma, Soldado, Tank, Aviao, TorreTerra, TorreAr }
+    private TipoBaseAtual baseAtual      = TipoBaseAtual.Soldado;
+    private bool          aguardandoBase = false;
 
     private int indiceBaseSoldadoAtual = 0;
     private int indiceBaseTankAtual    = 0;
+    private int indiceBaseAviaoAtual   = 0;
 
     private void Start()
     {
@@ -54,7 +65,9 @@ public class RoboIA : MonoBehaviour
 
         timerBaseSoldado = tempoBaseSoldado;
         timerBaseTank    = tempoBaseTank;
+        timerBaseAviao   = tempoBaseAviao;
         timerTorreTerra  = tempoTorreTerra;
+        timerTorreAr     = tempoTorreAr;
 
         Debug.Log("=== ROBO IA INICIADO ===");
     }
@@ -77,22 +90,24 @@ public class RoboIA : MonoBehaviour
 
     private void AtualizarBases()
     {
-        // Lê quantidade real da cena a cada tick
         quantidadeBaseSoldado = roboCriar.ContarBaseSoldado();
         quantidadeBaseTank    = roboCriar.ContarBaseTank();
+        quantidadeBaseAviao   = roboCriar.ContarBaseAviao();
         quantidadeTorreTerra  = roboCriar.ContarTorreTerra();
+        quantidadeTorreAr     = roboCriar.ContarTorreAr();
 
         // Define próxima base se nenhuma em andamento
         if (baseAtual == TipoBaseAtual.Nenhuma)
         {
             if      (quantidadeBaseSoldado < maxBaseSoldado) baseAtual = TipoBaseAtual.Soldado;
             else if (quantidadeBaseTank    < maxBaseTank)    baseAtual = TipoBaseAtual.Tank;
+            else if (quantidadeBaseAviao   < maxBaseAviao)   baseAtual = TipoBaseAtual.Aviao;
             else if (quantidadeTorreTerra  < maxTorreTerra)  baseAtual = TipoBaseAtual.TorreTerra;
+            else if (quantidadeTorreAr     < maxTorreAr)     baseAtual = TipoBaseAtual.TorreAr;
         }
 
         if (baseAtual == TipoBaseAtual.Soldado)
         {
-            // Já no máximo — passa pra próxima sem pausar unidades
             if (quantidadeBaseSoldado >= maxBaseSoldado)
             {
                 baseAtual      = TipoBaseAtual.Tank;
@@ -108,7 +123,6 @@ public class RoboIA : MonoBehaviour
 
                 if (roboCriar.CriarBaseSoldado())
                 {
-                    // Criou com sucesso — reinicia timer, avança tipo, libera unidades
                     timerBaseSoldado = tempoBaseSoldado;
                     baseAtual        = TipoBaseAtual.Tank;
                     aguardandoBase   = false;
@@ -119,7 +133,7 @@ public class RoboIA : MonoBehaviour
         {
             if (quantidadeBaseTank >= maxBaseTank)
             {
-                baseAtual      = TipoBaseAtual.TorreTerra;
+                baseAtual      = TipoBaseAtual.Aviao;
                 aguardandoBase = false;
                 return;
             }
@@ -133,6 +147,29 @@ public class RoboIA : MonoBehaviour
                 if (roboCriar.CriarBaseTank())
                 {
                     timerBaseTank  = tempoBaseTank;
+                    baseAtual      = TipoBaseAtual.Aviao;
+                    aguardandoBase = false;
+                }
+            }
+        }
+        else if (baseAtual == TipoBaseAtual.Aviao)
+        {
+            if (quantidadeBaseAviao >= maxBaseAviao)
+            {
+                baseAtual      = TipoBaseAtual.TorreTerra;
+                aguardandoBase = false;
+                return;
+            }
+
+            TickTimer(ref timerBaseAviao);
+
+            if (timerBaseAviao <= 0f)
+            {
+                aguardandoBase = true;
+
+                if (roboCriar.CriarBaseAviao())
+                {
+                    timerBaseAviao = tempoBaseAviao;
                     baseAtual      = TipoBaseAtual.TorreTerra;
                     aguardandoBase = false;
                 }
@@ -142,7 +179,7 @@ public class RoboIA : MonoBehaviour
         {
             if (quantidadeTorreTerra >= maxTorreTerra)
             {
-                baseAtual      = TipoBaseAtual.Soldado;
+                baseAtual      = TipoBaseAtual.TorreAr;
                 aguardandoBase = false;
                 return;
             }
@@ -156,8 +193,31 @@ public class RoboIA : MonoBehaviour
                 if (roboCriar.CriarTorreTerra())
                 {
                     timerTorreTerra = tempoTorreTerra;
-                    baseAtual       = TipoBaseAtual.Soldado;
+                    baseAtual       = TipoBaseAtual.TorreAr;
                     aguardandoBase  = false;
+                }
+            }
+        }
+        else if (baseAtual == TipoBaseAtual.TorreAr)
+        {
+            if (quantidadeTorreAr >= maxTorreAr)
+            {
+                baseAtual      = TipoBaseAtual.Soldado;
+                aguardandoBase = false;
+                return;
+            }
+
+            TickTimer(ref timerTorreAr);
+
+            if (timerTorreAr <= 0f)
+            {
+                aguardandoBase = true;
+
+                if (roboCriar.CriarTorreAr())
+                {
+                    timerTorreAr   = tempoTorreAr;
+                    baseAtual      = TipoBaseAtual.Soldado;
+                    aguardandoBase = false;
                 }
             }
         }
@@ -184,12 +244,15 @@ public class RoboIA : MonoBehaviour
 
         Transform[] basesSoldado = roboCriar.ObterBasesSoldado();
         Transform[] basesTank    = roboCriar.ObterBasesTank();
+        Transform[] basesAviao   = roboCriar.ObterBasesAviao();
 
-        // Sem base tank — pula etapa tank e continua com soldado
+        // Pula etapa Tank se não há bases tank disponíveis
         if (etapaUnidade == 3 && (basesTank.Length == 0 || !roboCriar.TankSpawnDisponivel()))
-        {
+            etapaUnidade = 4;
+
+        // Pula etapa F-16 se não há bases avião disponíveis (Mesma lógica do Tank)
+        if (etapaUnidade == 4 && (basesAviao.Length == 0 || !roboCriar.AviaoSpawnDisponivel()))
             etapaUnidade = 0;
-        }
 
         switch (etapaUnidade)
         {
@@ -216,7 +279,7 @@ public class RoboIA : MonoBehaviour
 
             case 3: // Tank
             {
-                if (basesTank.Length == 0) { etapaUnidade = 0; break; }
+                if (basesTank.Length == 0) { etapaUnidade = 4; break; }
 
                 int indice      = indiceBaseTankAtual % basesTank.Length;
                 Transform base_ = basesTank[indice];
@@ -228,9 +291,24 @@ public class RoboIA : MonoBehaviour
                 if (criado) indiceBaseTankAtual++;
                 break;
             }
+
+            case 4: // F-16
+            {
+                if (basesAviao.Length == 0) { etapaUnidade = 0; break; }
+
+                int indice      = indiceBaseAviaoAtual % basesAviao.Length;
+                Transform base_ = basesAviao[indice];
+                Transform spawn = roboCriar.EncontrarPontoSpawn(base_, "Aviao");
+
+                if (roboCriar.PodeCriarF16NaBase(spawn))
+                    criado = roboCriar.CriarF16NaBase(spawn);
+
+                if (criado) indiceBaseAviaoAtual++;
+                break;
+            }
         }
 
-        if (criado) etapaUnidade = (etapaUnidade + 1) % 4;
+        if (criado) etapaUnidade = (etapaUnidade + 1) % TOTAL_ETAPAS;
     }
 
     // =========================================================
@@ -246,25 +324,40 @@ public class RoboIA : MonoBehaviour
         }
 
         GUIStyle style = new GUIStyle();
-        style.fontSize = 16;
-        style.normal.textColor = Color.green;
+        style.fontSize          = 16;
+        style.normal.textColor  = Color.green;
 
         Transform[] basesSoldado = roboCriar.ObterBasesSoldado();
         Transform[] basesTank    = roboCriar.ObterBasesTank();
+        Transform[] basesAviao   = roboCriar.ObterBasesAviao();
 
         int soldadoAtual = basesSoldado.Length > 0 ? (indiceBaseSoldadoAtual % basesSoldado.Length) + 1 : 0;
         int tankAtual    = basesTank.Length    > 0 ? (indiceBaseTankAtual    % basesTank.Length)    + 1 : 0;
+        int aviaoAtual   = basesAviao.Length   > 0 ? (indiceBaseAviaoAtual   % basesAviao.Length)   + 1 : 0;
+
+        string etapaLabel = etapaUnidade switch
+        {
+            0 => "Coletor",
+            1 => "Soldado",
+            2 => "Guerreiro",
+            3 => "Tank",
+            4 => "F-16",
+            _ => etapaUnidade.ToString()
+        };
 
         string debug = $"BASE SOLDADO:  {quantidadeBaseSoldado}/{maxBaseSoldado} | Timer: {timerBaseSoldado:F0}\n";
         debug += $"BASE TANK:     {quantidadeBaseTank}/{maxBaseTank} | Timer: {timerBaseTank:F0}\n";
+        debug += $"BASE AVIÃO:    {quantidadeBaseAviao}/{maxBaseAviao} | Timer: {timerBaseAviao:F0}\n";
         debug += $"TORRE TERRA:   {quantidadeTorreTerra}/{maxTorreTerra} | Timer: {timerTorreTerra:F0}\n";
+        debug += $"TORRE AR:      {quantidadeTorreAr}/{maxTorreAr} | Timer: {timerTorreAr:F0}\n";
         debug += $"Construindo:   {baseAtual}\n";
         debug += $"Produção:      {(aguardandoBase ? "PAUSADA" : "ATIVA")}\n";
-        debug += $"Próx. Unidade: {etapaUnidade}\n";
+        debug += $"Próx. Unidade: {etapaLabel}\n";
         debug += $"---\n";
         debug += $"Bases Soldado: {basesSoldado.Length} | Rodízio: #{soldadoAtual}\n";
-        debug += $"Bases Tank:    {basesTank.Length}    | Rodízio: #{tankAtual}";
+        debug += $"Bases Tank:    {basesTank.Length}    | Rodízio: #{tankAtual}\n";
+        debug += $"Bases Avião:   {basesAviao.Length}   | Rodízio: #{aviaoAtual}";
 
-        GUI.Label(new Rect(Screen.width - 250, 10, 500, 280), debug, style);
+        GUI.Label(new Rect(Screen.width - 270, 10, 520, 320), debug, style);
     }
 }

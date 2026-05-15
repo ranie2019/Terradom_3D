@@ -11,7 +11,8 @@ public class BaseArea : MonoBehaviour
         Soldado,
         Tank,
         Aviao,
-        TorreTerra
+        TorreTerra,
+        TorreAr
     }
 
     [Header("Limite de Construção")]
@@ -29,6 +30,9 @@ public class BaseArea : MonoBehaviour
 
     [Header("Prefab Torre Terra")]
     [SerializeField] private GameObject prefabTorreTerra;
+
+    [Header("Prefab Torre Ar")]
+    [SerializeField] private GameObject prefabTorreAr;
 
     [Header("Referencias")]
     [SerializeField] private Camera cameraPrincipal;
@@ -48,6 +52,7 @@ public class BaseArea : MonoBehaviour
     [SerializeField] private GameObject baseTankAtual;
     [SerializeField] private GameObject baseAviaoAtual;
     [SerializeField] private GameObject torreTerraAtual;
+    [SerializeField] private GameObject torreArAtual;
     [SerializeField] private bool estaPosicionando;
     [SerializeField] private bool podeConstruir;
     [SerializeField] private bool modoRotacao;
@@ -145,6 +150,19 @@ public class BaseArea : MonoBehaviour
         );
     }
 
+    public void CriarTorreArParaPosicionar()
+    {
+        if (GameControllerRecursos.Instance == null) return;
+
+        IniciarPosicionamentoDaBase(
+            TipoBaseAtual.TorreAr,
+            prefabTorreAr,
+            GameControllerRecursos.Instance.GetCustoPedraTorreAr(),
+            GameControllerRecursos.Instance.GetCustoMadeiraTorreAr(),
+            GameControllerRecursos.Instance.GetCustoMetalTorreAr()
+        );
+    }
+
     // Mantidos para compatibilidade com código externo que chama esses métodos
     public bool PodeCriarBaseSoldado()
     {
@@ -173,6 +191,12 @@ public class BaseArea : MonoBehaviour
     {
         return GameControllerRecursos.Instance != null &&
                GameControllerRecursos.Instance.PodeCriarTorreTerra();
+    }
+
+    public bool PodeCriarTorreAr()
+    {
+        return GameControllerRecursos.Instance != null &&
+               GameControllerRecursos.Instance.PodeCriarTorreAr();
     }
 
     // =====================================================================
@@ -241,6 +265,7 @@ public class BaseArea : MonoBehaviour
             case TipoBaseAtual.Tank:       return baseTankAtual;
             case TipoBaseAtual.Aviao:      return baseAviaoAtual;
             case TipoBaseAtual.TorreTerra: return torreTerraAtual;
+            case TipoBaseAtual.TorreAr:    return torreArAtual;
             default:                       return null;
         }
     }
@@ -251,6 +276,7 @@ public class BaseArea : MonoBehaviour
         baseTankAtual    = null;
         baseAviaoAtual   = null;
         torreTerraAtual  = null;
+        torreArAtual     = null;
 
         switch (tipoBase)
         {
@@ -258,6 +284,7 @@ public class BaseArea : MonoBehaviour
             case TipoBaseAtual.Tank:       baseTankAtual    = novaBase; break;
             case TipoBaseAtual.Aviao:      baseAviaoAtual   = novaBase; break;
             case TipoBaseAtual.TorreTerra: torreTerraAtual  = novaBase; break;
+            case TipoBaseAtual.TorreAr:    torreArAtual     = novaBase; break;
         }
     }
 
@@ -272,6 +299,7 @@ public class BaseArea : MonoBehaviour
         baseTankAtual    = null;
         baseAviaoAtual   = null;
         torreTerraAtual  = null;
+        torreArAtual     = null;
         tipoBaseAtual    = TipoBaseAtual.Nenhuma;
     }
 
@@ -408,6 +436,7 @@ public class BaseArea : MonoBehaviour
         baseTankAtual    = null;
         baseAviaoAtual   = null;
         torreTerraAtual  = null;
+        torreArAtual     = null;
     }
 
     // Ativa e registra o BaseLimite após a base ser confirmada

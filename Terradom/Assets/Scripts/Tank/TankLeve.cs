@@ -442,13 +442,8 @@ public class TankLeve : MonoBehaviour
     {
         if (Time.time < proximaTrocaDeCurva) return;
 
-        if (forcarRetoEntreCurvas && Mathf.Abs(anguloDirecaoAlvo) > 0.5f)
-        {
-            float tempoReto = UnityEngine.Random.Range(tempoMinimoRetoEntreCurvas, tempoMaximoRetoEntreCurvas);
-            ForcarTrechoReto(tempoReto);
-            return;
-        }
-
+        // CORREÇÃO: Removida a lógica de forçar reto entre curvas para tornar a patrulha mais dinâmica.
+        // O tanque agora sempre sorteará uma nova curva para explorar melhor o mapa.
         SortearNovaCurva();
     }
 
@@ -509,9 +504,14 @@ public class TankLeve : MonoBehaviour
             pontoSensorDetectado = hitFrontal.point;
             normalSensorDetectado = hitFrontal.normal;
             distanciaObstaculoAtual = hitFrontal.distance;
+            
+            // CORREÇÃO: Quando detecta obstáculo, forçamos uma curva brusca (anguloMaximoDirecao)
+            // para garantir que ele mude de rota e não apenas tente "raspar" no objeto.
             ladoDesvioAtual = EscolherMelhorLadoDesvio(hitFrontal);
             ultimoLadoCurva = ladoDesvioAtual;
-            manterDesvioAte = Time.time + tempoManterDesvio;
+            
+            // Aumentamos o tempo de manutenção do desvio para garantir que ele saia da zona de colisão.
+            manterDesvioAte = Time.time + tempoManterDesvio * 1.5f;
         }
 
         desvioAtivo = Time.time <= manterDesvioAte;
@@ -519,13 +519,17 @@ public class TankLeve : MonoBehaviour
 
         if (desvioAtivo)
         {
+            // CORREÇÃO: Forçamos o ângulo máximo para garantir mudança de caminho.
             anguloDirecaoAlvo = ladoDesvioAtual * anguloMaximoDirecao;
             proximaTrocaDeCurva = Time.time + tempoManterDesvio;
             return;
         }
 
         if (estavaDesviando && !sensorDetectandoObstaculo)
-            ForcarTrechoReto(tempoRetoAposDesvio);
+        {
+            // Após desviar, sorteamos uma nova curva imediatamente para não voltar ao caminho antigo.
+            SortearNovaCurva();
+        }
     }
 
     private int EscolherMelhorLadoDesvio(RaycastHit hitFrontal)
@@ -665,13 +669,13 @@ public class TankLeve : MonoBehaviour
     {
         if (tankMorto || velocidadeFrente <= 0.01f) return 0f;
         if (emCombate) return Mathf.Clamp(velocidadeDuranteCombate, 0f, velocidadeFrente);
-        if (!desvioAtivo) return velocidadeFrente;
+        
+        // CORREÇÃO: Se não há obstáculo sendo detectado AGORA, não reduzimos a velocidade.
+        if (!sensorDetectandoObstaculo) return velocidadeFrente;
         if (!reduzirVelocidadeAoDesviar) return velocidadeFrente;
 
         float velocidadeDesvioSegura = Mathf.Clamp(velocidadeDuranteDesvio, 0.05f, velocidadeFrente);
         float velocidadeMinimaSegura = Mathf.Clamp(velocidadeMinimaDesvio, 0.05f, velocidadeDesvioSegura);
-
-        if (!sensorDetectandoObstaculo) return velocidadeDesvioSegura;
 
         float distanciaReducao = Mathf.Max(0.1f, distanciaComecarReduzir);
         float fatorDistancia = Mathf.InverseLerp(0f, distanciaReducao, distanciaObstaculoAtual);
@@ -826,27 +830,27 @@ public class TankLeve : MonoBehaviour
             Vector3 sensorPositivo = Quaternion.AngleAxis(anguloSensoresLaterais, Vector3.up) * frente;
             Vector3 sensorNegativo = Quaternion.AngleAxis(-anguloSensoresLaterais, Vector3.up) * frente;
 
-            Gizmos.color = sensorDetectandoObstaculo ? Color.red : Color.cyan;
+            Gizmos.color = sensorDetectandoObstaculo ? Color.red : Color.green;
             Gizmos.DrawLine(origem, origem + frente * distanciaSensorFrontal);
             Gizmos.DrawWireSphere(origem + frente * distanciaSensorFrontal, raioSensorFrontal);
 
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(origem, origem + sensorPositivo.normalized * distanciaSensorFrontal);
-            Gizmos.DrawLine(origem, origem + sensorNegativo.normalized * distanciaSensorFrontal);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(origem, origem + sensorPositivo * distanciaSensorFrontal);
+            Gizmos.DrawLine(origem, origem + sensorNegativo * distanciaSensorFrontal);
 
             if (sensorDetectandoObstaculo)
             {
                 Gizmos.color = Color.red;
-                Gizmos.DrawSphere(pontoSensorDetectado, 0.25f);
-                Gizmos.DrawLine(pontoSensorDetectado, pontoSensorDetectado + normalSensorDetectado);
+                Gizmos.DrawSphere(pontoSensorDetectado, 0.2f);
+                Gizmos.DrawLine(pontoSensorDetectado, pontoSensorDetectado + normalSensorDetectado * 1.5f);
             }
         }
 
-        if (desenharAlvoNoEditor && tankVisao != null && tankVisao.AlvoAtual != null)
+        if (desenharAlvoNoEditor && emCombate && AlvoAtual != null)
         {
             Gizmos.color = Color.magenta;
-            Gizmos.DrawLine(transform.position + Vector3.up * 1.2f, tankVisao.AlvoAtual.position);
-            Gizmos.DrawWireSphere(tankVisao.AlvoAtual.position, 0.55f);
+            Gizmos.DrawLine(transform.position, AlvoAtual.position);
+            Gizmos.DrawWireSphere(AlvoAtual.position, 1.2f);
         }
     }
 }

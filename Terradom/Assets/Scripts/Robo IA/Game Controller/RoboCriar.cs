@@ -1,14 +1,16 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 [DisallowMultipleComponent]
 public class RoboCriar : MonoBehaviour
 {
-    private BaseAreaIA baseArea;
+    private BaseAreaIA    baseArea;
     private SoldadoSpownIA soldadoSpawn;
-    private TankSpownIA tankSpawn;
+    private TankSpownIA    tankSpawn;
+    private AviaoSpownIA   aviaoSpawn;
 
-    public bool TankSpawnDisponivel() => tankSpawn != null;
+    public bool TankSpawnDisponivel()  => tankSpawn  != null;
+    public bool AviaoSpawnDisponivel() => aviaoSpawn != null;
 
     private void Awake()
     {
@@ -21,24 +23,20 @@ public class RoboCriar : MonoBehaviour
 
     public void AtualizarReferencias()
     {
-        if (baseArea == null)
-            baseArea = FindFirstObjectByType<BaseAreaIA>();
-        if (soldadoSpawn == null)
-            soldadoSpawn = FindFirstObjectByType<SoldadoSpownIA>();
-        if (tankSpawn == null)
-            tankSpawn = FindFirstObjectByType<TankSpownIA>();
+        if (baseArea     == null) baseArea     = FindFirstObjectByType<BaseAreaIA>();
+        if (soldadoSpawn == null) soldadoSpawn = FindFirstObjectByType<SoldadoSpownIA>();
+        if (tankSpawn    == null) tankSpawn    = FindFirstObjectByType<TankSpownIA>();
+        if (aviaoSpawn   == null) aviaoSpawn   = FindFirstObjectByType<AviaoSpownIA>();
 
-        if (baseArea == null)
-            Debug.LogError("[RoboCriar] ❌ BaseAreaIA não encontrada!");
-        if (soldadoSpawn == null)
-            Debug.LogError("[RoboCriar] ❌ SoldadoSpownIA não encontrada!");
-        if (tankSpawn == null)
-            Debug.LogWarning("[RoboCriar] ⚠️ TankSpownIA não encontrada. Produção de tank desativada.");
+        if (baseArea     == null) Debug.LogError  ("[RoboCriar] ❌ BaseAreaIA não encontrada!");
+        if (soldadoSpawn == null) Debug.LogError  ("[RoboCriar] ❌ SoldadoSpownIA não encontrada!");
+        if (tankSpawn    == null) Debug.LogWarning("[RoboCriar] ⚠️ TankSpownIA não encontrada. Produção de tank desativada.");
+        if (aviaoSpawn   == null) Debug.LogWarning("[RoboCriar] ⚠️ AviaoSpownIA não encontrada. Produção de avião desativada.");
     }
 
     private void GarantirReferencias()
     {
-        if (baseArea == null || soldadoSpawn == null || tankSpawn == null)
+        if (baseArea == null || soldadoSpawn == null || tankSpawn == null || aviaoSpawn == null)
             AtualizarReferencias();
     }
 
@@ -64,12 +62,30 @@ public class RoboCriar : MonoBehaviour
         return criada;
     }
 
+    public bool CriarBaseAviao()
+    {
+        GarantirReferencias();
+        if (baseArea == null) return false;
+        bool criada = baseArea.TentarCriarBasePorIndice(2);
+        if (criada) Debug.Log("[RoboCriar] 🏗️ Base Avião criada");
+        return criada;
+    }
+
     public bool CriarTorreTerra()
     {
         GarantirReferencias();
         if (baseArea == null) return false;
         bool criada = baseArea.TentarCriarBasePorIndice(3);
         if (criada) Debug.Log("[RoboCriar] 🏗️ Torre Terra criada");
+        return criada;
+    }
+
+    public bool CriarTorreAr()
+    {
+        GarantirReferencias();
+        if (baseArea == null) return false;
+        bool criada = baseArea.TentarCriarBasePorIndice(4);
+        if (criada) Debug.Log("[RoboCriar] 🏗️ Torre Ar criada");
         return criada;
     }
 
@@ -89,10 +105,22 @@ public class RoboCriar : MonoBehaviour
         return baseArea != null && baseArea.ExisteBasePorIndice(1);
     }
 
+    public bool BaseAviaoExiste()
+    {
+        GarantirReferencias();
+        return baseArea != null && baseArea.ExisteBasePorIndice(2);
+    }
+
     public bool TorreTerraExiste()
     {
         GarantirReferencias();
         return baseArea != null && baseArea.ExisteBasePorIndice(3);
+    }
+
+    public bool TorreArExiste()
+    {
+        GarantirReferencias();
+        return baseArea != null && baseArea.ExisteBasePorIndice(4);
     }
 
     public int ContarBaseSoldado()
@@ -107,10 +135,22 @@ public class RoboCriar : MonoBehaviour
         return baseArea != null ? baseArea.ContarBasesPorIndice(1) : 0;
     }
 
+    public int ContarBaseAviao()
+    {
+        GarantirReferencias();
+        return baseArea != null ? baseArea.ContarBasesPorIndice(2) : 0;
+    }
+
     public int ContarTorreTerra()
     {
         GarantirReferencias();
         return baseArea != null ? baseArea.ContarBasesPorIndice(3) : 0;
+    }
+
+    public int ContarTorreAr()
+    {
+        GarantirReferencias();
+        return baseArea != null ? baseArea.ContarBasesPorIndice(4) : 0;
     }
 
     public Transform[] ObterBasesSoldado()
@@ -123,6 +163,12 @@ public class RoboCriar : MonoBehaviour
     {
         GarantirReferencias();
         return baseArea != null ? baseArea.ObterBasesPorIndice(1) : new Transform[0];
+    }
+
+    public Transform[] ObterBasesAviao()
+    {
+        GarantirReferencias();
+        return baseArea != null ? baseArea.ObterBasesPorIndice(2) : new Transform[0];
     }
 
     // =========================================================
@@ -160,7 +206,7 @@ public class RoboCriar : MonoBehaviour
     }
 
     // =========================================================
-    // SOLDADO — UNIDADES NA BASE (usado pelo RoboIA)
+    // SOLDADO — UNIDADES NA BASE
     // =========================================================
 
     public bool PodeCriarColetorNaBase(Transform base_)
@@ -234,7 +280,50 @@ public class RoboCriar : MonoBehaviour
     }
 
     // =========================================================
-    // PONTO DE SPAWN — movido do RoboIA para cá
+    // AVIÃO — UNIDADES
+    // =========================================================
+
+    public bool PodeCriarAviao() =>
+        aviaoSpawn != null && aviaoSpawn.PodeCriarAviao();
+
+    public bool CriarAviao()
+    {
+        GarantirReferencias();
+        if (aviaoSpawn == null) return false;
+        return aviaoSpawn.TentarCriarAviao();
+    }
+
+    public bool PodeCriarAviaoNaBase(Transform base_)
+    {
+        GarantirReferencias();
+        return aviaoSpawn != null && base_ != null &&
+               aviaoSpawn.PodeCriarAviaoNaBase(base_);
+    }
+
+    public bool CriarAviaoNaBase(Transform base_)
+    {
+        GarantirReferencias();
+        if (aviaoSpawn == null || base_ == null) return false;
+        return aviaoSpawn.TentarCriarAviaoNaBase(base_);
+    }
+
+    // F-16 (Mesma lógica do Avião, mas nomeado conforme pedido)
+    public bool PodeCriarF16NaBase(Transform base_)
+    {
+        GarantirReferencias();
+        return aviaoSpawn != null && base_ != null &&
+               aviaoSpawn.PodeCriarAviaoNaBase(base_);
+    }
+
+    public bool CriarF16NaBase(Transform base_)
+    {
+        GarantirReferencias();
+        if (aviaoSpawn == null || base_ == null) return false;
+        return aviaoSpawn.TentarCriarAviaoNaBase(base_);
+    }
+
+    // =========================================================
+    // PONTO DE SPAWN
     // =========================================================
 
     public Transform EncontrarPontoSpawn(Transform baseTransform, string tipo)
