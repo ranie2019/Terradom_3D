@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 430326659100891454}
   - component: {fileID: 4326924037998140433}
   - component: {fileID: 963621081924734968}
-  m_Layer: 5
+  m_Layer: 12
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -75,6 +75,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &2591140659329584870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5197630810840430864}
+  m_Layer: 0
+  m_Name: Clone Unidades IA
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5197630810840430864
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2591140659329584870}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.00002702702, z: 415.7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6802509303515661813}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3282332623705018391
 GameObject:
   m_ObjectHideFlags: 0
@@ -86,7 +117,7 @@ GameObject:
   - component: {fileID: 1077150095564829026}
   - component: {fileID: 5450275319940446285}
   - component: {fileID: 5600468139143644333}
-  m_Layer: 5
+  m_Layer: 12
   m_Name: FundoVida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -161,7 +192,7 @@ GameObject:
   - component: {fileID: 1241024241469425630}
   - component: {fileID: 8579136467607007743}
   - component: {fileID: 7401481466937406162}
-  m_Layer: 5
+  m_Layer: 12
   m_Name: BarraVida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -237,7 +268,7 @@ GameObject:
   - component: {fileID: 5354921510128585456}
   - component: {fileID: 570235199350963672}
   - component: {fileID: 3578057103141192884}
-  m_Layer: 5
+  m_Layer: 12
   m_Name: Spawn (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -340,7 +371,7 @@ GameObject:
   - component: {fileID: 4997263766895937692}
   - component: {fileID: 5153102619567990505}
   - component: {fileID: 3596458338993182404}
-  m_Layer: 5
+  m_Layer: 12
   m_Name: CanvasWorld
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -454,7 +485,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -86.94021
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -462,7 +493,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -379.45013
+      value: -415.7
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -492,6 +523,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5434119245647672709, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: -4410762004898053339, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: -1345835273350093917, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -499,6 +538,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_Name
       value: Base Soldado Azul
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: m_TagString
@@ -516,6 +559,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 879f6fc5f3c6011479939e0d861fbf4b, type: 2}
+    - target: {fileID: 4433858372940671480, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 5385040094381930592, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -524,6 +571,14 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: fe5d1b6e0e88dc74bb679fd758ad1634, type: 2}
+    - target: {fileID: 5667018738733642908, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7993461938762842835, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 8231722285239930261, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -537,6 +592,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3844266698990355793}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5197630810840430864}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 29fc47e2cfbf43347b3b6867f7413c1f, type: 3}
       insertIndex: -1
@@ -681,7 +739,7 @@ MonoBehaviour:
   corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
   corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
   velocidadePiscar: 2
-  alturaVisualizacao: 0.1
+  alturaVisualizacao: 0.5
   segmentosCirculo: 64
   terrain: {fileID: 0}
   debugLogs: 0

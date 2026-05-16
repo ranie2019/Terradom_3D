@@ -1534,7 +1534,7 @@ MonoBehaviour:
   corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.15}
   corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.8}
   velocidadePiscar: 2
-  alturaVisualizacao: 0.05
+  alturaVisualizacao: 0.5
   segmentosCirculo: 64
   terrain: {fileID: 0}
   debugLogs: 0

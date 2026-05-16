@@ -4,13 +4,14 @@ using System.Collections.Generic;
 [DisallowMultipleComponent]
 public class RoboCriar : MonoBehaviour
 {
-    private BaseAreaIA    baseArea;
+    private BaseAreaIA     baseArea;
     private SoldadoSpownIA soldadoSpawn;
     private TankSpownIA    tankSpawn;
     private AviaoSpownIA   aviaoSpawn;
 
     public bool TankSpawnDisponivel()  => tankSpawn  != null;
     public bool AviaoSpawnDisponivel() => aviaoSpawn != null;
+    public bool F16SpawnDisponivel()   => aviaoSpawn != null; // F16 usa a mesma base de avião
 
     private void Awake()
     {
@@ -307,7 +308,20 @@ public class RoboCriar : MonoBehaviour
         return aviaoSpawn.TentarCriarAviaoNaBase(base_);
     }
 
-    // F-16 (Mesma lógica do Avião, mas nomeado conforme pedido)
+    // =========================================================
+    // F-16 — UNIDADES (usa Base Avião / AviaoSpownIA até F16SpownIA existir)
+    // =========================================================
+
+    public bool PodeCriarF16() =>
+        aviaoSpawn != null && aviaoSpawn.PodeCriarAviao();
+
+    public bool CriarF16()
+    {
+        GarantirReferencias();
+        if (aviaoSpawn == null) return false;
+        return aviaoSpawn.TentarCriarAviao();
+    }
+
     public bool PodeCriarF16NaBase(Transform base_)
     {
         GarantirReferencias();

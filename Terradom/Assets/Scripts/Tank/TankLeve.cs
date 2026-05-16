@@ -1,4 +1,4 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
@@ -9,6 +9,7 @@ public class TankLeve : MonoBehaviour
         Patrulhando,
         DesviandoObstaculo,
         EmCombate,
+        Re,
         Morto
     }
 
@@ -20,14 +21,9 @@ public class TankLeve : MonoBehaviour
     [SerializeField] private float suavidadeDirecao = 3.5f;
 
     [Header("Patrulha livre")]
-    [SerializeField] private float tempoMinimoMesmaCurva = 2f;
-    [SerializeField] private float tempoMaximoMesmaCurva = 5f;
-    [SerializeField] private float chanceDeAndarReto = 0.35f;
-    [SerializeField] private float anguloMinimoCurva = 8f;
-    [SerializeField] private bool alternarLadoDaCurva = true;
-    [SerializeField] private bool forcarRetoEntreCurvas = true;
-    [SerializeField] private float tempoMinimoRetoEntreCurvas = 0.8f;
-    [SerializeField] private float tempoMaximoRetoEntreCurvas = 1.6f;
+    [SerializeField] private float tempoContagem = 5f;        // contador regressivo para trocar dire√ß√£o
+    [SerializeField] private float anguloMinimoCurva = 30f;   // √¢ngulo m√≠nimo ao trocar dire√ß√£o
+    [SerializeField] private bool alternarLadoDaCurva = true; // alterna esquerda/direita a cada troca
 
     [Header("IA / Modulos")]
     [SerializeField] private bool buscarModulosAutomaticamente = true;
@@ -73,6 +69,15 @@ public class TankLeve : MonoBehaviour
     [SerializeField] private float margemEscolhaLado = 0.35f;
     [SerializeField] private bool ignorarChaoNoSensor = true;
     [SerializeField] private float normalMinimaParaChao = 0.55f;
+    [SerializeField] private string[] tagsIgnoradasNoSensor = { "Terrain" }; // objetos com essas tags nunca bloqueiam o sensor
+
+    [Header("Anti-stuck (re automatica)")]
+    [SerializeField] private bool usarAntiStuck = true;
+    [SerializeField] private float tempoParaDetectarStuck = 0.8f;   // segundos parado para acionar a r√©
+    [SerializeField] private float velocidadeRe = 2.5f;              // velocidade da r√©
+    [SerializeField] private float duracaoRe = 0.7f;                 // quanto tempo fica dando r√©
+    [SerializeField] private float anguloViradaAposRe = 45f;         // √¢ngulo de curva for√ßado ap√≥s a r√©
+    [SerializeField] private float limiarMovimentoStuck = 0.15f;     // abaixo disso considera "parado"
 
     [Header("Colisao fisica")]
     [SerializeField] private bool configurarRigidbodyAutomaticamente = true;
@@ -99,7 +104,7 @@ public class TankLeve : MonoBehaviour
     private float anguloDirecaoAtual;
     private float anguloDirecaoAlvo;
     private float anguloVisualDirecaoRodas;
-    private float proximaTrocaDeCurva;
+    private float contagemPatrulha;   // contador regressivo vis√≠vel no Inspector via OnGUI
     private float manterDesvioAte;
     private float manterCombateAte;
     private float distanciaObstaculoAtual;
@@ -112,6 +117,12 @@ public class TankLeve : MonoBehaviour
     private bool tankMorto;
     private Vector3 pontoSensorDetectado;
     private Vector3 normalSensorDetectado;
+    private bool ladoDesvioTravado = false;  // impede troca de lado enquanto desviando
+
+    // Anti-stuck
+    private float tempoSemMover = 0f;
+    private bool emRe = false;
+    private float reTerminaAte = 0f;
 
     public bool EmCombate => emCombate;
     public bool TemAlvoNaVisao => temAlvoNaVisao;
@@ -132,6 +143,7 @@ public class TankLeve : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         BuscarModulosDoTank();
         AplicarConfiguracaoRigidbody();
+        contagemPatrulha = tempoContagem;
         SortearNovaCurva();
     }
 
@@ -148,7 +160,13 @@ public class TankLeve : MonoBehaviour
 
         AtualizarIACombate();
 
-        if (emCombate)
+        AtualizarAntiStuck();
+
+        if (emRe)
+        {
+            estadoAtual = EstadoTank.Re;
+        }
+        else if (emCombate)
         {
             PrepararTankParaCombate();
         }
@@ -344,6 +362,8 @@ public class TankLeve : MonoBehaviour
         temAlvoNaVisao = false;
         desvioAtivo = false;
         sensorDetectandoObstaculo = false;
+        emRe = false;
+        tempoSemMover = 0f;
         estadoAtual = EstadoTank.Morto;
 
         velocidadeAtual = 0f;
@@ -371,6 +391,57 @@ public class TankLeve : MonoBehaviour
         if (destruirTankAoMorrer)
             Destroy(gameObject, Mathf.Max(0f, tempoParaDestruirAposMorrer));
     }
+
+    private void AtualizarAntiStuck()
+    {
+        if (!usarAntiStuck || tankMorto || emCombate) return;
+
+        // Se a r√© ainda est√° ativa, aguarda terminar
+        if (emRe)
+        {
+            if (Time.time >= reTerminaAte)
+            {
+                emRe = false;
+                tempoSemMover = 0f;
+
+                // For√ßa uma curva acentuada para sair da parede
+                ultimoLadoCurva *= -1;
+                anguloDirecaoAlvo = ultimoLadoCurva * Mathf.Clamp(anguloViradaAposRe, 0f, anguloMaximoDirecao);
+                manterDesvioAte = Time.time + Mathf.Max(tempoManterDesvio, 0.5f);
+                desvioAtivo = true;
+                ladoDesvioTravado = false;
+            }
+            return;
+        }
+
+        // Mede se o tank est√° se movendo de fato
+        float velocidadeReal = Mathf.Abs(CalcularVelocidadeHorizontalRealDoVeiculo());
+        bool deveriaMover = velocidadeAtual > limiarMovimentoStuck || desvioAtivo;
+
+        if (deveriaMover && velocidadeReal < limiarMovimentoStuck)
+            tempoSemMover += Time.fixedDeltaTime;
+        else
+            tempoSemMover = 0f;
+
+        if (tempoSemMover >= tempoParaDetectarStuck)
+        {
+            IniciarRe();
+        }
+    }
+
+    private void IniciarRe()
+    {
+        emRe = true;
+        reTerminaAte = Time.time + duracaoRe;
+        tempoSemMover = 0f;
+
+        // Cancela qualquer desvio em curso
+        desvioAtivo = false;
+        ladoDesvioTravado = false;
+        manterDesvioAte = 0f;
+        sensorDetectandoObstaculo = false;
+    }
+
 
     private void ManterTankParadoQuandoMorto()
     {
@@ -435,52 +506,41 @@ public class TankLeve : MonoBehaviour
         manterDesvioAte = 0f;
         distanciaObstaculoAtual = distanciaSensorFrontal;
         anguloDirecaoAlvo = 0f;
-        proximaTrocaDeCurva = Time.time + 0.25f;
+        // Mant√©m contagemPatrulha intacta ‚Äî o tank retoma a patrulha normalmente ao sair do combate
     }
 
     private void AtualizarPatrulhaLivre()
     {
-        if (Time.time < proximaTrocaDeCurva) return;
+        // Contagem regressiva: decrementa a cada FixedUpdate
+        contagemPatrulha -= Time.fixedDeltaTime;
 
-        // CORRE«√O: Removida a lÛgica de forÁar reto entre curvas para tornar a patrulha mais din‚mica.
-        // O tanque agora sempre sortear· uma nova curva para explorar melhor o mapa.
-        SortearNovaCurva();
+        if (contagemPatrulha <= 0f)
+        {
+            SortearNovaCurva();
+            contagemPatrulha = Mathf.Max(0.5f, tempoContagem); // reinicia o loop
+        }
     }
 
     private void SortearNovaCurva()
     {
-        float tempoMin = Mathf.Max(0.2f, tempoMinimoMesmaCurva);
-        float tempoMax = Mathf.Max(tempoMin, tempoMaximoMesmaCurva);
-        proximaTrocaDeCurva = Time.time + UnityEngine.Random.Range(tempoMin, tempoMax);
-
-        if (UnityEngine.Random.value <= chanceDeAndarReto)
-        {
-            anguloDirecaoAlvo = 0f;
-            return;
-        }
-
-        int ladoCurva;
+        // Alterna o lado a cada troca para cobrir o mapa
         if (alternarLadoDaCurva)
-        {
             ultimoLadoCurva *= -1;
-            ladoCurva = ultimoLadoCurva;
-        }
         else
-        {
-            ladoCurva = UnityEngine.Random.value < 0.5f ? -1 : 1;
-        }
+            ultimoLadoCurva = UnityEngine.Random.value < 0.5f ? -1 : 1;
 
         float anguloMin = Mathf.Clamp(anguloMinimoCurva, 0f, anguloMaximoDirecao);
         float anguloMax = Mathf.Max(anguloMin, anguloMaximoDirecao);
-        anguloDirecaoAlvo = ladoCurva * UnityEngine.Random.Range(anguloMin, anguloMax);
+        anguloDirecaoAlvo = ultimoLadoCurva * UnityEngine.Random.Range(anguloMin, anguloMax);
     }
 
     private void ForcarTrechoReto(float duracao)
     {
-        anguloDirecaoAlvo = 0f;
-        desvioAtivo = false;
-        manterDesvioAte = 0f;
-        proximaTrocaDeCurva = Time.time + Mathf.Max(0.1f, duracao);
+        anguloDirecaoAlvo    = 0f;
+        desvioAtivo          = false;
+        manterDesvioAte      = 0f;
+        // Reinicia a contagem com a dura√ß√£o do trecho reto para n√£o trocar curva logo ap√≥s desviar
+        contagemPatrulha = Mathf.Max(duracao, 0.5f);
     }
 
     private void AtualizarSensorDesvio()
@@ -491,74 +551,103 @@ public class TankLeve : MonoBehaviour
 
         if (!usarSensorDesvio)
         {
-            desvioAtivo = false;
+            desvioAtivo       = false;
+            ladoDesvioTravado = false;
             return;
         }
 
-        RaycastHit hitFrontal;
-        bool encontrouObstaculoFrontal = SensorCast(ObterOrigemSensor(), ObterFrenteVeiculo(), distanciaSensorFrontal, raioSensorFrontal, out hitFrontal);
+        Vector3 origem = ObterOrigemSensor();
+        Vector3 frente = ObterFrenteVeiculo();
 
-        if (encontrouObstaculoFrontal)
+        RaycastHit hitFrontal;
+        bool obstaculoFrente = SensorCast(origem, frente, distanciaSensorFrontal, raioSensorFrontal, out hitFrontal);
+
+        if (obstaculoFrente)
         {
             sensorDetectandoObstaculo = true;
-            pontoSensorDetectado = hitFrontal.point;
-            normalSensorDetectado = hitFrontal.normal;
-            distanciaObstaculoAtual = hitFrontal.distance;
-            
-            // CORRE«√O: Quando detecta obst·culo, forÁamos uma curva brusca (anguloMaximoDirecao)
-            // para garantir que ele mude de rota e n„o apenas tente "raspar" no objeto.
-            ladoDesvioAtual = EscolherMelhorLadoDesvio(hitFrontal);
-            ultimoLadoCurva = ladoDesvioAtual;
-            
-            // Aumentamos o tempo de manutenÁ„o do desvio para garantir que ele saia da zona de colis„o.
-            manterDesvioAte = Time.time + tempoManterDesvio * 1.5f;
+            pontoSensorDetectado      = hitFrontal.point;
+            normalSensorDetectado     = hitFrontal.normal;
+            distanciaObstaculoAtual   = hitFrontal.distance;
+
+            // So define o lado na PRIMEIRA deteccao do obstaculo atual.
+            // Isso impede que o lado fique alternando frame a frame (causa do giro 360).
+            if (!ladoDesvioTravado)
+            {
+                ladoDesvioAtual   = EscolherMelhorLadoDesvio(hitFrontal);
+                ultimoLadoCurva   = ladoDesvioAtual;
+                manterDesvioAte   = Time.time + tempoManterDesvio;
+                ladoDesvioTravado = true;
+            }
+            // Se o timer expirou mas o obstaculo persiste: inverte o lado e tenta de novo.
+            else if (Time.time > manterDesvioAte)
+            {
+                ladoDesvioAtual *= -1;
+                ultimoLadoCurva  = ladoDesvioAtual;
+                manterDesvioAte  = Time.time + tempoManterDesvio;
+            }
         }
 
+        // Desvio ativo enquanto timer nao expirou
         desvioAtivo = Time.time <= manterDesvioAte;
         estadoAtual = desvioAtivo ? EstadoTank.DesviandoObstaculo : EstadoTank.Patrulhando;
 
+        // Destrava quando desvio terminar e nao ha mais obstaculo
+        if (!desvioAtivo || !obstaculoFrente)
+        {
+            if (!obstaculoFrente)
+                ladoDesvioTravado = false;
+        }
+
         if (desvioAtivo)
         {
-            // CORRE«√O: ForÁamos o ‚ngulo m·ximo para garantir mudanÁa de caminho.
-            anguloDirecaoAlvo = ladoDesvioAtual * anguloMaximoDirecao;
-            proximaTrocaDeCurva = Time.time + tempoManterDesvio;
+            // Angulo fixo de 90 graus para garantir saida sem completar voltas.
+            anguloDirecaoAlvo = ladoDesvioAtual * Mathf.Min(90f, anguloMaximoDirecao);
             return;
         }
 
         if (estavaDesviando && !sensorDetectandoObstaculo)
         {
-            // ApÛs desviar, sorteamos uma nova curva imediatamente para n„o voltar ao caminho antigo.
-            SortearNovaCurva();
+            // Apos desvio limpo: sorteia nova curva e forca um trecho reto
+            // para o tank sair da zona do obstaculo antes de curvar de novo.
+            ForcarTrechoReto(tempoRetoAposDesvio);
         }
     }
 
     private int EscolherMelhorLadoDesvio(RaycastHit hitFrontal)
     {
         Vector3 origem = ObterOrigemSensor();
-        float espacoLadoPositivo = MedirEspacoNaDirecao(1, origem);
-        float espacoLadoNegativo = MedirEspacoNaDirecao(-1, origem);
 
-        if (Mathf.Abs(espacoLadoPositivo - espacoLadoNegativo) > margemEscolhaLado)
-            return espacoLadoPositivo > espacoLadoNegativo ? 1 : -1;
+        // Mede espaco a 90 graus para cada lado (mais preciso que anguloSensoresLaterais)
+        float espacoDir = MedirEspacoNaDirecao( 1, origem);
+        float espacoEsq = MedirEspacoNaDirecao(-1, origem);
 
-        Vector3 direcaoObjeto = hitFrontal.point - origem;
-        direcaoObjeto.y = 0f;
+        // Se um lado tem claramente mais espaco, vai para ele
+        if (Mathf.Abs(espacoDir - espacoEsq) > margemEscolhaLado)
+            return espacoDir > espacoEsq ? 1 : -1;
 
-        if (direcaoObjeto.sqrMagnitude > 0.01f)
+        // Empate: desvia para o lado oposto ao ponto de contato
+        Vector3 direcaoContato = hitFrontal.point - origem;
+        direcaoContato.y = 0f;
+
+        if (direcaoContato.sqrMagnitude > 0.01f)
         {
-            float ladoObjeto = Vector3.SignedAngle(ObterFrenteVeiculo(), direcaoObjeto.normalized, Vector3.up);
-            if (!Mathf.Approximately(ladoObjeto, 0f)) return ladoObjeto > 0f ? -1 : 1;
+            float ladoContato = Vector3.SignedAngle(ObterFrenteVeiculo(), direcaoContato.normalized, Vector3.up);
+            if (!Mathf.Approximately(ladoContato, 0f))
+                return ladoContato > 0f ? -1 : 1;
         }
 
+        // Ultimo recurso: alterna o lado
         ultimoLadoCurva *= -1;
         return ultimoLadoCurva;
     }
 
     private float MedirEspacoNaDirecao(int lado, Vector3 origem)
     {
-        Vector3 direcao = Quaternion.AngleAxis(lado * anguloSensoresLaterais, Vector3.up) * ObterFrenteVeiculo();
+        // Usa 90 graus fixo para medir espaco lateral real
+        Vector3 direcao = Quaternion.AngleAxis(lado * 90f, Vector3.up) * ObterFrenteVeiculo();
         RaycastHit hit;
-        if (SensorCast(origem, direcao.normalized, distanciaSensorFrontal, raioSensorFrontal, out hit)) return hit.distance;
+        if (SensorCast(origem, direcao.normalized, distanciaSensorFrontal, raioSensorFrontal, out hit))
+            return hit.distance;
         return distanciaSensorFrontal;
     }
 
@@ -566,29 +655,61 @@ public class TankLeve : MonoBehaviour
     {
         melhorHit = new RaycastHit();
         QueryTriggerInteraction triggerMode = detectarTriggers ? QueryTriggerInteraction.Collide : QueryTriggerInteraction.Ignore;
+        float raioSeguro      = Mathf.Max(0.05f, raio);
+        float distanciaSegura = Mathf.Max(0.1f, distancia);
 
-        RaycastHit[] hits = Physics.SphereCastAll(origem, Mathf.Max(0.05f, raio), direcao.normalized, Mathf.Max(0.1f, distancia), camadasDetectaveis, triggerMode);
-        bool encontrou = false;
+        bool encontrou     = false;
         float menorDistancia = float.MaxValue;
 
+        // Raycast simples primeiro: detecta paredes mesmo quando a origem esta proxima delas.
+        RaycastHit hitRay;
+        if (Physics.Raycast(origem, direcao.normalized, out hitRay, distanciaSegura, camadasDetectaveis, triggerMode))
+        {
+            if (!DeveIgnorarHitSensor(hitRay))
+            {
+                melhorHit      = hitRay;
+                menorDistancia = hitRay.distance;
+                encontrou      = true;
+            }
+        }
+
+        RaycastHit[] hits = Physics.SphereCastAll(origem, raioSeguro, direcao.normalized, distanciaSegura, camadasDetectaveis, triggerMode);
         for (int i = 0; i < hits.Length; i++)
         {
-            Collider colisor = hits[i].collider;
-            if (colisor == null) continue;
-            if (colisor.transform == transform || colisor.transform.IsChildOf(transform)) continue;
-            if (ignorarChaoNoSensor && hits[i].normal.y >= normalMinimaParaChao) continue;
+            if (DeveIgnorarHitSensor(hits[i])) continue;
 
             if (hits[i].distance < menorDistancia)
             {
                 menorDistancia = hits[i].distance;
-                melhorHit = hits[i];
-                encontrou = true;
+                melhorHit      = hits[i];
+                encontrou      = true;
             }
         }
 
         return encontrou;
     }
 
+    private bool DeveIgnorarHitSensor(RaycastHit hit)
+    {
+        if (hit.collider == null) return true;
+        if (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform)) return true;
+
+        // Ignora objetos com tags configuradas (Terrain, Water, etc.)
+        if (tagsIgnoradasNoSensor != null && tagsIgnoradasNoSensor.Length > 0)
+        {
+            string tagObj = hit.collider.gameObject.tag;
+            for (int i = 0; i < tagsIgnoradasNoSensor.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(tagsIgnoradasNoSensor[i]) && tagObj == tagsIgnoradasNoSensor[i])
+                    return true;
+            }
+        }
+
+        // Ignora ch√£o pela normal (superf√≠cie horizontal)
+        if (ignorarChaoNoSensor && hit.normal.y >= normalMinimaParaChao) return true;
+
+        return false;
+    }
     private Vector3 ObterOrigemSensor()
     {
         Vector3 baseOrigem = rb != null ? rb.worldCenterOfMass : transform.position;
@@ -640,10 +761,11 @@ public class TankLeve : MonoBehaviour
             ladoDesvioAtual = ultimoLadoCurva * -1;
         }
 
-        ultimoLadoCurva = ladoDesvioAtual;
+        ultimoLadoCurva   = ladoDesvioAtual;
         anguloDirecaoAlvo = ladoDesvioAtual * anguloMaximoDirecao;
-        manterDesvioAte = Time.time + Mathf.Max(tempoManterDesvio, tempoManterDesvioAposColisao);
-        proximaTrocaDeCurva = Time.time + Mathf.Max(tempoMinimoMesmaCurva, tempoManterDesvioAposColisao);
+        manterDesvioAte   = Time.time + Mathf.Max(tempoManterDesvio, tempoManterDesvioAposColisao);
+        // Reinicia contagem para n√£o trocar curva logo ap√≥s uma colis√£o
+        contagemPatrulha  = Mathf.Max(tempoManterDesvioAposColisao, 1f);
 
         if (reduzirVelocidadeAoDesviar)
             velocidadeAtual = Mathf.Min(velocidadeAtual, velocidadeDuranteDesvio);
@@ -668,9 +790,10 @@ public class TankLeve : MonoBehaviour
     private float CalcularVelocidadeDesejada()
     {
         if (tankMorto || velocidadeFrente <= 0.01f) return 0f;
+        if (emRe) return -Mathf.Clamp(velocidadeRe, 0.1f, velocidadeFrente);
         if (emCombate) return Mathf.Clamp(velocidadeDuranteCombate, 0f, velocidadeFrente);
         
-        // CORRE«√O: Se n„o h· obst·culo sendo detectado AGORA, n„o reduzimos a velocidade.
+        // CORREÔøΩÔøΩO: Se nÔøΩo hÔøΩ obstÔøΩculo sendo detectado AGORA, nÔøΩo reduzimos a velocidade.
         if (!sensorDetectandoObstaculo) return velocidadeFrente;
         if (!reduzirVelocidadeAoDesviar) return velocidadeFrente;
 
@@ -783,12 +906,8 @@ public class TankLeve : MonoBehaviour
         distanciaEntreEixos = Mathf.Max(0.1f, distanciaEntreEixos);
         anguloMaximoDirecao = Mathf.Clamp(anguloMaximoDirecao, 0f, 60f);
         suavidadeDirecao = Mathf.Max(0.1f, suavidadeDirecao);
-        tempoMinimoMesmaCurva = Mathf.Max(0.2f, tempoMinimoMesmaCurva);
-        tempoMaximoMesmaCurva = Mathf.Max(tempoMinimoMesmaCurva, tempoMaximoMesmaCurva);
-        chanceDeAndarReto = Mathf.Clamp01(chanceDeAndarReto);
+        tempoContagem = Mathf.Max(0.5f, tempoContagem);
         anguloMinimoCurva = Mathf.Clamp(anguloMinimoCurva, 0f, anguloMaximoDirecao);
-        tempoMinimoRetoEntreCurvas = Mathf.Max(0.1f, tempoMinimoRetoEntreCurvas);
-        tempoMaximoRetoEntreCurvas = Mathf.Max(tempoMinimoRetoEntreCurvas, tempoMaximoRetoEntreCurvas);
         velocidadeDuranteCombate = Mathf.Max(0f, velocidadeDuranteCombate);
         freioAoEncontrarInimigo = Mathf.Max(0.1f, freioAoEncontrarInimigo);
         tempoContinuarParadoAposPerderAlvo = Mathf.Max(0f, tempoContinuarParadoAposPerderAlvo);
@@ -806,6 +925,11 @@ public class TankLeve : MonoBehaviour
         margemEscolhaLado = Mathf.Max(0f, margemEscolhaLado);
         normalMinimaParaChao = Mathf.Clamp01(normalMinimaParaChao);
         tempoManterDesvioAposColisao = Mathf.Max(0.1f, tempoManterDesvioAposColisao);
+        tempoParaDetectarStuck = Mathf.Max(0.1f, tempoParaDetectarStuck);
+        velocidadeRe = Mathf.Max(0.1f, velocidadeRe);
+        duracaoRe = Mathf.Max(0.1f, duracaoRe);
+        anguloViradaAposRe = Mathf.Clamp(anguloViradaAposRe, 0f, anguloMaximoDirecao);
+        limiarMovimentoStuck = Mathf.Max(0.01f, limiarMovimentoStuck);
         rotacaoRodasPorUnidadeVelocidade = Mathf.Max(0f, rotacaoRodasPorUnidadeVelocidade);
         multiplicadorVisualDirecaoRodas = Mathf.Max(0f, multiplicadorVisualDirecaoRodas);
         suavidadeVisualDirecaoRodas = Mathf.Max(0.1f, suavidadeVisualDirecaoRodas);

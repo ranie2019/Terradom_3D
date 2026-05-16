@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4676868825471178250}
   - component: {fileID: 4637286742673061343}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -83,7 +83,7 @@ GameObject:
   - component: {fileID: 6505430867969209262}
   - component: {fileID: 7087394258476920898}
   - component: {fileID: 7132979366411490819}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cube.013
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -173,7 +173,7 @@ GameObject:
   - component: {fileID: 8765756863691200485}
   - component: {fileID: 9124285659659559700}
   - component: {fileID: 5591174439074664303}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cylinder (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -263,7 +263,7 @@ GameObject:
   - component: {fileID: 2083702281198669273}
   - component: {fileID: 6609487302138725623}
   - component: {fileID: 949735610421120440}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: BarraVida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -337,7 +337,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3157539825845705539}
   - component: {fileID: 2266162638355664000}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -412,7 +412,7 @@ GameObject:
   - component: {fileID: 3460403503719247910}
   - component: {fileID: 292421018970480137}
   - component: {fileID: 1052054876317959523}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 1
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -561,7 +561,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6827186707091247927}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cabeca
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -597,7 +597,7 @@ GameObject:
   - component: {fileID: 1390222731535045440}
   - component: {fileID: 6683691304743609549}
   - component: {fileID: 4331715946008790947}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 4
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -750,7 +750,7 @@ GameObject:
   - component: {fileID: 4741801136056188796}
   - component: {fileID: 3221553301005025718}
   - component: {fileID: 1189461073760209464}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 7
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -902,7 +902,7 @@ GameObject:
   - component: {fileID: 5380179417108492007}
   - component: {fileID: 1301739874611169673}
   - component: {fileID: 8934304366060992114}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1017,7 +1017,7 @@ GameObject:
   - component: {fileID: 3952568954406553219}
   - component: {fileID: 2109858066293376642}
   - component: {fileID: 8291894969302973877}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 6
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -1166,7 +1166,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2502863190394260452}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: BaseMissel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1200,7 +1200,7 @@ GameObject:
   - component: {fileID: 5953207928465266001}
   - component: {fileID: 6470608486559800221}
   - component: {fileID: 6981149311333833631}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cilindro
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1290,7 +1290,7 @@ GameObject:
   - component: {fileID: 7454043039961865678}
   - component: {fileID: 2019884208007884968}
   - component: {fileID: 3898933231414700093}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1380,7 +1380,7 @@ GameObject:
   - component: {fileID: 788766422760509227}
   - component: {fileID: 4934229292687954878}
   - component: {fileID: 4468618437095240758}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1471,7 +1471,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6729778134386828388}
   - component: {fileID: 965449838646358321}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1544,7 +1544,7 @@ GameObject:
   - component: {fileID: 5105855453159215535}
   - component: {fileID: 5759120939302779795}
   - component: {fileID: 3910384658483532782}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: baseMissel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1642,7 +1642,7 @@ GameObject:
   - component: {fileID: 3283625684144526042}
   - component: {fileID: 76755010499677268}
   - component: {fileID: 6693425532957611019}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 3
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -1793,7 +1793,7 @@ GameObject:
   - component: {fileID: 9039496151971457464}
   - component: {fileID: 3614254185259318224}
   - component: {fileID: 2318592283984658417}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cube.015
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1882,7 +1882,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5622204812943353950}
   - component: {fileID: 7453535943845435703}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1955,7 +1955,7 @@ GameObject:
   - component: {fileID: 2964378283734801642}
   - component: {fileID: 4982815348106317792}
   - component: {fileID: 7149295151491227}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: FundoVida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2030,7 +2030,7 @@ GameObject:
   - component: {fileID: 7065634906704601218}
   - component: {fileID: 3143859800070782049}
   - component: {fileID: 774062886363416922}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Torre Ar Vermelho
   m_TagString: Vermelho
   m_Icon: {fileID: 0}
@@ -2139,7 +2139,7 @@ GameObject:
   - component: {fileID: 1264093107517553829}
   - component: {fileID: 6507702299458285176}
   - component: {fileID: 5861193333281850771}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 8
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -2289,7 +2289,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1494658680748971980}
   - component: {fileID: 8140278469024365939}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2362,7 +2362,7 @@ GameObject:
   - component: {fileID: 1416658356633278}
   - component: {fileID: 694114937973786313}
   - component: {fileID: 8022767871869313797}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cube.006
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2454,7 +2454,7 @@ GameObject:
   - component: {fileID: 4805227644394909436}
   - component: {fileID: 2014867750235769905}
   - component: {fileID: 1470670826181291884}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 2
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -2605,7 +2605,7 @@ GameObject:
   - component: {fileID: 6101537102303115762}
   - component: {fileID: 4190257460390631464}
   - component: {fileID: 2922670480925081243}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Misseis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2703,7 +2703,7 @@ GameObject:
   - component: {fileID: 2909213305957179869}
   - component: {fileID: 6597640797365813173}
   - component: {fileID: 2794084284942052822}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Olhos
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2794,7 +2794,7 @@ GameObject:
   - component: {fileID: 5972855630544673115}
   - component: {fileID: 7092549690886161764}
   - component: {fileID: 7023381153027577543}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Antena
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2883,7 +2883,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9109790407343312867}
   - component: {fileID: 975942119371531132}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2957,7 +2957,7 @@ GameObject:
   - component: {fileID: 5086873609353787811}
   - component: {fileID: 2868671194931930046}
   - component: {fileID: 4101649203735593191}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: cabeca
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3077,7 +3077,7 @@ GameObject:
   - component: {fileID: 384370071035498422}
   - component: {fileID: 5249088272052541216}
   - component: {fileID: 6040663242065963909}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Missel 5
   m_TagString: Missel
   m_Icon: {fileID: 0}
@@ -3228,7 +3228,7 @@ GameObject:
   - component: {fileID: 1044739422491307823}
   - component: {fileID: 2829488885317018681}
   - component: {fileID: 1366834301324850280}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cylinder.015
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3317,7 +3317,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5127692871046377338}
   - component: {fileID: 8105002981932609157}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3389,7 +3389,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2152750635867195598}
   - component: {fileID: 6266068447466632667}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3462,7 +3462,7 @@ GameObject:
   - component: {fileID: 6975497202964157583}
   - component: {fileID: 8501907222643782859}
   - component: {fileID: 6975478365815147687}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Parafuzos
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3552,7 +3552,7 @@ GameObject:
   - component: {fileID: 957164819123662543}
   - component: {fileID: 5339229076813531846}
   - component: {fileID: 6353306421119208667}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cube.003
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3644,7 +3644,7 @@ GameObject:
   - component: {fileID: 8051579737878329712}
   - component: {fileID: 8799789834864893743}
   - component: {fileID: 5596591704214324668}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: CanvasWorld
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3760,7 +3760,7 @@ GameObject:
   - component: {fileID: 746571441534292535}
   - component: {fileID: 310554891776821848}
   - component: {fileID: 4574804123486101038}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Cube.009
   m_TagString: Untagged
   m_Icon: {fileID: 0}

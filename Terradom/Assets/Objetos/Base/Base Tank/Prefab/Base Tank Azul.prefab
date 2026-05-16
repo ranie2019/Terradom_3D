@@ -320,15 +320,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -291.36905
+      value: -278.26703
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.00000888708
+      value: -0.000019062543
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -323.28967
+      value: -341.4628
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7838d24033c96fe4bb49fad5f4ef0b23, type: 3}
       propertyPath: m_LocalRotation.w
@@ -529,7 +529,7 @@ MonoBehaviour:
   corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
   corBorda: {r: 0.2, g: 0.31827828, b: 0.8, a: 0.39215687}
   velocidadePiscar: 2
-  alturaVisualizacao: 0.1
+  alturaVisualizacao: 0.5
   segmentosCirculo: 64
   terrain: {fileID: 0}
   debugLogs: 0
