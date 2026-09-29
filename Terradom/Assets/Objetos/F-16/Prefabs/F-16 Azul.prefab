@@ -176,7 +176,7 @@ MonoBehaviour:
   aviaoGaragem: {fileID: 5633220080158471514}
   aviaoVoo: {fileID: 8047006041726719725}
   aviaoVisao: {fileID: 3317025807864646320}
-  aviaoAtaque: {fileID: 0}
+  aviaoAtaque: {fileID: 9191625953713026755}
   alturaTransicaoPatrulha: 100
   faseAtual: 0
   alturaAcimaTerrain: 0
@@ -259,6 +259,7 @@ MonoBehaviour:
   alcanceVisaoTerrestre: 310
   tagsInimigosTerrestres:
   - Vermelho
+  - Verde
   ignorarAvioesNaVisaoTerrestre: 1
   layerAviao:
     serializedVersion: 2
@@ -267,6 +268,7 @@ MonoBehaviour:
   alcanceVisaoAerea: 1000
   tagsInimigosAereos:
   - Vermelho
+  - Verde
   detectarTriggers: 0
   intervaloBusca: 0.15
   prioridadeAlvo: 0
@@ -303,10 +305,10 @@ MonoBehaviour:
   intervaloMissel: 2
   tagsInimigoPai:
   - Vermelho
-  tagsFilhoApenasMetralhadora:
-  - Soldado
-  - Guerreiro
-  - Coletor
+  - Verde
+  layersApenasMetralhadora:
+    serializedVersion: 2
+    m_Bits: 57344
   desenharGizmosNoEditor: 1
   misseisRestantes: 8
 --- !u!114 &3502975617175563294
@@ -329,6 +331,7 @@ MonoBehaviour:
   - MIssel
   - Vermelho
   - Espada
+  - Verde
   cooldownDano: 0.25
 --- !u!1 &2486167691975619294
 GameObject:
@@ -2054,6 +2057,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 261861090764929462}
     m_Modifications:
+    - target: {fileID: -9102622648653764658, guid: c5189ab93a122e84da463641d2210f6c, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: -9102622648653764658, guid: c5189ab93a122e84da463641d2210f6c, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -9102622648653764658, guid: c5189ab93a122e84da463641d2210f6c, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8835839840656023600, guid: c5189ab93a122e84da463641d2210f6c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 664.2403
@@ -2121,6 +2136,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 261861090764929462}
     m_Modifications:
+    - target: {fileID: -2926663951625367685, guid: 49b70aa5beb669f489da30d5c87e2ba1, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: -2926663951625367685, guid: 49b70aa5beb669f489da30d5c87e2ba1, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2926663951625367685, guid: 49b70aa5beb669f489da30d5c87e2ba1, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4451015109616025744, guid: 49b70aa5beb669f489da30d5c87e2ba1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 368.3385
@@ -2192,6 +2219,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: 4
       objectReference: {fileID: 0}
+    - target: {fileID: 3710571098231555752, guid: b4b55f0a631980a4eb42ac107c7dcedc, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 3710571098231555752, guid: b4b55f0a631980a4eb42ac107c7dcedc, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3710571098231555752, guid: b4b55f0a631980a4eb42ac107c7dcedc, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4841504187932997406, guid: b4b55f0a631980a4eb42ac107c7dcedc, type: 3}
       propertyPath: m_LocalPosition.x
       value: -369
@@ -2255,6 +2294,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 261861090764929462}
     m_Modifications:
+    - target: {fileID: -6651074057021143615, guid: 38d1a83a1975f2043a1c93004d00d1c1, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: -6651074057021143615, guid: 38d1a83a1975f2043a1c93004d00d1c1, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6651074057021143615, guid: 38d1a83a1975f2043a1c93004d00d1c1, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1315137440663556561, guid: 38d1a83a1975f2043a1c93004d00d1c1, type: 3}
       propertyPath: m_LocalPosition.x
       value: -507.57346
@@ -2322,6 +2373,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 261861090764929462}
     m_Modifications:
+    - target: {fileID: -6003325335541582252, guid: d08c977c7bdcd424eb99078e14598563, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: -6003325335541582252, guid: d08c977c7bdcd424eb99078e14598563, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6003325335541582252, guid: d08c977c7bdcd424eb99078e14598563, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6499843762002024880, guid: d08c977c7bdcd424eb99078e14598563, type: 3}
       propertyPath: m_LocalPosition.x
       value: -663.437
@@ -2433,6 +2496,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 8118194308668919441, guid: da5de8adfd01e26479899c2e0f6ea9bc, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118194308668919441, guid: da5de8adfd01e26479899c2e0f6ea9bc, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118194308668919441, guid: da5de8adfd01e26479899c2e0f6ea9bc, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2494,6 +2569,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 345472910160328291, guid: 5ab59d6a6d5089f4aa5ff258d7599566, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1099701462955783306, guid: 5ab59d6a6d5089f4aa5ff258d7599566, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1099701462955783306, guid: 5ab59d6a6d5089f4aa5ff258d7599566, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1099701462955783306, guid: 5ab59d6a6d5089f4aa5ff258d7599566, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6828197802363761637, guid: 5ab59d6a6d5089f4aa5ff258d7599566, type: 3}
@@ -2565,6 +2652,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6776670033268936423, guid: 78c389e670648b343acf9d984b90297a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8053689999702399944, guid: 78c389e670648b343acf9d984b90297a, type: 3}
+      propertyPath: DopplerLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8053689999702399944, guid: 78c389e670648b343acf9d984b90297a, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

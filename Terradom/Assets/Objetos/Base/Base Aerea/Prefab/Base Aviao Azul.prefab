@@ -68,7 +68,7 @@ Transform:
   m_GameObject: {fileID: 396559075328121411}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: -51.493496, y: 0, z: 0}
+  m_LocalPosition: {x: -51.493496, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1236,7 +1236,7 @@ Transform:
   m_GameObject: {fileID: 8440675772621300434}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.703973, y: -0.000012005479, z: 45.5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1289,6 +1289,7 @@ MonoBehaviour:
   - Espada
   - Bala
   - Missel
+  - Verde
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 0
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
@@ -1332,10 +1333,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
   raioArea: 100
-  tagBase: Vermelho
+  tagBase: Azul
   mostrarArea: 1
-  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.15}
-  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.8}
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0}
+  corBorda: {r: 0, g: 0.19607878, b: 1, a: 1}
   velocidadePiscar: 2
   alturaVisualizacao: 0.05
   segmentosCirculo: 64

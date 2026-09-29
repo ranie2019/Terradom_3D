@@ -56,9 +56,10 @@ public class AviaoAtaque : MonoBehaviour
 
     [Header("Filtro míssil")]
     [Tooltip("Tags do PAI que confirmam que o objeto é inimigo")]
-    [SerializeField] private string[] tagsInimigoPai = { "Vermelho" };
-    [Tooltip("Tags do FILHO que indicam unidade pequena — só metralhadora, sem míssil")]
-    [SerializeField] private string[] tagsFilhoApenasMetralhadora = { "Soldado", "Guerreiro", "Coletor" };
+    [SerializeField] private string[] tagsInimigoPai = { "Vermelho", "Azul" };
+    [Tooltip("Layers que indicam unidade pequena — só metralhadora, sem míssil.\n" +
+             "Se o alvo tiver uma das tagsInimigoPai E estiver numa dessas layers, usa metralhadora.")]
+    [SerializeField] private LayerMask layersApenasMetralhadora;
 
     // =====================================================================
     // INSPECTOR — DEBUG
@@ -103,12 +104,9 @@ public class AviaoAtaque : MonoBehaviour
 
     private void OnEnable()
     {
-        // Cooldown de segurança ao ativar — evita rajada imediata
         proximoTiroMetralhadora = Time.time + 1f;
         proximoLancamentoMissel = Time.time + 1f;
         alvoAtual               = null;
-
-        Debug.Log($"[AviaoAtaque] {gameObject.name} — ATIVADO. Mísseis: {misseisRestantes}", this);
     }
 
     // =====================================================================
@@ -138,18 +136,21 @@ public class AviaoAtaque : MonoBehaviour
     private void TentarAtirarMetralhadora()
     {
         if (Time.time < proximoTiroMetralhadora) return;
-
-        // LOCK-ON: só dispara se o nariz do avião estiver apontado para o alvo
-        // dentro da tolerância configurada. O AviaoVisao gira o avião em direção
-        // ao alvo no estado EmAtaque — aguardamos esse alinhamento antes de atirar.
         if (!NaLinhaDeAtiro()) return;
 
         Transform spawn = ObterSpawnMetralhadoraAtual();
         if (spawn == null || prefabBalaMetralhadora == null) return;
 
-        // spawn.rotation: projétil nasce alinhado com o cano.
-        // Configurar() define a direção final, ignorando qualquer pivot incorreto no prefab.
-        GameObject balaGO = Instantiate(prefabBalaMetralhadora, spawn.position, spawn.rotation);
+        // Mira diretamente no centro do alvo — simula a passagem rasante do avião
+        Vector3 pontoAlvo   = ObterPontoMira(alvoAtual);
+        Vector3 direcaoMira = (pontoAlvo - spawn.position).normalized;
+
+        // Se a direção for zero (spawn colapsado), usa o forward do spawn
+        if (direcaoMira.sqrMagnitude < 0.001f)
+            direcaoMira = spawn.forward;
+
+        Quaternion rotacaoMira = Quaternion.LookRotation(direcaoMira);
+        GameObject balaGO      = Instantiate(prefabBalaMetralhadora, spawn.position, rotacaoMira);
 
         ProjetilDistancia projetil = balaGO.GetComponent<ProjetilDistancia>();
         if (projetil != null)
@@ -160,20 +161,21 @@ public class AviaoAtaque : MonoBehaviour
     }
 
     /// <summary>
-    /// Retorna true se o nariz do avião está apontado para o alvo
+    /// Autoriza o disparo apenas quando o nariz do avião aponta para o alvo
     /// dentro de anguloMiraMetralhadora graus.
-    /// Usa AnguloParaAlvo do AviaoVisao (calculado a partir da origem da visão / nariz do avião).
+    /// Isso simula o alinhamento real do avião antes de disparar a metralhadora.
     /// </summary>
     private bool NaLinhaDeAtiro()
     {
         if (alvoAtual == null) return false;
 
+        // Usa o ângulo calculado pelo AviaoVisao (nariz do avião → alvo)
         if (aviaoVisao != null)
             return aviaoVisao.AnguloParaAlvo <= anguloMiraMetralhadora;
 
-        // Fallback caso AviaoVisao não esteja disponível
-        Vector3 dir    = (alvoAtual.position - transform.position).normalized;
-        float   angulo = Vector3.Angle(transform.forward, dir);
+        // Fallback: calcula direto no transform deste avião
+        Vector3 direcaoAlvo = (ObterPontoMira(alvoAtual) - transform.position).normalized;
+        float   angulo      = Vector3.Angle(transform.forward, direcaoAlvo);
         return angulo <= anguloMiraMetralhadora;
     }
 
@@ -219,9 +221,6 @@ public class AviaoAtaque : MonoBehaviour
         misseisRestantes--;
 
         proximoLancamentoMissel = Time.time + Mathf.Max(0.1f, intervaloMissel);
-
-        Debug.Log($"[AviaoAtaque] {gameObject.name} — míssil slot {slotIndex} lançado! " +
-                  $"Restantes: {misseisRestantes}", this);
     }
 
     /// <summary>
@@ -247,11 +246,38 @@ public class AviaoAtaque : MonoBehaviour
     // FILTRO DE MÍSSIL
     // =====================================================================
 
+    /// <summary>
+    /// Retorna false (só metralhadora) se o alvo for inimigo (tag pai)
+    /// E estiver numa das layers configuradas como "unidade pequena".
+    /// Retorna true (pode usar míssil) nos demais casos.
+    /// </summary>
     private bool PodeUsarMissel(Transform alvo)
     {
         if (alvo == null) return true;
+
+        // Só aplica filtro se o alvo for reconhecido como inimigo pela tag do pai
         if (!ObjetoOuAncestralTemTag(alvo, tagsInimigoPai)) return true;
-        return !FilhoTemTag(alvo, tagsFilhoApenasMetralhadora);
+
+        // Se a layer do alvo está entre as layers "só metralhadora", bloqueia míssil
+        return !AlvoEstaEmLayerMetralhadora(alvo);
+    }
+
+    /// <summary>
+    /// Verifica se o alvo (ou qualquer ancestral) está numa layer de "unidade pequena".
+    /// Sobe na hierarquia porque o Collider pode estar num filho mas a layer no pai.
+    /// </summary>
+    private bool AlvoEstaEmLayerMetralhadora(Transform alvo)
+    {
+        if (alvo == null) return false;
+
+        Transform atual = alvo;
+        while (atual != null)
+        {
+            if ((layersApenasMetralhadora.value & (1 << atual.gameObject.layer)) != 0)
+                return true;
+            atual = atual.parent;
+        }
+        return false;
     }
 
     private bool ObjetoOuAncestralTemTag(Transform alvo, string[] tags)
@@ -264,21 +290,6 @@ public class AviaoAtaque : MonoBehaviour
                 if (!string.IsNullOrWhiteSpace(tag) && atual.gameObject.CompareTag(tag))
                     return true;
             atual = atual.parent;
-        }
-        return false;
-    }
-
-    private bool FilhoTemTag(Transform alvo, string[] tags)
-    {
-        if (alvo == null || tags == null) return false;
-        Transform raiz = alvo;
-        while (raiz.parent != null) raiz = raiz.parent;
-        foreach (Transform filho in raiz.GetComponentsInChildren<Transform>(true))
-        {
-            if (filho == raiz) continue;
-            foreach (string tag in tags)
-                if (!string.IsNullOrWhiteSpace(tag) && filho.gameObject.CompareTag(tag))
-                    return true;
         }
         return false;
     }

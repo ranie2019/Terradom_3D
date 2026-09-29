@@ -1482,7 +1482,7 @@ MonoBehaviour:
   - Azul
   ignorarLayersAereasNaVisaoTerrestre: 1
   usarVisaoAerea: 1
-  raioVisaoAerea: 100
+  raioVisaoAerea: 300
   layersAvioesInimigos:
     serializedVersion: 2
     m_Bits: 512
@@ -1491,7 +1491,7 @@ MonoBehaviour:
   - Azul
   detectarTriggers: 0
   intervaloBusca: 0.15
-  prioridadeAlvo: 1
+  prioridadeAlvo: 2
   desenharVisaoNoEditor: 1
 --- !u!114 &4843904732050496637
 MonoBehaviour:
@@ -1561,7 +1561,10 @@ MonoBehaviour:
   vidaAtual: 25
   barraVidaUI: {fileID: 8915297741210090049}
   tagsQueCausanDano:
-  - 
+  - Azul
+  - Bala
+  - Espada
+  - Missel
   cooldownDano: 0.25
 --- !u!1 &5198013775936986468
 GameObject:

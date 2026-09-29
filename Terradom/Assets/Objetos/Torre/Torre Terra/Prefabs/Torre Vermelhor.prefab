@@ -225,8 +225,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 504082c863ccc1c4b949f6895dbfeeba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseVida
-  vidaMaxima: 25
-  vidaAtual: 25
+  vidaMaxima: 75
+  vidaAtual: 75
   reiniciarVidaAoIniciar: 1
   destruirAoChegarEmZero: 1
   exigirTagPermitidaParaReceberDano: 1
@@ -234,6 +234,8 @@ MonoBehaviour:
   - Azul
   - Espada
   - Bala
+  - Missel
+  - Verde
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 1
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
@@ -256,7 +258,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 690e260e10eec794c8391a6f4c80d631, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Torre
-  raioVisao: 50
+  raioVisao: 100
   tagsInimigos:
   - Azul
   baseCanhao: {fileID: 6289208881991466143}

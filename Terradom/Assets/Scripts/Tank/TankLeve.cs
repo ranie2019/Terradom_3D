@@ -144,7 +144,7 @@ public class TankLeve : MonoBehaviour
         BuscarModulosDoTank();
         AplicarConfiguracaoRigidbody();
         contagemPatrulha = tempoContagem;
-        SortearNovaCurva();
+        anguloDirecaoAlvo = 0f;
     }
 
     private void FixedUpdate()
@@ -511,26 +511,30 @@ public class TankLeve : MonoBehaviour
 
     private void AtualizarPatrulhaLivre()
     {
-        // Contagem regressiva: decrementa a cada FixedUpdate
         contagemPatrulha -= Time.fixedDeltaTime;
 
         if (contagemPatrulha <= 0f)
         {
             SortearNovaCurva();
-            contagemPatrulha = Mathf.Max(0.5f, tempoContagem); // reinicia o loop
+            contagemPatrulha = Mathf.Max(0.5f, tempoContagem);
         }
+
+        // Quando a viragem estiver quase completa, zera o angulo e segue reto
+        if (Mathf.Abs(anguloDirecaoAtual - anguloDirecaoAlvo) < 1f && Mathf.Abs(anguloDirecaoAlvo) > 0.5f)
+            anguloDirecaoAlvo = 0f;
     }
 
     private void SortearNovaCurva()
     {
-        // Alterna o lado a cada troca para cobrir o mapa
+        // Sorteia um angulo de viragem unico para mudar de direcao e depois andar reto
+        // O angulo e aplicado uma vez e zerado apos a viragem completar
         if (alternarLadoDaCurva)
             ultimoLadoCurva *= -1;
         else
             ultimoLadoCurva = UnityEngine.Random.value < 0.5f ? -1 : 1;
 
-        float anguloMin = Mathf.Clamp(anguloMinimoCurva, 0f, anguloMaximoDirecao);
-        float anguloMax = Mathf.Max(anguloMin, anguloMaximoDirecao);
+        float anguloMin = Mathf.Clamp(anguloMinimoCurva, 5f, anguloMaximoDirecao);
+        float anguloMax = anguloMaximoDirecao;
         anguloDirecaoAlvo = ultimoLadoCurva * UnityEngine.Random.Range(anguloMin, anguloMax);
     }
 

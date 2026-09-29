@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3382924113691437708}
   - component: {fileID: 2592536071803666307}
   - component: {fileID: 8145331213932030258}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cabeca
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,7 +125,7 @@ GameObject:
   - component: {fileID: 4650441428859208168}
   - component: {fileID: 5164784045800585209}
   - component: {fileID: 4248725995864580607}
-  m_Layer: 5
+  m_Layer: 14
   m_Name: CanvasWorld
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: 8670288720952944610}
   - component: {fileID: 7915494615549882791}
   - component: {fileID: 5548504689061496619}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Braco D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -351,7 +351,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1715016252725795635}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: 'Perna D '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -386,7 +386,7 @@ GameObject:
   - component: {fileID: 6339666474188441986}
   - component: {fileID: 2558136811748876290}
   - component: {fileID: 6987391422971813502}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Corpo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -495,7 +495,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6443425907022000902}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Braco D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -530,7 +530,7 @@ GameObject:
   - component: {fileID: 6118189247748339211}
   - component: {fileID: 5274916691098262395}
   - component: {fileID: 9018695017279578581}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cabeca (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -642,7 +642,7 @@ GameObject:
   - component: {fileID: 4051156581383177238}
   - component: {fileID: 1741367205889253462}
   - component: {fileID: 2199118347616257422}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cocha D (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -754,7 +754,7 @@ GameObject:
   - component: {fileID: 4396516028437784869}
   - component: {fileID: 9147893507631491049}
   - component: {fileID: 6113771313912225889}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Ombro E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -864,7 +864,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2610505934447090211}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Pistola
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -898,7 +898,7 @@ GameObject:
   - component: {fileID: 3171700742288864696}
   - component: {fileID: 9139777733315540022}
   - component: {fileID: 1003464027956241543}
-  m_Layer: 5
+  m_Layer: 14
   m_Name: BarraVida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -974,7 +974,7 @@ GameObject:
   - component: {fileID: 326227803375985395}
   - component: {fileID: 4398335740517015311}
   - component: {fileID: 5453282047352738781}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cocha E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1084,7 +1084,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2701067253868754194}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cocha D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1117,7 +1117,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2159456765525882871}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: 'Perna E '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1152,7 +1152,7 @@ GameObject:
   - component: {fileID: 1518508590914268245}
   - component: {fileID: 722852603417064609}
   - component: {fileID: 7543129851043278246}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cocha D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1265,7 +1265,7 @@ GameObject:
   - component: {fileID: 3207441383541873937}
   - component: {fileID: 7425448227215603604}
   - component: {fileID: 2161042638127011951}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Ombro E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1374,7 +1374,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3804416543423152953}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Ombro D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1406,7 +1406,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6898481340653951247}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cocha E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1439,7 +1439,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5847816907109875669}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Braco E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1474,7 +1474,7 @@ GameObject:
   - component: {fileID: 2297788114308815278}
   - component: {fileID: 556405625489994920}
   - component: {fileID: 7974556027059655846}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: 'Perna D '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1586,7 +1586,7 @@ GameObject:
   - component: {fileID: 8454390234282950972}
   - component: {fileID: 6140370794134297670}
   - component: {fileID: 1168480796169194060}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Braco E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1698,7 +1698,7 @@ GameObject:
   - component: {fileID: 200434693650226036}
   - component: {fileID: 4333810874729140215}
   - component: {fileID: 3300221559574099187}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Ombro D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1812,7 +1812,7 @@ GameObject:
   - component: {fileID: 2123476061394051339}
   - component: {fileID: 8074517107419795997}
   - component: {fileID: 1001553934146808625}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Ombro D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1924,7 +1924,7 @@ GameObject:
   - component: {fileID: 4180712477208383926}
   - component: {fileID: 3214352471788039389}
   - component: {fileID: 8301784383959884312}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: 'Perna E '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2036,7 +2036,7 @@ GameObject:
   - component: {fileID: 7258736387327431669}
   - component: {fileID: 5091059242238418254}
   - component: {fileID: 5015995664964846342}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Cocha D (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2147,7 +2147,7 @@ GameObject:
   - component: {fileID: 2961436494741592072}
   - component: {fileID: 190492407566766847}
   - component: {fileID: 4396160664291143781}
-  m_Layer: 5
+  m_Layer: 14
   m_Name: FundoVida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2220,7 +2220,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4208606512843789707}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Ombro E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2260,7 +2260,7 @@ GameObject:
   - component: {fileID: 3045068892681967673}
   - component: {fileID: 3857150762704655300}
   - component: {fileID: 8667577381040030676}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Soldado Azul
   m_TagString: Azul
   m_Icon: {fileID: 0}
@@ -2399,12 +2399,12 @@ MonoBehaviour:
   vidaMax: 15
   vidaAtual: 15
   barraVidaUI: {fileID: 4248725995864580607}
-  tagsEspadaQueDano:
-  - espada vermelho
+  tagsQueCausanDano:
+  - Vermelho
+  - Bala
+  - Espada
+  - Missel
   cooldownDano: 0.25
-  ignorarSeAtingirEsses:
-  - {fileID: 0}
-  - {fileID: 0}
 --- !u!114 &3857150762704655300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2417,7 +2417,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 424a09bb6b306ea40b3f14beaa29d249, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Visao
-  raioVisao: 25
+  raioVisao: 80
   anguloCampoDeVisao: 140
   tagsAlvo:
   - Vermelho
@@ -2438,7 +2438,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03e5a6e469df6e249927896747e023e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AtaqueDistancia
-  alcanceAtaque: 25
+  alcanceAtaque: 80
   dano: 3
   cooldownAtaque: 3
   duracaoAnimAtaque: 0.6
@@ -2456,9 +2456,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2610505934447090211}
     m_Modifications:
+    - target: {fileID: 137678530859997941, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
     - target: {fileID: 4965438261709640327, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
       propertyPath: m_Name
       value: Pistola
+      objectReference: {fileID: 0}
+    - target: {fileID: 4965438261709640327, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
+      propertyPath: m_Layer
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 4965438261709640327, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
       propertyPath: m_TagString
@@ -2487,6 +2495,10 @@ PrefabInstance:
     - target: {fileID: 5113342695919799909, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5516677281876120031, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
+      propertyPath: m_Layer
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 5738456080911321149, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
       propertyPath: m_LocalScale.x
@@ -2539,6 +2551,18 @@ PrefabInstance:
     - target: {fileID: 5738456080911321149, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6650470630134122455, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 8502960412684221905, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 9051692995052618235, guid: a35b8c32acba1334b9b31dfe8cdbc9be, type: 3}
+      propertyPath: m_Layer
+      value: 14
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

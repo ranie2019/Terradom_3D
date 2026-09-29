@@ -82,6 +82,11 @@ public class Missel : MonoBehaviour
     [SerializeField] private bool       alinharExplosaoComNormal  = false;
     [SerializeField] private float      tempoParaDestruirExplosao = 4f;
 
+    [Header("Audio de explosão")]
+    [SerializeField] private AudioClip  audioExplosao;
+    [SerializeField] private float      volumeExplosao = 1f;
+    [SerializeField] private float      distanciaMaximaAudio = 50f;
+
     // =====================================================================
     // INSPECTOR — RASTRO DE FUMAÇA
     // =====================================================================
@@ -642,17 +647,21 @@ public class Missel : MonoBehaviour
 
     private void SpawnarExplosao()
     {
-        if (prefabExplosao == null) return;
-
         Vector3    pos = houveImpacto ? posicaoImpacto : transform.position;
         Quaternion rot = Quaternion.identity;
 
         if (alinharExplosaoComNormal && normalImpacto.sqrMagnitude > 0.001f)
             rot = Quaternion.LookRotation(normalImpacto, Vector3.up);
 
-        GameObject efeito = Instantiate(prefabExplosao, pos, rot);
-        if (tempoParaDestruirExplosao > 0f)
-            Destroy(efeito, tempoParaDestruirExplosao);
+        if (prefabExplosao != null)
+        {
+            GameObject efeito = Instantiate(prefabExplosao, pos, rot);
+            if (tempoParaDestruirExplosao > 0f)
+                Destroy(efeito, tempoParaDestruirExplosao);
+        }
+
+        if (audioExplosao != null)
+            AudioSource.PlayClipAtPoint(audioExplosao, pos, volumeExplosao);
     }
 
     // =====================================================================
@@ -684,6 +693,8 @@ public class Missel : MonoBehaviour
         raioDeteccao              = Mathf.Max(0.05f, raioDeteccao);
         margemDeteccao            = Mathf.Max(0f, margemDeteccao);
         tempoParaDestruirExplosao = Mathf.Max(0f, tempoParaDestruirExplosao);
+        volumeExplosao            = Mathf.Clamp01(volumeExplosao);
+        distanciaMaximaAudio      = Mathf.Max(1f, distanciaMaximaAudio);
         tempoRastroAposDestruir   = Mathf.Max(0f, tempoRastroAposDestruir);
     }
 

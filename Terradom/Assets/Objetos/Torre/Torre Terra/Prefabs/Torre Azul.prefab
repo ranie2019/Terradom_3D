@@ -363,16 +363,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 504082c863ccc1c4b949f6895dbfeeba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseVida
-  vidaMaxima: 25
-  vidaAtual: 25
+  vidaMaxima: 75
+  vidaAtual: 75
   reiniciarVidaAoIniciar: 1
   destruirAoChegarEmZero: 1
   exigirTagPermitidaParaReceberDano: 1
   tagsQuePodemCausarDano:
-  - Azul
+  - Vermelho
   - Espada
   - Bala
   - Missel
+  - Verde
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 1
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
@@ -398,6 +399,7 @@ MonoBehaviour:
   raioVisao: 100
   tagsInimigos:
   - Vermelho
+  - Verde
   baseCanhao: {fileID: 2225263066157953970}
   pontoDisparo: {fileID: 8283341987883542431}
   prefabBala: {fileID: 1369670887755148727, guid: 436be975e042b7748b29c6f7f81ede5a, type: 3}
@@ -420,11 +422,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 70
+  raioArea: 100
   tagBase: Azul
   mostrarArea: 1
-  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
-  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 0.39215687}
+  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0}
+  corBorda: {r: 0, g: 0.19607878, b: 1, a: 1}
   velocidadePiscar: 2
   alturaVisualizacao: 0.5
   segmentosCirculo: 64

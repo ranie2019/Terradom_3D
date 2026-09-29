@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -13,7 +13,7 @@ public class TankAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // REFERÊNCIA DE VISÃO
+    // REFERï¿½NCIA DE VISï¿½O
     // =====================================================================
 
     [Header("Referencia da visao")]
@@ -23,20 +23,20 @@ public class TankAtaque : MonoBehaviour
     // MIRA TERRESTRE
     // =====================================================================
 
-    [Header("Mira Terrestre — Giro Y e Elevacao Z")]
+    [Header("Mira Terrestre ï¿½ Giro Y e Elevacao Z")]
     [SerializeField] private Transform miraGiroY360;
     [SerializeField] private Transform miraElevacaoZ;
     [SerializeField] private Transform spawnBala;
     [SerializeField] private EixoFrenteMira eixoFrenteDaMira = EixoFrenteMira.XPositivo;
 
-    [Header("Mira Terrestre — Velocidades")]
+    [Header("Mira Terrestre ï¿½ Velocidades")]
     [SerializeField] private float velocidadeGiroY = 180f;
     [SerializeField] private float anguloMinimoZ   = -9f;
     [SerializeField] private float anguloMaximoZ   = 45f;
     [SerializeField] private float velocidadeGiroZ = 120f;
     [SerializeField] private bool  inverterElevacaoZ = false;
 
-    [Header("Mira Terrestre — Ataque")]
+    [Header("Mira Terrestre ï¿½ Ataque")]
     [SerializeField] private bool       atacarAlvoTerrestre        = true;
     [SerializeField] private bool       atacarAutomaticamente      = true;
     [SerializeField] private GameObject prefabBala                 = null;
@@ -47,23 +47,23 @@ public class TankAtaque : MonoBehaviour
     [SerializeField] private float      alturaExtraMiraAlvo        = 0.2f;
 
     // =====================================================================
-    // MIRA ANTIAÉREA
+    // MIRA ANTIAï¿½REA
     // =====================================================================
 
-    [Header("Mira Antiaerea — Giro Y e Elevacao Z")]
+    [Header("Mira Antiaerea ï¿½ Giro Y e Elevacao Z")]
     [SerializeField] private Transform miraAereaGiroY360;
     [SerializeField] private Transform miraAereaElevacaoZ;
     [SerializeField] private Transform spawnBalaAerea;
     [SerializeField] private EixoFrenteMira eixoFrenteDaMiraAerea = EixoFrenteMira.XPositivo;
 
-    [Header("Mira Antiaerea — Velocidades")]
+    [Header("Mira Antiaerea ï¿½ Velocidades")]
     [SerializeField] private float velocidadeGiroYAerea = 270f;
     [SerializeField] private float anguloMinimoZAerea   = 10f;
     [SerializeField] private float anguloMaximoZAerea   = 85f;
     [SerializeField] private float velocidadeGiroZAerea = 200f;
     [SerializeField] private bool  inverterElevacaoZAerea = false;
 
-    [Header("Mira Antiaerea — Ataque")]
+    [Header("Mira Antiaerea ï¿½ Ataque")]
     [SerializeField] private bool       atacarAlvoAereo                  = true;
     [SerializeField] private bool       atacarAutomaticamenteAerea        = true;
     [SerializeField] private GameObject prefabBalaAerea                   = null;
@@ -115,7 +115,7 @@ public class TankAtaque : MonoBehaviour
         if (tankVisao == null)
             tankVisao = GetComponent<TankVisao>();
 
-        // Mira terrestre — fallbacks
+        // Mira terrestre ï¿½ fallbacks
         if (miraGiroY360  == null) miraGiroY360  = transform;
         if (miraElevacaoZ == null) miraElevacaoZ = miraGiroY360;
         if (spawnBala     == null) spawnBala     = miraElevacaoZ;
@@ -123,7 +123,7 @@ public class TankAtaque : MonoBehaviour
         rotacaoOriginalGiroY     = miraGiroY360.localRotation;
         rotacaoOriginalElevacaoZ = miraElevacaoZ.localRotation;
 
-        // Mira antiaérea — guarda rotações originais só se os transforms existirem
+        // Mira antiaï¿½rea ï¿½ guarda rotaï¿½ï¿½es originais sï¿½ se os transforms existirem
         if (miraAereaGiroY360  != null) rotacaoOriginalGiroYAerea     = miraAereaGiroY360.localRotation;
         if (miraAereaElevacaoZ != null) rotacaoOriginalElevacaoZAerea = miraAereaElevacaoZ.localRotation;
         if (spawnBalaAerea     == null && miraAereaElevacaoZ != null)
@@ -153,7 +153,7 @@ public class TankAtaque : MonoBehaviour
             CentralizarMiraTerrestre(Time.deltaTime);
         }
 
-        // MIRA ANTIAÉREA
+        // MIRA ANTIAï¿½REA
         if (alvoAereo != null && MiraAereaConfigurada())
         {
             Vector3 pontoMiraAereo = ObterPontoMira(alvoAereo, alturaExtraMiraAlvoAerea);
@@ -178,24 +178,21 @@ public class TankAtaque : MonoBehaviour
         alvoTerrestre = null;
         alvoAereo     = null;
 
-        if (tankVisao == null || !tankVisao.TemAlvo) return;
+        if (tankVisao == null) return;
 
-        if (tankVisao.TipoAlvoAtual == TankVisao.TipoAlvoTank.Terrestre && atacarAlvoTerrestre)
-            alvoTerrestre = tankVisao.AlvoAtual;
+        // Usa a mira correta para cada tipo de alvo detectado
+        if (atacarAlvoTerrestre && tankVisao.TemAlvoTerrestre)
+            alvoTerrestre = tankVisao.AlvoTerrestreAtual;
 
-        if (tankVisao.TipoAlvoAtual == TankVisao.TipoAlvoTank.Aereo && atacarAlvoAereo)
-            alvoAereo = tankVisao.AlvoAtual;
-
-        // Se TankVisao suportar múltiplos alvos simultâneos, descomente e adapte:
-        // alvoTerrestre = tankVisao.AlvoTerrestre;
-        // alvoAereo     = tankVisao.AlvoAereo;
+        if (atacarAlvoAereo && tankVisao.TemAlvoAereo)
+            alvoAereo = tankVisao.AlvoAereoAtual;
     }
 
     private bool MiraAereaConfigurada() =>
         miraAereaGiroY360 != null && miraAereaElevacaoZ != null;
 
     // =====================================================================
-    // MIRA TERRESTRE — GIRO
+    // MIRA TERRESTRE ï¿½ GIRO
     // =====================================================================
 
     private void GirarMiraHorizontalY(Vector3 pontoMira, float deltaTime)
@@ -228,13 +225,19 @@ public class TankAtaque : MonoBehaviour
     {
         if (miraElevacaoZ == null) return;
 
+        // Calcula direï¿½ï¿½o no espaï¿½o do pai do osso de elevaï¿½ï¿½o (que jï¿½ girou no Y)
         Transform referencia = miraElevacaoZ.parent != null ? miraElevacaoZ.parent : miraGiroY360;
         if (referencia == null) return;
 
-        Vector3 direcaoLocal = referencia.InverseTransformDirection(pontoMira - miraElevacaoZ.position);
-        if (direcaoLocal.sqrMagnitude <= 0.0001f) return;
+        Vector3 direcaoMundo = pontoMira - miraElevacaoZ.position;
+        if (direcaoMundo.sqrMagnitude <= 0.0001f) return;
 
-        float anguloDesejado = CalcularAnguloElevacao(direcaoLocal, eixoFrenteDaMira);
+        // Componente vertical e horizontal (independente do eixo frente)
+        float componenteVertical    = direcaoMundo.y;
+        Vector3 direcaoHorizontal   = new Vector3(direcaoMundo.x, 0f, direcaoMundo.z);
+        float componenteHorizontal  = direcaoHorizontal.magnitude;
+
+        float anguloDesejado = Mathf.Atan2(componenteVertical, componenteHorizontal) * Mathf.Rad2Deg;
         if (inverterElevacaoZ) anguloDesejado *= -1f;
         anguloDesejado = Mathf.Clamp(anguloDesejado, anguloMinimoZ, anguloMaximoZ);
 
@@ -245,7 +248,7 @@ public class TankAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // MIRA ANTIAÉREA — GIRO
+    // MIRA ANTIAï¿½REA ï¿½ GIRO
     // =====================================================================
 
     private void GirarMiraAereaHorizontalY(Vector3 pontoMira, float deltaTime)
@@ -278,13 +281,13 @@ public class TankAtaque : MonoBehaviour
     {
         if (miraAereaElevacaoZ == null) return;
 
-        Transform referencia = miraAereaElevacaoZ.parent != null ? miraAereaElevacaoZ.parent : miraAereaGiroY360;
-        if (referencia == null) return;
+        Vector3 direcaoMundo = pontoMira - miraAereaElevacaoZ.position;
+        if (direcaoMundo.sqrMagnitude <= 0.0001f) return;
 
-        Vector3 direcaoLocal = referencia.InverseTransformDirection(pontoMira - miraAereaElevacaoZ.position);
-        if (direcaoLocal.sqrMagnitude <= 0.0001f) return;
+        float componenteVertical   = direcaoMundo.y;
+        float componenteHorizontal = new Vector3(direcaoMundo.x, 0f, direcaoMundo.z).magnitude;
 
-        float anguloDesejado = CalcularAnguloElevacao(direcaoLocal, eixoFrenteDaMiraAerea);
+        float anguloDesejado = Mathf.Atan2(componenteVertical, componenteHorizontal) * Mathf.Rad2Deg;
         if (inverterElevacaoZAerea) anguloDesejado *= -1f;
         anguloDesejado = Mathf.Clamp(anguloDesejado, anguloMinimoZAerea, anguloMaximoZAerea);
 
@@ -295,7 +298,7 @@ public class TankAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // ATIRAR — TERRESTRE
+    // ATIRAR ï¿½ TERRESTRE
     // =====================================================================
 
     private void TentarAtirar(Vector3 pontoMira)
@@ -314,7 +317,7 @@ public class TankAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // ATIRAR — ANTIAÉREA
+    // ATIRAR ï¿½ ANTIAï¿½REA
     // =====================================================================
 
     private void TentarAtirarAereo(Vector3 pontoMira)
@@ -333,7 +336,7 @@ public class TankAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // ATIRAR — GENÉRICO
+    // ATIRAR ï¿½ GENï¿½RICO
     // =====================================================================
 
     private void Atirar(Transform spawn, GameObject prefab, Vector3 pontoMira, float velBala, float vidaBala, EixoFrenteMira eixo)
@@ -451,7 +454,7 @@ public class TankAtaque : MonoBehaviour
     }
 
     // =====================================================================
-    // VALIDAÇÃO
+    // VALIDAï¿½ï¿½O
     // =====================================================================
 
     private void OnValidate()
@@ -484,7 +487,7 @@ public class TankAtaque : MonoBehaviour
     {
         if (!desenharLinhaMiraNoEditor) return;
 
-        // Mira terrestre — vermelho
+        // Mira terrestre ï¿½ vermelho
         if (spawnBala != null)
         {
             Gizmos.color = Color.red;
@@ -498,7 +501,7 @@ public class TankAtaque : MonoBehaviour
             }
         }
 
-        // Mira antiaérea — ciano
+        // Mira antiaï¿½rea ï¿½ ciano
         if (spawnBalaAerea != null)
         {
             Gizmos.color = Color.cyan;
