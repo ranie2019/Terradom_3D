@@ -121,6 +121,10 @@ public class Missel : MonoBehaviour
     // Coroutine do tempo de vida (guardada para cancelar se necessário)
     private Coroutine _coroutineVida;
 
+    // O Inspector aponta para o asset do rastro. Só instanciamos esse prefab;
+    // nunca alteramos ou destruímos o asset original.
+    private ParticleSystem _prefabRastroFumaca;
+
     // =====================================================================
     // API PÚBLICA
     // =====================================================================
@@ -176,6 +180,13 @@ public class Missel : MonoBehaviour
     {
         rb  = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
+
+        if (rastroFumaca != null && !rastroFumaca.gameObject.scene.IsValid())
+        {
+            _prefabRastroFumaca = rastroFumaca;
+            rastroFumaca = null;
+        }
+
         ConfigurarRigidbody();
 
         velocidadeAtual = velocidade;
@@ -243,6 +254,9 @@ public class Missel : MonoBehaviour
 
     private void AtivarRastro()
     {
+        if (rastroFumaca == null && _prefabRastroFumaca != null)
+            rastroFumaca = Instantiate(_prefabRastroFumaca, transform);
+
         if (rastroFumaca == null)
         {
             Debug.LogWarning($"[Missel] {gameObject.name} — Rastro Fumaca nao atribuido no Inspector!", this);
@@ -273,6 +287,7 @@ public class Missel : MonoBehaviour
         rastroFumaca.transform.SetParent(null);
         rastroFumaca.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         Destroy(rastroFumaca.gameObject, tempoRastroAposDestruir);
+        rastroFumaca = null;
     }
 
     // =====================================================================
@@ -486,8 +501,10 @@ public class Missel : MonoBehaviour
         if (torreDonoDoPool != null && pontoOrigem != null)
         {
             // POOL: reseta e volta para o ponto — míssil continua visível na torre
+            // ResetarParaPool limpa torreDonoDoPool; guarde a referência antes do reset.
+            TorreAr torre = torreDonoDoPool;
             ResetarParaPool(pontoOrigem);
-            torreDonoDoPool.NotificarMisselDevolvido();
+            torre.NotificarMisselDevolvido();
         }
         else
         {

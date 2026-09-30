@@ -1536,6 +1536,8 @@ MonoBehaviour:
   pararParaAlvoTerrestre: 1
   pararParaAlvoAereo: 1
   velocidadeDuranteCombate: 0
+  velocidadeMinimaDuranteCombate: 3
+  distanciaPreferidaCombate: 28
   freioAoEncontrarInimigo: 18
   tempoContinuarParadoAposPerderAlvo: 0.15
   tankLeveGerenciaAtaque: 1
@@ -1635,6 +1637,7 @@ MonoBehaviour:
   raioVisaoTerrestre: 80
   tagsInimigosTerrestres:
   - Vermelho
+  - Verde
   ignorarLayersAereasNaVisaoTerrestre: 1
   usarVisaoAerea: 1
   raioVisaoAerea: 300
@@ -1644,6 +1647,7 @@ MonoBehaviour:
   aviaoTambemPrecisaTerTag: 1
   tagsInimigosAereos:
   - Vermelho
+  - Verde
   detectarTriggers: 0
   intervaloBusca: 0.15
   prioridadeAlvo: 2
@@ -1673,6 +1677,7 @@ MonoBehaviour:
   atacarAlvoTerrestre: 1
   atacarAutomaticamente: 1
   prefabBala: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
+  danoBala: 5
   intervaloEntreTiros: 0.5
   velocidadeBala: 80
   tempoVidaBala: 10
@@ -1690,6 +1695,7 @@ MonoBehaviour:
   atacarAlvoAereo: 1
   atacarAutomaticamenteAerea: 1
   prefabBalaAerea: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
+  danoBalaAerea: 5
   intervaloEntreTirosAerea: 0.4
   velocidadeBalaAerea: 45
   tempoVidaBalaAerea: 6
@@ -1720,6 +1726,7 @@ MonoBehaviour:
   - Bala
   - Espada
   - Missel
+  - Verde
   cooldownDano: 0.25
 --- !u!1 &5198013775936986468
 GameObject:

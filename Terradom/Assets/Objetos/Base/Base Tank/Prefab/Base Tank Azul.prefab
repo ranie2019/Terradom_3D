@@ -1166,7 +1166,7 @@ GameObject:
   - component: {fileID: 5001249028150810845}
   - component: {fileID: 6815938640463043701}
   - component: {fileID: 7702245591794354870}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Base Tank Azul
   m_TagString: Azul
   m_Icon: {fileID: 0}

@@ -40,6 +40,7 @@ public class TankAtaque : MonoBehaviour
     [SerializeField] private bool       atacarAlvoTerrestre        = true;
     [SerializeField] private bool       atacarAutomaticamente      = true;
     [SerializeField] private GameObject prefabBala                 = null;
+    [SerializeField] private int        danoBala                   = 5;
     [SerializeField] private float      intervaloEntreTiros        = 1.2f;
     [SerializeField] private float      velocidadeBala             = 25f;
     [SerializeField] private float      tempoVidaBala              = 5f;
@@ -67,6 +68,7 @@ public class TankAtaque : MonoBehaviour
     [SerializeField] private bool       atacarAlvoAereo                  = true;
     [SerializeField] private bool       atacarAutomaticamenteAerea        = true;
     [SerializeField] private GameObject prefabBalaAerea                   = null;
+    [SerializeField] private int        danoBalaAerea                     = 5;
     [SerializeField] private float      intervaloEntreTirosAerea          = 0.4f;
     [SerializeField] private float      velocidadeBalaAerea               = 45f;
     [SerializeField] private float      tempoVidaBalaAerea                = 6f;
@@ -137,18 +139,19 @@ public class TankAtaque : MonoBehaviour
     private void Update()
     {
         AtualizarAlvos();
+        bool mirasCompartilhadas = MirasCompartilhamTransform();
 
         // MIRA TERRESTRE
         if (alvoTerrestre != null)
         {
-            Vector3 pontoMira = ObterPontoMira(alvoTerrestre, alturaExtraMiraAlvo);
+            Vector3 pontoMira = ObterPontoMiraPrevisto(alvoTerrestre, alturaExtraMiraAlvo, velocidadeBala, spawnBala);
             GirarMiraHorizontalY(pontoMira, Time.deltaTime);
             GirarCanhaoElevacaoZ(pontoMira, Time.deltaTime);
 
             if (atacarAutomaticamente)
-                TentarAtirar(pontoMira);
+                TentarAtirar(alvoTerrestre, pontoMira);
         }
-        else
+        else if (!mirasCompartilhadas || (alvoTerrestre == null && alvoAereo == null))
         {
             CentralizarMiraTerrestre(Time.deltaTime);
         }
@@ -156,14 +159,14 @@ public class TankAtaque : MonoBehaviour
         // MIRA ANTIA�REA
         if (alvoAereo != null && MiraAereaConfigurada())
         {
-            Vector3 pontoMiraAereo = ObterPontoMira(alvoAereo, alturaExtraMiraAlvoAerea);
+            Vector3 pontoMiraAereo = ObterPontoMiraPrevisto(alvoAereo, alturaExtraMiraAlvoAerea, velocidadeBalaAerea, spawnBalaAerea);
             GirarMiraAereaHorizontalY(pontoMiraAereo, Time.deltaTime);
             GirarMiraAereaElevacaoZ(pontoMiraAereo, Time.deltaTime);
 
             if (atacarAutomaticamenteAerea)
-                TentarAtirarAereo(pontoMiraAereo);
+                TentarAtirarAereo(alvoAereo, pontoMiraAereo);
         }
-        else
+        else if (!mirasCompartilhadas)
         {
             CentralizarMiraAerea(Time.deltaTime);
         }
@@ -179,17 +182,34 @@ public class TankAtaque : MonoBehaviour
         alvoAereo     = null;
 
         if (tankVisao == null) return;
+        // Uma torre fisica so pode apontar para um alvo por vez. Segue a
+        // prioridade selecionada pelo TankVisao para evitar duas miras em conflito.
+        if (tankVisao.TemAlvo)
+        {
+            if (tankVisao.TipoAlvoAtual == TankVisao.TipoAlvoTank.Terrestre && atacarAlvoTerrestre)
+                alvoTerrestre = tankVisao.AlvoAtual;
+            else if (tankVisao.TipoAlvoAtual == TankVisao.TipoAlvoTank.Aereo && atacarAlvoAereo)
+                alvoAereo = tankVisao.AlvoAtual;
+        }
 
-        // Usa a mira correta para cada tipo de alvo detectado
-        if (atacarAlvoTerrestre && tankVisao.TemAlvoTerrestre)
-            alvoTerrestre = tankVisao.AlvoTerrestreAtual;
-
-        if (atacarAlvoAereo && tankVisao.TemAlvoAereo)
-            alvoAereo = tankVisao.AlvoAereoAtual;
+        // Se o tipo prioritario nao pode ser atacado por este prefab, tenta o outro.
+        if (alvoTerrestre == null && alvoAereo == null)
+        {
+            if (atacarAlvoTerrestre && tankVisao.TemAlvoTerrestre)
+                alvoTerrestre = tankVisao.AlvoTerrestreAtual;
+            else if (atacarAlvoAereo && tankVisao.TemAlvoAereo)
+                alvoAereo = tankVisao.AlvoAereoAtual;
+        }
     }
 
     private bool MiraAereaConfigurada() =>
         miraAereaGiroY360 != null && miraAereaElevacaoZ != null;
+
+    private bool MirasCompartilhamTransform()
+    {
+        return (miraGiroY360 != null && miraGiroY360 == miraAereaGiroY360) ||
+               (miraElevacaoZ != null && miraElevacaoZ == miraAereaElevacaoZ);
+    }
 
     // =====================================================================
     // MIRA TERRESTRE � GIRO
@@ -301,7 +321,7 @@ public class TankAtaque : MonoBehaviour
     // ATIRAR � TERRESTRE
     // =====================================================================
 
-    private void TentarAtirar(Vector3 pontoMira)
+    private void TentarAtirar(Transform alvo, Vector3 pontoMira)
     {
         if (prefabBala == null || spawnBala == null) return;
         if (Time.time < proximoTiroEm) return;
@@ -312,7 +332,7 @@ public class TankAtaque : MonoBehaviour
         if (direcaoParaAlvo.sqrMagnitude <= 0.0001f) return;
         if (Vector3.Angle(frenteCanhao, direcaoParaAlvo) > toleranciaMiraParaAtirar) return;
 
-        Atirar(spawnBala, prefabBala, pontoMira, velocidadeBala, tempoVidaBala, eixoFrenteDaMira);
+        Atirar(alvo, spawnBala, prefabBala, pontoMira, danoBala, velocidadeBala, tempoVidaBala, eixoFrenteDaMira);
         proximoTiroEm = Time.time + Mathf.Max(0.05f, intervaloEntreTiros);
     }
 
@@ -320,7 +340,7 @@ public class TankAtaque : MonoBehaviour
     // ATIRAR � ANTIA�REA
     // =====================================================================
 
-    private void TentarAtirarAereo(Vector3 pontoMira)
+    private void TentarAtirarAereo(Transform alvo, Vector3 pontoMira)
     {
         if (prefabBalaAerea == null || spawnBalaAerea == null) return;
         if (Time.time < proximoTiroAereoEm) return;
@@ -331,7 +351,7 @@ public class TankAtaque : MonoBehaviour
         if (direcaoParaAlvo.sqrMagnitude <= 0.0001f) return;
         if (Vector3.Angle(frenteCanhao, direcaoParaAlvo) > toleranciaMiraParaAtirarAerea) return;
 
-        Atirar(spawnBalaAerea, prefabBalaAerea, pontoMira, velocidadeBalaAerea, tempoVidaBalaAerea, eixoFrenteDaMiraAerea);
+        Atirar(alvo, spawnBalaAerea, prefabBalaAerea, pontoMira, danoBalaAerea, velocidadeBalaAerea, tempoVidaBalaAerea, eixoFrenteDaMiraAerea);
         proximoTiroAereoEm = Time.time + Mathf.Max(0.05f, intervaloEntreTirosAerea);
     }
 
@@ -339,7 +359,7 @@ public class TankAtaque : MonoBehaviour
     // ATIRAR � GEN�RICO
     // =====================================================================
 
-    private void Atirar(Transform spawn, GameObject prefab, Vector3 pontoMira, float velBala, float vidaBala, EixoFrenteMira eixo)
+    private void Atirar(Transform alvo, Transform spawn, GameObject prefab, Vector3 pontoMira, int danoTiro, float velBala, float vidaBala, EixoFrenteMira eixo)
     {
         Vector3 origemTiro  = spawn.position;
         Vector3 direcaoTiro = ObterFrenteCanhao(spawn, eixo);
@@ -350,18 +370,26 @@ public class TankAtaque : MonoBehaviour
         Quaternion rotacaoBala = Quaternion.LookRotation(direcaoTiro, Vector3.up);
         GameObject balaCriada  = Instantiate(prefab, origemTiro, rotacaoBala);
 
-        Rigidbody rb = balaCriada.GetComponent<Rigidbody>();
-        if (rb != null)
+        ProjetilDistancia projetil = balaCriada.GetComponent<ProjetilDistancia>();
+        if (projetil != null)
         {
-#if UNITY_6000_0_OR_NEWER
-            rb.linearVelocity = direcaoTiro * velBala;
-#else
-            rb.velocity = direcaoTiro * velBala;
-#endif
+            projetil.Configurar(alvo, danoTiro, velBala, transform.root, pontoMira);
         }
         else
         {
-            StartCoroutine(MoverBalaSemRigidbody(balaCriada.transform, direcaoTiro, velBala));
+            Rigidbody rb = balaCriada.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+#if UNITY_6000_0_OR_NEWER
+                rb.linearVelocity = direcaoTiro * velBala;
+#else
+                rb.velocity = direcaoTiro * velBala;
+#endif
+            }
+            else
+            {
+                StartCoroutine(MoverBalaSemRigidbody(balaCriada.transform, direcaoTiro, velBala));
+            }
         }
 
         if (vidaBala > 0f)
@@ -425,6 +453,30 @@ public class TankAtaque : MonoBehaviour
             : alvo.position    + Vector3.up * alturaExtra;
     }
 
+    private Vector3 ObterPontoMiraPrevisto(Transform alvo, float alturaExtra, float velocidadeProjetil, Transform pontoDisparo)
+    {
+        Vector3 pontoAtual = ObterPontoMira(alvo, alturaExtra);
+        if (alvo == null) return pontoAtual;
+
+        Rigidbody rbAlvo = alvo.GetComponentInParent<Rigidbody>();
+        if (rbAlvo == null) rbAlvo = alvo.GetComponentInChildren<Rigidbody>();
+        if (rbAlvo == null) return pontoAtual;
+
+#if UNITY_6000_0_OR_NEWER
+        Vector3 velocidadeAlvo = rbAlvo.linearVelocity;
+#else
+        Vector3 velocidadeAlvo = rbAlvo.velocity;
+#endif
+        float velocidadeSegura = Mathf.Max(0.1f, velocidadeProjetil);
+        Vector3 origem = pontoDisparo != null ? pontoDisparo.position : transform.position;
+        float tempoInterceptacao = Mathf.Clamp(Vector3.Distance(origem, pontoAtual) / velocidadeSegura, 0f, 1.5f);
+
+        // Refina uma vez a estimativa, porque o ponto adiantado tambem aumenta a distancia do tiro.
+        Vector3 pontoPrevisto = pontoAtual + velocidadeAlvo * tempoInterceptacao;
+        tempoInterceptacao = Mathf.Clamp(Vector3.Distance(origem, pontoPrevisto) / velocidadeSegura, 0f, 1.5f);
+        return pontoAtual + velocidadeAlvo * tempoInterceptacao;
+    }
+
     private Vector3 ObterFrenteCanhao(Transform spawn, EixoFrenteMira eixo)
     {
         if (spawn == null) return transform.right;
@@ -463,6 +515,7 @@ public class TankAtaque : MonoBehaviour
         velocidadeGiroZ                    = Mathf.Max(1f,    velocidadeGiroZ);
         intervaloEntreTiros                = Mathf.Max(0.05f, intervaloEntreTiros);
         velocidadeBala                     = Mathf.Max(0.1f,  velocidadeBala);
+        danoBala                           = Mathf.Max(0,     danoBala);
         tempoVidaBala                      = Mathf.Max(0f,    tempoVidaBala);
         toleranciaMiraParaAtirar           = Mathf.Clamp(toleranciaMiraParaAtirar, 0.1f, 45f);
         velocidadeCentralizarSemAlvo       = Mathf.Max(1f,    velocidadeCentralizarSemAlvo);
@@ -471,6 +524,7 @@ public class TankAtaque : MonoBehaviour
         velocidadeGiroZAerea               = Mathf.Max(1f,    velocidadeGiroZAerea);
         intervaloEntreTirosAerea           = Mathf.Max(0.05f, intervaloEntreTirosAerea);
         velocidadeBalaAerea                = Mathf.Max(0.1f,  velocidadeBalaAerea);
+        danoBalaAerea                      = Mathf.Max(0,     danoBalaAerea);
         tempoVidaBalaAerea                 = Mathf.Max(0f,    tempoVidaBalaAerea);
         toleranciaMiraParaAtirarAerea      = Mathf.Clamp(toleranciaMiraParaAtirarAerea, 0.1f, 45f);
         velocidadeCentralizarAereaSemAlvo  = Mathf.Max(1f,    velocidadeCentralizarAereaSemAlvo);

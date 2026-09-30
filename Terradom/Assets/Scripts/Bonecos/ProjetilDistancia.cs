@@ -33,17 +33,22 @@ public class ProjetilDistancia : MonoBehaviour
 
     [Header("Efeito ao ser destruido")]
     [SerializeField] private GameObject prefabEfeitoImpacto;
-    [SerializeField] private bool tocarEfeitoSomenteNoImpacto = true;   // false = toca também ao expirar por tempo
+    [SerializeField] private bool tocarEfeitoSomenteNoImpacto = true;   // false = toca tambÃ©m ao expirar por tempo
     [SerializeField] private bool alinharEfeitoComNormal = true;        // rotaciona o efeito com a normal da superficie
-    [SerializeField] private float tempoParaDestruirEfeito = 3f;        // 0 = não destrói automaticamente
+    [SerializeField] private float tempoParaDestruirEfeito = 3f;        // 0 = nÃ£o destrÃ³i automaticamente
 
     private Transform alvo;
+    private Transform origemDisparo;
+    private TankLeve tankDono;
+    private string tagEquipeDona;
+    private float distanciaDoDisparo;
+    private bool resultadoRegistrado;
     private Rigidbody rb;
     private Vector3 direcaoInicial;
     private bool jaColidiu;
     private bool direcaoDefinida;
 
-    // Guarda a posição e normal do último impacto para usar no OnDestroy
+    // Guarda a posiÃ§Ã£o e normal do Ãºltimo impacto para usar no OnDestroy
     private Vector3 posicaoImpacto;
     private Vector3 normalImpacto;
     private bool houveImpacto;
@@ -55,6 +60,26 @@ public class ProjetilDistancia : MonoBehaviour
         velocidade = novaVelocidade;
 
         DefinirDirecaoInicial();
+    }
+
+    public void Configurar(Transform novoAlvo, int novoDano, float novaVelocidade,
+                           Transform novoDono, Vector3 pontoMira)
+    {
+        alvo = novoAlvo;
+        dano = novoDano;
+        velocidade = novaVelocidade;
+        origemDisparo = novoDono;
+        tankDono = novoDono != null ? novoDono.GetComponentInParent<TankLeve>() : null;
+        tagEquipeDona = ObterTagEquipe(novoDono);
+        distanciaDoDisparo = novoDono != null && novoAlvo != null
+            ? Vector3.Distance(novoDono.position, novoAlvo.position)
+            : 0f;
+
+        if (tagEquipeDona == "Azul") tagsQueRecebemDano = new[] { "Vermelho", "Verde" };
+        else if (tagEquipeDona == "Vermelho") tagsQueRecebemDano = new[] { "Azul", "Verde" };
+        else if (tagEquipeDona == "Verde") tagsQueRecebemDano = new[] { "Azul", "Vermelho" };
+
+        DefinirDirecaoInicial(pontoMira);
     }
 
     private void Awake()
@@ -71,7 +96,7 @@ public class ProjetilDistancia : MonoBehaviour
         if (direcaoInicial.sqrMagnitude < 0.001f)
             direcaoInicial = transform.forward.normalized;
 
-        // Inicializa normal padrão (contrária à direção do projétil)
+        // Inicializa normal padrÃ£o (contrÃ¡ria Ã  direÃ§Ã£o do projÃ©til)
         normalImpacto = -direcaoInicial;
 
         Destroy(gameObject, tempoDeVida);
@@ -109,6 +134,17 @@ public class ProjetilDistancia : MonoBehaviour
         if (direcaoInicial.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(direcaoInicial, Vector3.up);
 
+        direcaoDefinida = true;
+    }
+
+    private void DefinirDirecaoInicial(Vector3 destino)
+    {
+        direcaoInicial = destino - transform.position;
+        if (direcaoInicial.sqrMagnitude < 0.001f)
+            direcaoInicial = transform.forward;
+
+        direcaoInicial.Normalize();
+        transform.rotation = Quaternion.LookRotation(direcaoInicial, Vector3.up);
         direcaoDefinida = true;
     }
 
@@ -195,6 +231,9 @@ public class ProjetilDistancia : MonoBehaviour
             if (ColisorEhDoProprioProjetil(colisor))
                 continue;
 
+            if (EhAliado(colisor.transform))
+                continue;
+
             if (hits[i].distance < menorDistancia)
             {
                 menorDistancia = hits[i].distance;
@@ -219,6 +258,10 @@ public class ProjetilDistancia : MonoBehaviour
         if (alvoTransform.IsChildOf(transform))
             return true;
 
+        if (origemDisparo != null &&
+            (alvoTransform == origemDisparo || alvoTransform.IsChildOf(origemDisparo)))
+            return true;
+
         return false;
     }
 
@@ -227,7 +270,7 @@ public class ProjetilDistancia : MonoBehaviour
         if (collision == null || collision.collider == null)
             return;
 
-        // Captura a normal do contato físico
+        // Captura a normal do contato fÃ­sico
         if (collision.contactCount > 0)
         {
             posicaoImpacto = collision.contacts[0].point;
@@ -262,6 +305,9 @@ public class ProjetilDistancia : MonoBehaviour
         if (ColisorEhDoProprioProjetil(colisorAtingido))
             return;
 
+        if (EhAliado(colisorAtingido.transform))
+            return;
+
         ColidiuComTransform(colisorAtingido.transform);
     }
 
@@ -270,9 +316,13 @@ public class ProjetilDistancia : MonoBehaviour
         if (jaColidiu)
             return;
 
+        if (transformAtingido == null || EhAliado(transformAtingido))
+            return;
+
         jaColidiu = true;
 
         bool aplicouDano = TentarAplicarDano(transformAtingido);
+        RegistrarResultadoDisparo(aplicouDano);
 
         if (aplicouDano || destruirMesmoSemDano)
             Destroy(gameObject);
@@ -286,11 +336,40 @@ public class ProjetilDistancia : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Se só toca no impacto e não houve impacto (expirou por tempo), ignora
+        if (!resultadoRegistrado && tankDono != null)
+            RegistrarResultadoDisparo(false);
+
+        // Se sÃ³ toca no impacto e nÃ£o houve impacto (expirou por tempo), ignora
         if (tocarEfeitoSomenteNoImpacto && !houveImpacto)
             return;
 
         SpawnarEfeito();
+    }
+
+    private void RegistrarResultadoDisparo(bool acertou)
+    {
+        if (resultadoRegistrado) return;
+        resultadoRegistrado = true;
+        if (tankDono != null)
+            tankDono.RegistrarResultadoDisparo(acertou, distanciaDoDisparo);
+    }
+
+    private bool EhAliado(Transform objeto)
+    {
+        if (objeto == null || string.IsNullOrEmpty(tagEquipeDona)) return false;
+        return ObterTagEquipe(objeto) == tagEquipeDona;
+    }
+
+    private string ObterTagEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+        return string.Empty;
     }
 
     private void SpawnarEfeito()

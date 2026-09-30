@@ -59,6 +59,9 @@ public class BaseArea : MonoBehaviour
 
     // FIX: Evita que o mesmo click que abre o posicionamento confirme a base no mesmo frame
     private int frameInicioPositionamento = -1;
+    private int custoPendentePedra;
+    private int custoPendenteMadeira;
+    private int custoPendenteMetal;
 
     private void Awake()
     {
@@ -68,10 +71,22 @@ public class BaseArea : MonoBehaviour
 
     private void Update()
     {
+        if (!estaPosicionando)
+            return;
+
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            CancelarPosicionamento();
+            return;
+        }
+
         GameObject baseAtual = ObterBaseAtual();
 
-        if (!estaPosicionando || baseAtual == null)
+        if (baseAtual == null)
+        {
+            CancelarPosicionamento();
             return;
+        }
 
         AlternarModoComBotaoDireito();
 
@@ -91,6 +106,32 @@ public class BaseArea : MonoBehaviour
     public void CriarBaseParaPosicionar()
     {
         CriarBaseSoldadoParaPosicionar();
+    }
+
+    /// <summary>
+    /// Cancela o posicionamento, remove a prévia e devolve os recursos gastos.
+    /// Este método também pode ser ligado ao OnClick de um botão Cancelar.
+    /// </summary>
+    public void CancelarPosicionamento()
+    {
+        if (!estaPosicionando)
+            return;
+
+        GameObject baseAtual = ObterBaseAtual();
+        if (baseAtual != null)
+        {
+            baseAtual.SetActive(false);
+            Destroy(baseAtual);
+        }
+
+        if (GameControllerRecursos.Instance != null)
+        {
+            GameControllerRecursos.Instance.AdicionarRecurso(tagDoJogador, "Pedra", custoPendentePedra);
+            GameControllerRecursos.Instance.AdicionarRecurso(tagDoJogador, "Arvore", custoPendenteMadeira);
+            GameControllerRecursos.Instance.AdicionarRecurso(tagDoJogador, "Metal", custoPendenteMetal);
+        }
+
+        LimparEstadoDePosicionamento();
     }
 
     public void CriarBaseSoldadoParaPosicionar()
@@ -215,10 +256,19 @@ public class BaseArea : MonoBehaviour
             return;
 
         if (estaPosicionando)
+        {
+            // Clicar novamente no botão da base atual cancela a prévia.
+            if (tipoBaseAtual == tipoBase)
+                CancelarPosicionamento();
             return;
+        }
 
         if (!GastarRecursos(custoPedra, custoMadeira, custoMetal))
             return;
+
+        custoPendentePedra = custoPedra;
+        custoPendenteMadeira = custoMadeira;
+        custoPendenteMetal = custoMetal;
 
         LimparBaseAtualEmPosicionamento();
 
@@ -431,12 +481,25 @@ public class BaseArea : MonoBehaviour
         // =========================================
         AdicionarBaseLimite(baseAtual);
 
-        tipoBaseAtual    = TipoBaseAtual.Nenhuma;
+        LimparEstadoDePosicionamento();
+        podeConstruir = true;
+    }
+
+    private void LimparEstadoDePosicionamento()
+    {
+        estaPosicionando = false;
+        podeConstruir = false;
+        modoRotacao = false;
+        tipoBaseAtual = TipoBaseAtual.Nenhuma;
         baseSoldadoAtual = null;
-        baseTankAtual    = null;
-        baseAviaoAtual   = null;
-        torreTerraAtual  = null;
-        torreArAtual     = null;
+        baseTankAtual = null;
+        baseAviaoAtual = null;
+        torreTerraAtual = null;
+        torreArAtual = null;
+        custoPendentePedra = 0;
+        custoPendenteMadeira = 0;
+        custoPendenteMetal = 0;
+        frameInicioPositionamento = -1;
     }
 
     // Ativa e registra o BaseLimite após a base ser confirmada

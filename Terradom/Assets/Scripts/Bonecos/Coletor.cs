@@ -24,6 +24,8 @@ public class Coletor : MonoBehaviour
     [SerializeField] private float pesoReservaAlvo = 10f;
     [SerializeField] private float pesoRecursoEscasso = 20f;  // bônus por ir ao tipo com menos estoque
     [SerializeField] private GameControllerRecursos gameControllerRecursos;
+    private Collider[] bufferBusca = new Collider[256];
+    private readonly RaycastHit[] bufferLinhaVisao = new RaycastHit[64];
 
     private TipoRecurso tipoRegistrado = TipoRecurso.Nenhum;
     private Transform alvoReservado = null;
@@ -76,6 +78,13 @@ public class Coletor : MonoBehaviour
     [SerializeField, Range(1f, 360f)] private float anguloCampoDeVisao = 180f;
     [SerializeField] private bool travarYNaVisao = true;
 
+    [Header("Instinto de sobrevivência")]
+    [SerializeField] private bool fugirDeInimigos = true;
+    [SerializeField] private float alcanceDeteccaoInimigo = 12f;
+    [SerializeField] private float intervaloBuscaInimigo = 0.15f;
+    [SerializeField] private LayerMask camadasInimigosVisiveis = ~0;
+    [SerializeField] private LayerMask camadasBloqueiamVisaoInimigo = ~0;
+
     [Header("Ação")]
     [SerializeField] private float distanciaAcao = 2f;
     [SerializeField] private float distanciaSairDaAcao = 2.5f;
@@ -101,6 +110,9 @@ public class Coletor : MonoBehaviour
 
     private Transform alvoIgnoradoTemporariamente;
     private float ignorarAlvoAte;
+    private Transform inimigoVisivel;
+    private Vector3 pontoInimigoVisivel;
+    private bool fugindoDeInimigo;
 
     private Vector3 direcaoPatrulha;
     private Vector3 direcaoDesejada;
@@ -115,6 +127,7 @@ public class Coletor : MonoBehaviour
     private float proximaBuscaAlvo;
     private float proximaAcao;
     private float proximoDanoContato;
+    private float proximaBuscaInimigo;
     private float manterDesvioAte;
     private float proximoDesvioPermitido;
     private float proximaVerificacaoTravado;
@@ -166,6 +179,23 @@ public class Coletor : MonoBehaviour
         if (estaMorto)
             return;
 
+        AtualizarInimigoVisivel();
+        bool ameacaVisivel = inimigoVisivel != null;
+        if (ameacaVisivel != fugindoDeInimigo)
+        {
+            fugindoDeInimigo = ameacaVisivel;
+            manterDesvioAte = 0f;
+            direcaoDesvio = Vector3.zero;
+            if (!ameacaVisivel)
+                proximaBuscaAlvo = 0f;
+        }
+
+        if (ameacaVisivel)
+        {
+            ControlarFuga();
+            return;
+        }
+
         AtualizarAlvo();
         ControlarEstado();
     }
@@ -206,7 +236,8 @@ public class Coletor : MonoBehaviour
         }
 
         // Libera reserva do alvo
-        if (alvoReservado != null)
+        // ReferenceEquals detecta a referência gerenciada mesmo após o Transform ser destruído.
+        if (!ReferenceEquals(alvoReservado, null))
         {
             if (alvosReservados.ContainsKey(alvoReservado))
             {
@@ -249,7 +280,8 @@ public class Coletor : MonoBehaviour
     {
         bool alvoAindaValido = AlvoEhValido();
 
-        if (alvoAindaValido && Time.time < proximaBuscaAlvo)
+        // Mantém o alvo reservado enquanto ele continuar válido, mesmo se surgir um tipo mais escasso.
+        if (alvoAindaValido)
             return;
 
         if (!alvoAindaValido)
@@ -265,37 +297,36 @@ public class Coletor : MonoBehaviour
 
         proximaBuscaAlvo = Time.time + intervaloBuscaAlvo;
 
-        Collider[] hits = Physics.OverlapSphere(
+        int quantidadeHits = ConsultarColisoresNaEsfera(
             transform.position,
             alcanceVisao,
             camadasDetectaveis,
             QueryTriggerInteraction.Collide
         );
 
+        int menorEstoqueDisponivel = int.MaxValue;
+
+        for (int i = 0; i < quantidadeHits; i++)
+        {
+            Collider hit = bufferBusca[i];
+            if (!TentarObterRecursoDisponivel(hit, out Transform recurso, out TipoRecurso tipo, out Vector3 ponto))
+                continue;
+
+            menorEstoqueDisponivel = Mathf.Min(menorEstoqueDisponivel, ObterEstoqueDoTipo(tipo));
+        }
+
         Transform melhorTransform = null;
         Collider melhorCollider = null;
         TipoRecurso melhorTipo = TipoRecurso.Nenhum;
         float melhorScore = float.MinValue;
 
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < quantidadeHits; i++)
         {
-            Collider hit = hits[i];
-            if (hit == null)
+            Collider hit = bufferBusca[i];
+            if (!TentarObterRecursoDisponivel(hit, out Transform recurso, out TipoRecurso tipoEncontrado, out Vector3 ponto))
                 continue;
 
-            if (hit.transform == transform || hit.transform.IsChildOf(transform))
-                continue;
-
-            Transform recurso = ResolverTransformDoRecurso(hit.transform, out TipoRecurso tipoEncontrado);
-            if (recurso == null || tipoEncontrado == TipoRecurso.Nenhum)
-                continue;
-
-            if (AlvoEstaIgnoradoTemporariamente(recurso))
-                continue;
-
-            Vector3 ponto = hit.ClosestPoint(transform.position);
-
-            if (!EstaNoCampoDeVisao(ponto))
+            if (ObterEstoqueDoTipo(tipoEncontrado) != menorEstoqueDisponivel)
                 continue;
 
             float score = CalcularScoreAlvo(recurso, ponto, tipoEncontrado);
@@ -318,6 +349,149 @@ public class Coletor : MonoBehaviour
 
             RegistrarNovoAlvo(melhorTransform, melhorTipo);
         }
+    }
+
+    private bool TentarObterRecursoDisponivel(Collider hit, out Transform recurso, out TipoRecurso tipo, out Vector3 ponto)
+    {
+        recurso = null;
+        tipo = TipoRecurso.Nenhum;
+        ponto = transform.position;
+
+        if (hit == null || EhMeuProprioCollider(hit.transform))
+            return false;
+
+        recurso = ResolverTransformDoRecurso(hit.transform, out tipo);
+        if (recurso == null || tipo == TipoRecurso.Nenhum || AlvoEstaIgnoradoTemporariamente(recurso))
+            return false;
+
+        if (alvosReservados.TryGetValue(recurso, out int reservas) && reservas > 0 && recurso != alvoReservado)
+            return false;
+
+        ponto = hit.ClosestPoint(transform.position);
+        return EstaNoCampoDeVisao(ponto);
+    }
+
+    private int ConsultarColisoresNaEsfera(Vector3 centro, float raio, LayerMask camadas, QueryTriggerInteraction triggers)
+    {
+        int quantidade = Physics.OverlapSphereNonAlloc(centro, raio, bufferBusca, camadas, triggers);
+        while (quantidade == bufferBusca.Length && bufferBusca.Length < 8192)
+        {
+            System.Array.Resize(ref bufferBusca, Mathf.Min(bufferBusca.Length * 2, 8192));
+            quantidade = Physics.OverlapSphereNonAlloc(centro, raio, bufferBusca, camadas, triggers);
+        }
+
+        return quantidade;
+    }
+
+    private void AtualizarInimigoVisivel()
+    {
+        if (!fugirDeInimigos)
+        {
+            inimigoVisivel = null;
+            return;
+        }
+
+        if (Time.time < proximaBuscaInimigo)
+            return;
+
+        proximaBuscaInimigo = Time.time + intervaloBuscaInimigo;
+        inimigoVisivel = null;
+        int quantidade = ConsultarColisoresNaEsfera(
+            transform.position,
+            alcanceDeteccaoInimigo,
+            camadasInimigosVisiveis,
+            QueryTriggerInteraction.Ignore
+        );
+
+        string minhaEquipe = ObterEquipe(transform);
+        float menorDistancia = float.MaxValue;
+        for (int i = 0; i < quantidade; i++)
+        {
+            Collider candidato = bufferBusca[i];
+            if (candidato == null || EhMeuProprioCollider(candidato.transform))
+                continue;
+
+            string equipeInimiga = ObterEquipe(candidato.transform);
+            if (string.IsNullOrEmpty(equipeInimiga) || equipeInimiga == minhaEquipe)
+                continue;
+
+            Vector3 origemVisao = transform.position + Vector3.up * alturaSensorObstaculo;
+            Vector3 ponto = candidato.ClosestPoint(origemVisao);
+            if (!EstaNoCampoDeVisao(ponto) || !TemLinhaDeVisaoAte(ponto, equipeInimiga))
+                continue;
+
+            float distancia = DistanciaPlano(transform.position, ponto);
+            if (distancia >= menorDistancia)
+                continue;
+
+            menorDistancia = distancia;
+            inimigoVisivel = candidato.transform;
+            pontoInimigoVisivel = ponto;
+        }
+    }
+
+    private string ObterEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+
+        return string.Empty;
+    }
+
+    private bool TemLinhaDeVisaoAte(Vector3 ponto, string equipeInimiga)
+    {
+        Vector3 origem = transform.position + Vector3.up * alturaSensorObstaculo;
+        Vector3 diferenca = ponto - origem;
+        float distancia = diferenca.magnitude;
+        if (distancia <= 0.01f)
+            return true;
+
+        int quantidade = Physics.RaycastNonAlloc(
+            origem,
+            diferenca / distancia,
+            bufferLinhaVisao,
+            distancia + 0.05f,
+            camadasBloqueiamVisaoInimigo,
+            QueryTriggerInteraction.Ignore
+        );
+
+        float menorDistancia = float.MaxValue;
+        string equipeAtingida = string.Empty;
+        for (int i = 0; i < quantidade; i++)
+        {
+            RaycastHit hit = bufferLinhaVisao[i];
+            if (hit.collider == null || EhMeuProprioCollider(hit.collider.transform) || hit.distance >= menorDistancia)
+                continue;
+
+            menorDistancia = hit.distance;
+            equipeAtingida = ObterEquipe(hit.collider.transform);
+        }
+
+        return equipeAtingida == equipeInimiga;
+    }
+
+    private void ControlarFuga()
+    {
+        estaEmAcao = false;
+        PararAnimacoesAcao();
+
+        if (EstaDesviando())
+        {
+            MoverNaDirecao(direcaoDesvio);
+            return;
+        }
+
+        Vector3 direcaoFuga = transform.position - pontoInimigoVisivel;
+        direcaoFuga.y = 0f;
+        if (direcaoFuga.sqrMagnitude <= 0.001f)
+            direcaoFuga = -transform.forward;
+
+        MoverNaDirecao(direcaoFuga.normalized);
     }
 
     private float CalcularScoreAlvo(Transform recurso, Vector3 ponto, TipoRecurso tipo)
@@ -361,6 +535,14 @@ public class Coletor : MonoBehaviour
 
     private int ObterEstoqueDoTipo(TipoRecurso tipo)
     {
+        // GameControllerRecursos registra atualmente a economia do time Azul.
+        // Evita que coletores de outros times usem o estoque azul por engano.
+        if (ObterEquipe(transform) != "Azul")
+            return 0;
+
+        if (gameControllerRecursos == null)
+            gameControllerRecursos = GameControllerRecursos.Instance;
+
         if (gameControllerRecursos == null)
             return 0;
 
@@ -492,6 +674,8 @@ public class Coletor : MonoBehaviour
 
         if (usarSensorAntiTravamento && !EstaDesviando() && SensorEncontrouObstaculoNaFrente(direcaoNormalizada, out RaycastHit hit))
         {
+            direcaoDesejada = direcaoNormalizada;
+            estaMovendo = true;
             ForcarDesvio(hit.collider, hit.point, "Sensor frontal");
             return;
         }
@@ -661,7 +845,7 @@ public class Coletor : MonoBehaviour
         estaEmAcao = false;
         PararAnimacoesAcao();
 
-        if (ignorarAlvoQuandoBaterEmObstaculo && alvoAtual != null)
+        if (ignorarAlvoQuandoBaterEmObstaculo && !fugindoDeInimigo && alvoAtual != null)
         {
             alvoIgnoradoTemporariamente = alvoAtual;
             ignorarAlvoAte = Time.time + tempoIgnorarAlvoAposBater;
@@ -745,7 +929,7 @@ public class Coletor : MonoBehaviour
         if (Time.time < proximoDesvioPermitido)
             return;
 
-        if (limparAlvoQuandoTravado)
+        if (limparAlvoQuandoTravado && !fugindoDeInimigo)
         {
             alvoIgnoradoTemporariamente = alvoAtual;
             ignorarAlvoAte = Time.time + tempoIgnorarAlvoAposBater;
@@ -1256,6 +1440,8 @@ public class Coletor : MonoBehaviour
 
         alcanceVisao = Mathf.Max(0.1f, alcanceVisao);
         intervaloBuscaAlvo = Mathf.Max(0.02f, intervaloBuscaAlvo);
+        alcanceDeteccaoInimigo = Mathf.Max(0.1f, alcanceDeteccaoInimigo);
+        intervaloBuscaInimigo = Mathf.Max(0.02f, intervaloBuscaInimigo);
         distanciaAcao = Mathf.Max(0.1f, distanciaAcao);
         distanciaSairDaAcao = Mathf.Max(distanciaAcao, distanciaSairDaAcao);
         tempoEntreAcoes = Mathf.Max(0.01f, tempoEntreAcoes);
@@ -1275,6 +1461,14 @@ public class Coletor : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, distanciaSairDaAcao);
+
+        if (fugirDeInimigos)
+        {
+            Gizmos.color = new Color(1f, 0.25f, 0.25f, 1f);
+            Gizmos.DrawWireSphere(transform.position, alcanceDeteccaoInimigo);
+            if (inimigoVisivel != null)
+                Gizmos.DrawLine(transform.position, pontoInimigoVisivel);
+        }
 
         if (usarCampoDeVisao)
         {
