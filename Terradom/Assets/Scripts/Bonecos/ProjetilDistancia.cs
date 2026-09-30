@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using UnityEngine;
 
@@ -47,6 +48,7 @@ public class ProjetilDistancia : MonoBehaviour
     private Vector3 direcaoInicial;
     private bool jaColidiu;
     private bool direcaoDefinida;
+    private RaycastHit[] bufferHitsImpacto = new RaycastHit[32];
 
     // Guarda a posição e normal do último impacto para usar no OnDestroy
     private Vector3 posicaoImpacto;
@@ -209,40 +211,47 @@ public class ProjetilDistancia : MonoBehaviour
         float distanciaTotal = distanciaMovimento + Mathf.Max(0f, margemDeteccaoImpacto);
         float raio = Mathf.Max(0.01f, raioDeteccaoImpacto);
 
-        RaycastHit[] hits = Physics.SphereCastAll(
-            origem,
-            raio,
-            direcao.normalized,
-            distanciaTotal,
-            camadasDeImpacto,
-            triggerMode
-        );
-
-        bool encontrou = false;
-        float menorDistancia = float.MaxValue;
-
-        for (int i = 0; i < hits.Length; i++)
+        while (true)
         {
-            Collider colisor = hits[i].collider;
+            int quantidade = Physics.SphereCastNonAlloc(
+                origem,
+                raio,
+                direcao.normalized,
+                bufferHitsImpacto,
+                distanciaTotal,
+                camadasDeImpacto,
+                triggerMode
+            );
 
-            if (colisor == null)
-                continue;
+            bool encontrou = false;
+            float menorDistancia = float.MaxValue;
 
-            if (ColisorEhDoProprioProjetil(colisor))
-                continue;
-
-            if (EhAliado(colisor.transform))
-                continue;
-
-            if (hits[i].distance < menorDistancia)
+            for (int i = 0; i < quantidade; i++)
             {
-                menorDistancia = hits[i].distance;
-                melhorHit = hits[i];
-                encontrou = true;
-            }
-        }
+                Collider colisor = bufferHitsImpacto[i].collider;
 
-        return encontrou;
+                if (colisor == null)
+                    continue;
+
+                if (ColisorEhDoProprioProjetil(colisor))
+                    continue;
+
+                if (EhAliado(colisor.transform))
+                    continue;
+
+                if (bufferHitsImpacto[i].distance < menorDistancia)
+                {
+                    menorDistancia = bufferHitsImpacto[i].distance;
+                    melhorHit = bufferHitsImpacto[i];
+                    encontrou = true;
+                }
+            }
+
+            if (quantidade < bufferHitsImpacto.Length)
+                return encontrou;
+
+            Array.Resize(ref bufferHitsImpacto, bufferHitsImpacto.Length * 2);
+        }
     }
 
     private bool ColisorEhDoProprioProjetil(Collider colisor)
@@ -397,6 +406,9 @@ public class ProjetilDistancia : MonoBehaviour
         if (transformAtingido == null)
             return false;
 
+        if (aplicarDanoEmBaseVida && TentarAplicarDanoEmBaseVidaIA(transformAtingido))
+            return true;
+
         if (aplicarDanoEmBaseVida && TentarAplicarDanoEmBaseVida(transformAtingido))
             return true;
 
@@ -412,6 +424,21 @@ public class ProjetilDistancia : MonoBehaviour
             return true;
 
         return false;
+    }
+
+    private bool TentarAplicarDanoEmBaseVidaIA(Transform transformAtingido)
+    {
+        BaseVidaIA baseVidaIA = EncontrarComponenteNaHierarquia<BaseVidaIA>(transformAtingido);
+        if (baseVidaIA == null)
+            return false;
+
+        if (!baseVidaIgnoraTagDoAlvo && !ObjetoOuFamiliaTemTagPermitida(transformAtingido))
+            return false;
+
+        // As bases IA usam um componente diferente de BaseVida. A colisão já
+        // validou que o projétil atingiu um alvo inimigo; aplica o dano direto.
+        baseVidaIA.ReceberDano(dano);
+        return true;
     }
 
     private bool TentarAplicarDanoEmBaseVida(Transform transformAtingido)

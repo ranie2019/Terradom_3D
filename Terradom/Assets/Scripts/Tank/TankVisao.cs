@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -39,6 +40,10 @@ public class TankVisao : MonoBehaviour
     [SerializeField] private float intervaloBusca = 0.15f;
     [SerializeField] private PrioridadeAlvo prioridadeAlvo = PrioridadeAlvo.TerrestrePrimeiro;
 
+    [Header("Linha de visao")]
+    [SerializeField] private bool exigirLinhaDeVisao = true;
+    [SerializeField] private LayerMask camadasBloqueiamVisao = ~0;
+
     [Header("Debug")]
     [SerializeField] private bool desenharVisaoNoEditor = true;
 
@@ -49,6 +54,8 @@ public class TankVisao : MonoBehaviour
     private TipoAlvoTank tipoAlvoAtual = TipoAlvoTank.Nenhum;
 
     private float proximaBusca;
+    private Collider[] bufferCollidersVisao = new Collider[64];
+    private RaycastHit[] bufferRaycastVisao = new RaycastHit[32];
 
     public Transform AlvoAtual => alvoAtual;
     public Transform AlvoTerrestreAtual => alvoTerrestreAtual;
@@ -93,19 +100,14 @@ public class TankVisao : MonoBehaviour
     private Transform BuscarAlvoTerrestreMaisProximo()
     {
         Vector3 origem = ObterOrigemVisao();
-        Collider[] colliders = Physics.OverlapSphere(
-            origem,
-            raioVisaoTerrestre,
-            ~0,
-            detectarTriggers ? QueryTriggerInteraction.Collide : QueryTriggerInteraction.Ignore
-        );
+        int quantidadeColliders = BuscarCollidersNaEsfera(origem, raioVisaoTerrestre);
 
         Transform melhorAlvo = null;
         float menorDistancia = float.MaxValue;
 
-        for (int i = 0; i < colliders.Length; i++)
+        for (int i = 0; i < quantidadeColliders; i++)
         {
-            Collider colisor = colliders[i];
+            Collider colisor = bufferCollidersVisao[i];
 
             if (colisor == null)
                 continue;
@@ -121,12 +123,14 @@ public class TankVisao : MonoBehaviour
 
             Transform alvo = ObterTransformPrincipalDoAlvo(colisor.transform);
             float distancia = DistanciaHorizontal(origem, alvo.position);
+            if (distancia >= menorDistancia)
+                continue;
 
-            if (distancia < menorDistancia)
-            {
-                menorDistancia = distancia;
-                melhorAlvo = alvo;
-            }
+            if (!TemLinhaDeVisao(colisor, alvo, origem))
+                continue;
+
+            menorDistancia = distancia;
+            melhorAlvo = alvo;
         }
 
         return melhorAlvo;
@@ -135,19 +139,14 @@ public class TankVisao : MonoBehaviour
     private Transform BuscarAlvoAereoMaisProximo()
     {
         Vector3 origem = ObterOrigemVisao();
-        Collider[] colliders = Physics.OverlapSphere(
-            origem,
-            raioVisaoAerea,
-            ~0,
-            detectarTriggers ? QueryTriggerInteraction.Collide : QueryTriggerInteraction.Ignore
-        );
+        int quantidadeColliders = BuscarCollidersNaEsfera(origem, raioVisaoAerea);
 
         Transform melhorAlvo = null;
         float menorDistancia = float.MaxValue;
 
-        for (int i = 0; i < colliders.Length; i++)
+        for (int i = 0; i < quantidadeColliders; i++)
         {
-            Collider colisor = colliders[i];
+            Collider colisor = bufferCollidersVisao[i];
 
             if (colisor == null)
                 continue;
@@ -163,15 +162,90 @@ public class TankVisao : MonoBehaviour
 
             Transform alvo = ObterTransformPrincipalDoAlvo(colisor.transform);
             float distancia = DistanciaHorizontal(origem, alvo.position);
+            if (distancia >= menorDistancia)
+                continue;
 
-            if (distancia < menorDistancia)
-            {
-                menorDistancia = distancia;
-                melhorAlvo = alvo;
-            }
+            if (!TemLinhaDeVisao(colisor, alvo, origem))
+                continue;
+
+            menorDistancia = distancia;
+            melhorAlvo = alvo;
         }
 
         return melhorAlvo;
+    }
+
+    private int BuscarCollidersNaEsfera(Vector3 origem, float raio)
+    {
+        QueryTriggerInteraction triggerMode = detectarTriggers
+            ? QueryTriggerInteraction.Collide
+            : QueryTriggerInteraction.Ignore;
+
+        while (true)
+        {
+            int quantidade = Physics.OverlapSphereNonAlloc(
+                origem,
+                raio,
+                bufferCollidersVisao,
+                ~0,
+                triggerMode
+            );
+
+            if (quantidade < bufferCollidersVisao.Length)
+                return quantidade;
+
+            Array.Resize(ref bufferCollidersVisao, bufferCollidersVisao.Length * 2);
+        }
+    }
+
+    private bool TemLinhaDeVisao(Collider colisorAlvo, Transform alvo, Vector3 origem)
+    {
+        if (!exigirLinhaDeVisao || colisorAlvo == null || alvo == null)
+            return true;
+
+        Vector3 pontoAlvo = colisorAlvo.ClosestPoint(origem);
+        Vector3 deslocamento = pontoAlvo - origem;
+        float distancia = deslocamento.magnitude;
+
+        if (distancia <= 0.05f)
+            return true;
+
+        float distanciaConsulta = Mathf.Max(0f, distancia - 0.02f);
+        QueryTriggerInteraction triggerMode = detectarTriggers
+            ? QueryTriggerInteraction.Collide
+            : QueryTriggerInteraction.Ignore;
+
+        while (true)
+        {
+            int quantidade = Physics.RaycastNonAlloc(
+                origem,
+                deslocamento / distancia,
+                bufferRaycastVisao,
+                distanciaConsulta,
+                camadasBloqueiamVisao,
+                triggerMode
+            );
+
+            bool encontrouBloqueio = false;
+            for (int i = 0; i < quantidade; i++)
+            {
+                Collider atingido = bufferRaycastVisao[i].collider;
+                if (atingido == null || EhDoProprioTank(atingido.transform))
+                    continue;
+
+                Transform transformAtingido = atingido.transform;
+                if (transformAtingido == alvo || transformAtingido.IsChildOf(alvo))
+                    continue;
+
+                encontrouBloqueio = true;
+                break;
+            }
+
+            if (quantidade < bufferRaycastVisao.Length)
+                return !encontrouBloqueio;
+
+            Array.Resize(ref bufferRaycastVisao, bufferRaycastVisao.Length * 2);
+        }
     }
 
     private void EscolherAlvoAtual()
@@ -267,17 +341,50 @@ public class TankVisao : MonoBehaviour
         if (alvo == null)
             return null;
 
-        Transform atual = alvo;
+        // A cena agrupa as bases sob um objeto pai (por exemplo, "Bases").
+        // Não suba até esse agrupador: use o objeto que realmente possui a vida.
+        BaseVidaIA vidaBaseIA = alvo.GetComponentInParent<BaseVidaIA>();
+        if (vidaBaseIA != null)
+            return vidaBaseIA.transform;
 
-        while (atual.parent != null)
+        BaseVida vidaBase = alvo.GetComponentInParent<BaseVida>();
+        if (vidaBase != null)
+            return vidaBase.transform;
+
+        TankLeve tank = alvo.GetComponentInParent<TankLeve>();
+        if (tank != null)
+            return tank.transform;
+
+        Vida vida = alvo.GetComponentInParent<Vida>();
+        if (vida != null)
+            return vida.transform;
+
+        Transform atual = alvo;
+        Transform ultimoObjetoDaEquipe = null;
+
+        while (atual != null && atual != transform && !atual.IsChildOf(transform))
         {
-            if (atual.parent == transform)
+            if (EhTagDeEquipe(atual.tag))
+            {
+                ultimoObjetoDaEquipe = atual;
+                atual = atual.parent;
+                continue;
+            }
+
+            // O primeiro objeto sem tag de equipe acima do alvo costuma ser
+            // apenas um agrupador da cena. Mantemos o último membro da equipe.
+            if (ultimoObjetoDaEquipe != null)
                 break;
 
             atual = atual.parent;
         }
 
-        return atual;
+        return ultimoObjetoDaEquipe != null ? ultimoObjetoDaEquipe : alvo;
+    }
+
+    private bool EhTagDeEquipe(string tag)
+    {
+        return tag == "Azul" || tag == "Vermelho" || tag == "Verde";
     }
 
     private bool ObjetoOuPaisTemAlgumaTag(Transform alvo, string[] tags)

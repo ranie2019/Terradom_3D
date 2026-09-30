@@ -97,3 +97,19 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# The Unity project is nested under Terradom/, so these root-anchored rules
+# must also cover that project directory.
+/Terradom/MemoryCaptures/
+/Terradom/Recordings/
+/Terradom/Assets/AssetStoreTools*
+/Terradom/Assets/Plugins/Editor/JetBrains*
+/Terradom/Assets/StreamingAssets/aa*
+/Terradom/Assets/AddressableAssetsData/link.xml*
+/Terradom/Assets/Addressables_Temp*
+/Terradom/Assets/AddressableAssetsData/*/*.bin*
+/Terradom/Assets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db
+/Terradom/Assets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
+/Terradom/Assets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers
+/Terradom/Assets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
+/Terradom/Assets/[Ii]nit[Tt]est[Ss]cene*.unity*

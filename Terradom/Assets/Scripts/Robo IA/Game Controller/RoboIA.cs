@@ -56,6 +56,12 @@ public class RoboIA : MonoBehaviour
     // (OnGUI pode ser chamado várias vezes por frame — evitar new GUIStyle() ali dentro)
 #if UNITY_EDITOR
     private GUIStyle _debugStyle;
+    private Transform raizUnidadesIA;
+    private int quantidadeColetores;
+    private int quantidadeSoldados;
+    private int quantidadeGuerreiros;
+    private int quantidadeTanques;
+    private int quantidadeAvioes;
 #endif
 
     private void Start()
@@ -84,6 +90,9 @@ public class RoboIA : MonoBehaviour
         proximoUpdate = Time.time + intervalo;
         AtualizarBases();
         OrdenarUnidades();
+#if UNITY_EDITOR
+        AtualizarContagemUnidades();
+#endif
     }
 
     private bool RoboCriarAtivo() => roboCriar != null && roboCriar.isActiveAndEnabled;
@@ -242,6 +251,42 @@ public class RoboIA : MonoBehaviour
     // =========================================================
 
 #if UNITY_EDITOR
+    private void AtualizarContagemUnidades()
+    {
+        if (raizUnidadesIA == null)
+        {
+            GameObject pastaUnidades = GameObject.Find("Clone Unidades IA");
+            if (pastaUnidades != null)
+                raizUnidadesIA = pastaUnidades.transform;
+        }
+
+        quantidadeColetores = 0;
+        quantidadeSoldados = 0;
+        quantidadeGuerreiros = 0;
+        quantidadeTanques = 0;
+        quantidadeAvioes = 0;
+
+        if (raizUnidadesIA == null)
+            return;
+
+        foreach (Transform unidade in raizUnidadesIA)
+        {
+            if (unidade == null || !unidade.gameObject.activeInHierarchy)
+                continue;
+
+            if (unidade.GetComponentInChildren<ColetorAi>(true) != null)
+                quantidadeColetores++;
+            else if (unidade.GetComponentInChildren<AtaqueDistancia>(true) != null)
+                quantidadeSoldados++;
+            else if (unidade.GetComponentInChildren<Ataque>(true) != null)
+                quantidadeGuerreiros++;
+            else if (unidade.GetComponentInChildren<TankLeve>(true) != null)
+                quantidadeTanques++;
+            else if (unidade.GetComponentInChildren<AviaoVoo>(true) != null)
+                quantidadeAvioes++;
+        }
+    }
+
     private void OnGUI()
     {
         if (!RoboCriarAtivo())
@@ -254,17 +299,10 @@ public class RoboIA : MonoBehaviour
         if (_debugStyle == null)
         {
             _debugStyle = new GUIStyle();
-            _debugStyle.fontSize         = 16;
             _debugStyle.normal.textColor = Color.green;
         }
 
-        Transform[] basesSoldado = roboCriar.ObterBasesSoldado();
-        Transform[] basesTank    = roboCriar.ObterBasesTank();
-        Transform[] basesAviao   = roboCriar.ObterBasesAviao();
-
-        int soldadoAtual = basesSoldado.Length > 0 ? (indiceBaseSoldadoAtual % basesSoldado.Length) + 1 : 0;
-        int tankAtual    = basesTank.Length    > 0 ? (indiceBaseTankAtual    % basesTank.Length)    + 1 : 0;
-        int aviaoAtual   = basesAviao.Length   > 0 ? (indiceBaseAviaoAtual   % basesAviao.Length)   + 1 : 0;
+        _debugStyle.fontSize = Screen.width < 480 || Screen.height < 360 ? 12 : 16;
 
         string etapaLabel = etapaUnidade switch
         {
@@ -285,11 +323,17 @@ public class RoboIA : MonoBehaviour
         debug += $"Producao:      {(aguardandoBase ? "PAUSADA" : "ATIVA")}\n";
         debug += $"Prox. Unidade: {etapaLabel}\n";
         debug += $"---\n";
-        debug += $"Bases Soldado: {basesSoldado.Length} | Rodizio: #{soldadoAtual}\n";
-        debug += $"Bases Tank:    {basesTank.Length}    | Rodizio: #{tankAtual}\n";
-        debug += $"Bases Aviao:   {basesAviao.Length}   | Rodizio: #{aviaoAtual}";
+        debug += "UNIDADES ATUAIS\n";
+        debug += $"Guerreiros: {quantidadeGuerreiros}\n";
+        debug += $"Soldados:   {quantidadeSoldados}\n";
+        debug += $"Coletores:  {quantidadeColetores}\n";
+        debug += $"Tanques:    {quantidadeTanques}\n";
+        debug += $"Avioes:     {quantidadeAvioes}";
 
-        GUI.Label(new Rect(Screen.width - 270, 10, 520, 320), debug, _debugStyle);
+        float larguraPainel = Mathf.Max(1f, Mathf.Min(520f, Screen.width - 20f));
+        float posicaoX = Mathf.Max(10f, Screen.width - larguraPainel - 10f);
+        float alturaPainel = Mathf.Max(1f, Screen.height - 20f);
+        GUI.Label(new Rect(posicaoX, 10f, larguraPainel, alturaPainel), debug, _debugStyle);
     }
 #endif
 }

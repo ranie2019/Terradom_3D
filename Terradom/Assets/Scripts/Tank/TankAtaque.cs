@@ -18,6 +18,7 @@ public class TankAtaque : MonoBehaviour
 
     [Header("Referencia da visao")]
     [SerializeField] private TankVisao tankVisao;
+    private TankLeve tankLeve;
 
     // =====================================================================
     // MIRA TERRESTRE
@@ -116,6 +117,8 @@ public class TankAtaque : MonoBehaviour
     {
         if (tankVisao == null)
             tankVisao = GetComponent<TankVisao>();
+
+        tankLeve = GetComponentInParent<TankLeve>();
 
         // Mira terrestre � fallbacks
         if (miraGiroY360  == null) miraGiroY360  = transform;
@@ -373,7 +376,8 @@ public class TankAtaque : MonoBehaviour
         ProjetilDistancia projetil = balaCriada.GetComponent<ProjetilDistancia>();
         if (projetil != null)
         {
-            projetil.Configurar(alvo, danoTiro, velBala, transform.root, pontoMira);
+            Transform donoDoDisparo = tankLeve != null ? tankLeve.transform : transform;
+            projetil.Configurar(alvo, danoTiro, velBala, donoDoDisparo, pontoMira);
         }
         else
         {

@@ -101,9 +101,11 @@ public class Vida : MonoBehaviour
         if (barraVidaUI != null)
             barraVidaUI.AtualizarVida(vidaAtual);
 
-        // FIX: removido SendMessage("TakeDamage", dano) que estava aqui.
-        // Nenhum script no projeto tem o método TakeDamage — era código morto
-        // gerando overhead de SendMessage a cada ponto de dano recebido.
+        // Notifica o controlador do tanque para atualizar os dados de evasao.
+        // A vida continua sendo reduzida apenas aqui; TakeDamage nao reaplica dano.
+        TankLeve tank = GetComponentInParent<TankLeve>();
+        if (tank != null)
+            tank.TakeDamage(dano);
 
         if (vidaAtual <= 0)
             Destroy(gameObject);

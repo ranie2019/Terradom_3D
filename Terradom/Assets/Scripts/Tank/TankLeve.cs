@@ -120,7 +120,8 @@ public class TankLeve : MonoBehaviour
     private Vector3 pontoSensorDetectado;
     private Vector3 normalSensorDetectado;
     private bool ladoDesvioTravado = false;  // impede troca de lado enquanto desviando
-    private readonly Collider[] bufferSobreposicaoSensor = new Collider[32];
+    private Collider[] bufferSobreposicaoSensor = new Collider[32];
+    private RaycastHit[] bufferSphereCastSensor = new RaycastHit[32];
 
     // Anti-stuck
     private float tempoSemMover = 0f;
@@ -195,6 +196,17 @@ public class TankLeve : MonoBehaviour
         PararECentralizarRodas();
         if (rb != null) DefinirVelocidadeRigidbody(Vector3.zero);
         anguloVisualDirecaoRodas = 0f;
+        TankLearningDatabase.Salvar();
+    }
+
+    private void OnApplicationPause(bool pausado)
+    {
+        if (pausado)
+            TankLearningDatabase.Salvar();
+    }
+
+    private void OnApplicationQuit()
+    {
         TankLearningDatabase.Salvar();
     }
 
@@ -800,17 +812,35 @@ public class TankLeve : MonoBehaviour
             }
         }
 
-        RaycastHit[] hits = Physics.SphereCastAll(origem, raioSeguro, direcao.normalized, distanciaSegura, camadasDetectaveis, triggerMode);
-        for (int i = 0; i < hits.Length; i++)
+        while (true)
         {
-            if (DeveIgnorarHitSensor(hits[i])) continue;
+            int quantidade = Physics.SphereCastNonAlloc(
+                origem,
+                raioSeguro,
+                direcao.normalized,
+                bufferSphereCastSensor,
+                distanciaSegura,
+                camadasDetectaveis,
+                triggerMode
+            );
 
-            if (hits[i].distance < menorDistancia)
+            for (int i = 0; i < quantidade; i++)
             {
-                menorDistancia = hits[i].distance;
-                melhorHit      = hits[i];
-                encontrou      = true;
+                RaycastHit hit = bufferSphereCastSensor[i];
+                if (DeveIgnorarHitSensor(hit)) continue;
+
+                if (hit.distance < menorDistancia)
+                {
+                    menorDistancia = hit.distance;
+                    melhorHit      = hit;
+                    encontrou      = true;
+                }
             }
+
+            if (quantidade < bufferSphereCastSensor.Length)
+                break;
+
+            System.Array.Resize(ref bufferSphereCastSensor, bufferSphereCastSensor.Length * 2);
         }
 
         return encontrou;
@@ -828,7 +858,22 @@ public class TankLeve : MonoBehaviour
     {
         float raio = Mathf.Max(0.05f, raioSensorFrontal);
         QueryTriggerInteraction triggerMode = detectarTriggers ? QueryTriggerInteraction.Collide : QueryTriggerInteraction.Ignore;
-        int quantidade = Physics.OverlapSphereNonAlloc(origem, raio, bufferSobreposicaoSensor, camadasDetectaveis, triggerMode);
+        int quantidade;
+        while (true)
+        {
+            quantidade = Physics.OverlapSphereNonAlloc(
+                origem,
+                raio,
+                bufferSobreposicaoSensor,
+                camadasDetectaveis,
+                triggerMode
+            );
+
+            if (quantidade < bufferSobreposicaoSensor.Length)
+                break;
+
+            System.Array.Resize(ref bufferSobreposicaoSensor, bufferSobreposicaoSensor.Length * 2);
+        }
         Collider maisProximo = null;
         float menorDistancia = float.MaxValue;
 
