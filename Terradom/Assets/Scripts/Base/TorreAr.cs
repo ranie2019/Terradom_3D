@@ -8,11 +8,15 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // INSPECTOR
     // =====================================================================
-
     [Header("Visão")]
     public float raioVisao = 80f;
     [SerializeField] private LayerMask layerAviao;
     [SerializeField] private string[] tagsInimigos = { "Vermelho" };
+
+    // FIX: intervalo de busca de alvo.
+    // Antes: Physics.OverlapSphere rodava todo frame (Update).
+    // Com 10 torres = 10 OverlapSpheres/frame. Agora roda a cada 0.2s por padrão.
+    [SerializeField] private float intervaloBuscaAlvo = 0.2f;
 
     [Header("Referências de Mira")]
     [Tooltip("Filho direto da torre. Gira somente no eixo Y (horizontal), limitado.")]
@@ -48,47 +52,53 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // ESTADO INTERNO
     // =====================================================================
-
     private Transform alvoAtual;
+    private int       indicePontoAtual;
+    private bool      recarregando;
+    private bool      disparando;
+    private float     anguloYAtual;
+    private float     anguloZAtual;
+    private float     velocidadeAtual;
+    private float     direcaoAtual;
+    private float     tempoProximaTroca;
 
-    private int  indicePontoAtual;
-    private bool recarregando;
-    private bool disparando;
+    // FIX: timer de busca de alvo
+    private float _proximaBusca;
 
-    private float anguloYAtual;
-    private float anguloZAtual;
-
-    private float velocidadeAtual;
-    private float direcaoAtual;
-    private float tempoProximaTroca;
-
-    private HashSet<Transform> _jaAvaliados = new HashSet<Transform>();
+    private readonly HashSet<Transform> _jaAvaliados = new HashSet<Transform>();
 
     // Pool: guarda os mísseis originais (filhos dos pontos) para reutilizá-los após recarga
-    // Chave = ponto de lançamento, Valor = lista de mísseis pertencentes àquele ponto
     private Dictionary<Transform, List<Missel>> _pool = new Dictionary<Transform, List<Missel>>();
 
     // =====================================================================
     // UNITY
     // =====================================================================
-
     void Start()
     {
         if (cabeca     != null) anguloYAtual = cabeca.localEulerAngles.y;
         if (baseMissel != null) anguloZAtual = baseMissel.localEulerAngles.z;
         DefinirNovaPatrulha();
         ConstruirPool();
+        _proximaBusca = Time.time; // primeira busca imediata
     }
 
     void Update()
     {
-        ProcurarAlvo();
+        // FIX: só busca alvo quando o timer vencer — não mais todo frame
+        if (Time.time >= _proximaBusca)
+        {
+            _proximaBusca = Time.time + intervaloBuscaAlvo;
+            ProcurarAlvo();
+        }
+
+        // Valida se alvo ainda existe (pode ter sido destruído entre buscas)
+        if (alvoAtual != null && !alvoAtual.gameObject.activeInHierarchy)
+            alvoAtual = null;
 
         if (alvoAtual != null)
         {
             GirarCabecaY();
             GirarBaseMisselZ();
-
             if (!disparando && !recarregando && TemMisselDisponivel())
                 StartCoroutine(RotinaDeLancamento());
         }
@@ -101,76 +111,49 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // POOL DE MÍSSEIS
     // =====================================================================
-
-    /// <summary>
-    /// Registra todos os mísseis filhos de cada ponto no dicionário de pool.
-    /// Chamado uma vez no Start — os mísseis devem já estar presentes no Editor como filhos inativos.
-    /// </summary>
     void ConstruirPool()
     {
         if (pontosMisseis == null) return;
-
         foreach (Transform ponto in pontosMisseis)
         {
             if (ponto == null) continue;
-
             var lista = new List<Missel>();
             for (int i = 0; i < ponto.childCount; i++)
             {
                 Missel m = ponto.GetChild(i).GetComponent<Missel>();
                 if (m != null)
-                {
                     lista.Add(m);
-                    // NÃO desativamos o GameObject — o míssil permanece visível.
-                    // O collider e o movimento são controlados pelo próprio Missel.
-                }
             }
             _pool[ponto] = lista;
         }
     }
 
-    /// <summary>
-    /// Devolve um míssil inativo pertencente ao ponto informado, ou null se não houver.
-    /// </summary>
     Missel PegarMisselDoPool(Transform ponto)
     {
         if (ponto == null) return null;
         if (!_pool.TryGetValue(ponto, out var lista)) return null;
-
         foreach (Missel m in lista)
             if (m != null && !m.EstaLancado) return m;
-
         return null;
     }
 
-    /// <summary>
-    /// Chamado pelo Missel ao terminar seu ciclo de vida (colisão ou tempo esgotado).
-    /// Recoloca o míssil no ponto de origem e o desativa — pronto para reutilização.
-    /// </summary>
-    // Chamado pelo Missel após ele próprio se resetar via ResetarParaPool()
     public void NotificarMisselDevolvido()
     {
-        // Nada a fazer aqui por enquanto — o Missel já se reposicionou no ponto.
-        // Este método existe para extensões futuras (ex.: atualizar UI de munição).
+        // Reservado para extensões futuras (ex.: atualizar UI de munição)
     }
 
     // =====================================================================
     // MIRA
     // =====================================================================
-
     void GirarCabecaY()
     {
         if (cabeca == null || alvoAtual == null) return;
-
         Vector3 dirWorld = alvoAtual.position - cabeca.position;
         dirWorld.y = 0f;
         if (dirWorld.sqrMagnitude < 0.001f) return;
-
-        Vector3 dirLocal = transform.InverseTransformDirection(dirWorld);
-
-        float anguloAlvo = Mathf.Atan2(dirLocal.x, dirLocal.z) * Mathf.Rad2Deg;
-        anguloAlvo = Mathf.Clamp(anguloAlvo, limiteYMin, limiteYMax);
-
+        Vector3 dirLocal  = transform.InverseTransformDirection(dirWorld);
+        float   anguloAlvo = Mathf.Atan2(dirLocal.x, dirLocal.z) * Mathf.Rad2Deg;
+        anguloAlvo  = Mathf.Clamp(anguloAlvo, limiteYMin, limiteYMax);
         anguloYAtual = Mathf.LerpAngle(anguloYAtual, anguloAlvo, Time.deltaTime * velocidadeMira);
         cabeca.localRotation = Quaternion.Euler(0f, anguloYAtual, 0f);
     }
@@ -178,15 +161,11 @@ public class TorreAr : MonoBehaviour
     void GirarBaseMisselZ()
     {
         if (baseMissel == null || alvoAtual == null) return;
-
         Vector3 alvoLocalDaCabeca = cabeca.InverseTransformPoint(alvoAtual.position);
-
-        float distH = Mathf.Sqrt(alvoLocalDaCabeca.x * alvoLocalDaCabeca.x +
-                                 alvoLocalDaCabeca.z * alvoLocalDaCabeca.z);
-
+        float   distH             = Mathf.Sqrt(alvoLocalDaCabeca.x * alvoLocalDaCabeca.x +
+                                               alvoLocalDaCabeca.z * alvoLocalDaCabeca.z);
         float elevacao    = Mathf.Atan2(alvoLocalDaCabeca.y, distH) * Mathf.Rad2Deg;
         float anguloZAlvo = -elevacao;
-
         anguloZAtual = Mathf.LerpAngle(anguloZAtual, anguloZAlvo, Time.deltaTime * velocidadeMira);
         baseMissel.localRotation = Quaternion.Euler(0f, 0f, anguloZAtual);
     }
@@ -194,13 +173,11 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // PATRULHA (sem alvo)
     // =====================================================================
-
     void Patrulhar()
     {
         if (cabeca != null)
         {
             anguloYAtual += direcaoAtual * velocidadeAtual * Time.deltaTime;
-
             if (anguloYAtual <= limiteYMin)
             {
                 anguloYAtual = limiteYMin;
@@ -211,16 +188,13 @@ public class TorreAr : MonoBehaviour
                 anguloYAtual = limiteYMax;
                 direcaoAtual = -1f;
             }
-
             cabeca.localRotation = Quaternion.Euler(0f, anguloYAtual, 0f);
         }
-
         if (baseMissel != null)
         {
             anguloZAtual = Mathf.LerpAngle(anguloZAtual, 0f, Time.deltaTime * velocidadeMira);
             baseMissel.localRotation = Quaternion.Euler(0f, 0f, anguloZAtual);
         }
-
         if (Time.time >= tempoProximaTroca)
             DefinirNovaPatrulha();
     }
@@ -235,11 +209,9 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // DETECÇÃO DE ALVO
     // =====================================================================
-
     void ProcurarAlvo()
     {
         Collider[] coliders = Physics.OverlapSphere(transform.position, raioVisao, layerAviao);
-
         _jaAvaliados.Clear();
 
         Transform melhorAlvo  = null;
@@ -251,13 +223,11 @@ public class TorreAr : MonoBehaviour
         {
             Transform raiz = PegarTransformComTag(col.transform);
             if (raiz == null) continue;
-
             if (_jaAvaliados.Contains(raiz)) continue;
             _jaAvaliados.Add(raiz);
 
-            float valor = CalcularValorPrioridade(raiz);
-
-            bool ehMelhor = prioridade == PrioridadeAlvoAr.MaisLonge
+            float valor    = CalcularValorPrioridade(raiz);
+            bool  ehMelhor = prioridade == PrioridadeAlvoAr.MaisLonge
                 ? valor > melhorValor
                 : valor < melhorValor;
 
@@ -267,7 +237,6 @@ public class TorreAr : MonoBehaviour
                 melhorAlvo  = raiz;
             }
         }
-
         alvoAtual = melhorAlvo;
     }
 
@@ -278,14 +247,12 @@ public class TorreAr : MonoBehaviour
             case PrioridadeAlvoAr.MaisPerto:
             case PrioridadeAlvoAr.MaisLonge:
                 return Vector3.Distance(transform.position, alvo.position);
-
             case PrioridadeAlvoAr.MenorVida:
             case PrioridadeAlvoAr.MaiorVida:
                 IVidaAr vida = alvo.GetComponentInChildren<IVidaAr>()
                             ?? alvo.GetComponentInParent<IVidaAr>();
                 if (vida == null) return Mathf.Infinity;
                 return prioridade == PrioridadeAlvoAr.MenorVida ? vida.VidaAtual : -vida.VidaAtual;
-
             default:
                 return Vector3.Distance(transform.position, alvo.position);
         }
@@ -306,14 +273,11 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // DISPARO
     // =====================================================================
-
     bool TemMisselDisponivel()
     {
         if (pontosMisseis == null || pontosMisseis.Length == 0) return false;
-
         foreach (Transform ponto in pontosMisseis)
             if (PegarMisselDoPool(ponto) != null) return true;
-
         return false;
     }
 
@@ -326,8 +290,8 @@ public class TorreAr : MonoBehaviour
         }
 
         disparando = true;
-
         int tentativas = 0;
+
         while (TemMisselDisponivel() && alvoAtual != null)
         {
             Transform ponto  = pontosMisseis[indicePontoAtual];
@@ -349,19 +313,12 @@ public class TorreAr : MonoBehaviour
         }
 
         disparando = false;
-
         if (!TemMisselDisponivel())
             StartCoroutine(Recarregar());
     }
 
-    /// <summary>
-    /// Ativa o míssil, desparenta do ponto de lançamento e inicia a perseguição.
-    /// O ponto de origem é passado ao Missel para que ele possa ser devolvido ao pool.
-    /// </summary>
     void LancarMissel(Missel missel, Transform pontoOrigem)
     {
-        // O GameObject já está ativo e visível — só precisamos desparentá-lo
-        // e chamar Lancar(). O Missel ativa o collider e inicia o movimento internamente.
         missel.transform.SetParent(null);
         missel.Lancar(alvoAtual, transform, pontoOrigem, this);
     }
@@ -370,16 +327,29 @@ public class TorreAr : MonoBehaviour
     {
         recarregando = true;
         yield return new WaitForSeconds(tempoRecarga);
-        // Todos os mísseis já devem ter sido devolvidos ao pool pelo próprio Missel.
-        // Apenas reseta o índice para começar pelo primeiro ponto novamente.
         indicePontoAtual = 0;
         recarregando     = false;
     }
 
     // =====================================================================
+    // VALIDAÇÃO
+    // =====================================================================
+    private void OnValidate()
+    {
+        raioVisao              = Mathf.Max(1f,   raioVisao);
+        intervaloBuscaAlvo     = Mathf.Max(0.05f, intervaloBuscaAlvo);
+        velocidadeMira         = Mathf.Max(0.1f,  velocidadeMira);
+        intervaloEntreLancamentos = Mathf.Max(0.05f, intervaloEntreLancamentos);
+        tempoRecarga           = Mathf.Max(0.5f,  tempoRecarga);
+        velocidadeMin          = Mathf.Max(0f,    velocidadeMin);
+        velocidadeMax          = Mathf.Max(velocidadeMin, velocidadeMax);
+        tempoTrocaMin          = Mathf.Max(0.1f,  tempoTrocaMin);
+        tempoTrocaMax          = Mathf.Max(tempoTrocaMin, tempoTrocaMax);
+    }
+
+    // =====================================================================
     // GIZMOS
     // =====================================================================
-
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 0.8f, 1f, 0.35f);
@@ -394,12 +364,10 @@ public class TorreAr : MonoBehaviour
 
         if (cabeca != null)
         {
-            Vector3 origem = cabeca.position;
-            float   r      = raioVisao * 0.4f;
-
+            Vector3    origem = cabeca.position;
+            float      r      = raioVisao * 0.4f;
             Quaternion rotMin = transform.rotation * Quaternion.Euler(0f, limiteYMin, 0f);
             Quaternion rotMax = transform.rotation * Quaternion.Euler(0f, limiteYMax, 0f);
-
             Gizmos.color = Color.yellow;
             Gizmos.DrawRay(origem, rotMin * Vector3.forward * r);
             Gizmos.DrawRay(origem, rotMax * Vector3.forward * r);

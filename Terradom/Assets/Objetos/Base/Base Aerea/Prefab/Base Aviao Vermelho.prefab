@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 1560411799954219101}
   - component: {fileID: 8348596626229054059}
   - component: {fileID: 4608826668832445252}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.004
-  m_TagString: Azul
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -102,9 +102,9 @@ GameObject:
   - component: {fileID: 6668713554278058710}
   - component: {fileID: 3034706069757916205}
   - component: {fileID: 4119098293892354778}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Exterieur DOOR Big AV_Left
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -192,9 +192,9 @@ GameObject:
   - component: {fileID: 2086219706406434171}
   - component: {fileID: 251192286311515275}
   - component: {fileID: 3672151848760101934}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.006
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -282,9 +282,9 @@ GameObject:
   - component: {fileID: 519071877064715889}
   - component: {fileID: 677983538867733940}
   - component: {fileID: 1926744553630919478}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SOL.004
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -370,9 +370,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8360498726364083563}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: PontoDecolagem
-  m_TagString: PontoDecolagem
+  m_TagString: Vermelho
   m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -403,9 +403,9 @@ GameObject:
   - component: {fileID: 7156496292477158952}
   - component: {fileID: 8071370457538534443}
   - component: {fileID: 2937830832802621349}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: FundoVida
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -478,9 +478,9 @@ GameObject:
   - component: {fileID: 1992800896527679927}
   - component: {fileID: 8681967000215614043}
   - component: {fileID: 8236943470553556726}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Exterieur DOOR Big AV_Right
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -568,9 +568,9 @@ GameObject:
   - component: {fileID: 3638500377168153241}
   - component: {fileID: 6000736603344473257}
   - component: {fileID: 564639164522638709}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.002
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -658,9 +658,9 @@ GameObject:
   - component: {fileID: 5735310335354172100}
   - component: {fileID: 4970476062653864761}
   - component: {fileID: 2244210493654738943}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: BarraVida
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -845,9 +845,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1357377138718003788}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Spawn
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -880,9 +880,9 @@ GameObject:
   - component: {fileID: 3214873210965293281}
   - component: {fileID: 8976287593897601983}
   - component: {fileID: 6660598101891030963}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: CanvasWorld
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -995,9 +995,9 @@ GameObject:
   - component: {fileID: 2091547406991350622}
   - component: {fileID: 7062813619964305800}
   - component: {fileID: 916441545117839705}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.005
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1085,9 +1085,9 @@ GameObject:
   - component: {fileID: 2881563624062446086}
   - component: {fileID: 116293804319825050}
   - component: {fileID: 2146330074063454129}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Exterieur DOOR Small AV_Right
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1173,9 +1173,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5904562221760686600}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Base
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1216,9 +1216,9 @@ GameObject:
   - component: {fileID: 1146153235760909093}
   - component: {fileID: 1031526063044270028}
   - component: {fileID: 304688562312655779}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SOL
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1307,9 +1307,9 @@ GameObject:
   - component: {fileID: 3497002556586570516}
   - component: {fileID: 2058555215380198228}
   - component: {fileID: 5008107005487293566}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.003
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -8,13 +8,18 @@ public class Torre : MonoBehaviour
     public float raioVisao = 10f;
     [SerializeField] private string[] tagsInimigos;
 
+    // FIX: adicionado intervalo de busca de alvo.
+    // Antes: Physics.OverlapSphere rodava todo frame (Update).
+    // Com 10 torres = 10 OverlapSpheres/frame. Agora roda a cada 0.2s por padrão.
+    [SerializeField] private float intervaloBuscaAlvo = 0.2f;
+
     [Header("Referências")]
     [SerializeField] private Transform baseCanhao;
     [SerializeField] private Transform pontoDisparo;
 
     [Header("Disparo")]
     [SerializeField] private GameObject prefabBala;
-    [SerializeField] private float velocidadeBala = 20f;
+    [SerializeField] private float velocidadeBala  = 20f;
     [SerializeField] private float tirosPorSegundo = 2f;
 
     [Header("Prioridade de Alvo")]
@@ -23,28 +28,41 @@ public class Torre : MonoBehaviour
     [Header("Patrulha (sem alvo)")]
     [SerializeField] private float velocidadeMin = 10f;
     [SerializeField] private float velocidadeMax = 30f;
-    [SerializeField] private float tempoTrocaMin = 1f;
-    [SerializeField] private float tempoTrocaMax = 3f;
+    [SerializeField] private float tempoTrocaMin =  1f;
+    [SerializeField] private float tempoTrocaMax =  3f;
 
-    private Transform alvoAtual;
-    private float tempoProximoTiro;
-    private float velocidadeAtual;
-    private float direcaoAtual;
-    private float tempoProximaTroca;
+    private Transform _alvoAtual;
+    private float     _tempoProximoTiro;
+    private float     _velocidadeAtual;
+    private float     _direcaoAtual;
+    private float     _tempoProximaTroca;
 
-    // Reutilizado a cada frame pra evitar alocação
-    private HashSet<Transform> _jaAvaliados = new HashSet<Transform>();
+    // FIX: timer de busca de alvo
+    private float _proximaBusca;
+
+    // Reutilizado a cada busca para evitar alocação de HashSet novo
+    private readonly HashSet<Transform> _jaAvaliados = new HashSet<Transform>();
 
     void Start()
     {
         DefinirNovaPatrulha();
+        _proximaBusca = Time.time; // primeira busca imediata
     }
 
     void Update()
     {
-        ProcurarAlvo();
+        // FIX: só busca alvo quando o timer vencer — não mais todo frame
+        if (Time.time >= _proximaBusca)
+        {
+            _proximaBusca = Time.time + intervaloBuscaAlvo;
+            ProcurarAlvo();
+        }
 
-        if (alvoAtual != null)
+        // Valida se alvo ainda existe (pode ter sido destruído entre buscas)
+        if (_alvoAtual != null && !_alvoAtual.gameObject.activeInHierarchy)
+            _alvoAtual = null;
+
+        if (_alvoAtual != null)
         {
             Mirar();
             Atirar();
@@ -58,11 +76,10 @@ public class Torre : MonoBehaviour
     void ProcurarAlvo()
     {
         Collider[] coliders = Physics.OverlapSphere(transform.position, raioVisao);
+        _jaAvaliados.Clear();
 
-        _jaAvaliados.Clear(); // limpa sem alocar novo HashSet
-
-        Transform melhorAlvo = null;
-        float melhorValor = prioridade == PrioridadeAlvo.MaisLonge
+        Transform melhorAlvo  = null;
+        float     melhorValor = prioridade == PrioridadeAlvo.MaisLonge
             ? Mathf.NegativeInfinity
             : Mathf.Infinity;
 
@@ -71,24 +88,22 @@ public class Torre : MonoBehaviour
             Transform raiz = PegarTransformComTag(col.transform);
             if (raiz == null) continue;
 
-            // Cada inimigo entra na comparação UMA VEZ só
             if (_jaAvaliados.Contains(raiz)) continue;
             _jaAvaliados.Add(raiz);
 
-            float valor = CalcularValorPrioridade(raiz);
-
-            bool ehMelhor = prioridade == PrioridadeAlvo.MaisLonge
+            float valor    = CalcularValorPrioridade(raiz);
+            bool  ehMelhor = prioridade == PrioridadeAlvo.MaisLonge
                 ? valor > melhorValor
                 : valor < melhorValor;
 
             if (ehMelhor)
             {
                 melhorValor = valor;
-                melhorAlvo = raiz;
+                melhorAlvo  = raiz;
             }
         }
 
-        alvoAtual = melhorAlvo; // null se ninguém no raio = volta a patrulhar
+        _alvoAtual = melhorAlvo;
     }
 
     float CalcularValorPrioridade(Transform alvo)
@@ -125,20 +140,20 @@ public class Torre : MonoBehaviour
 
     void Mirar()
     {
-        Vector3 direcao = alvoAtual.position - baseCanhao.position;
+        if (baseCanhao == null || _alvoAtual == null) return;
+        Vector3 direcao = _alvoAtual.position - baseCanhao.position;
         direcao.y = 0f;
-
         if (direcao == Vector3.zero) return;
-
         float angulo = Mathf.Atan2(direcao.x, direcao.z) * Mathf.Rad2Deg;
         baseCanhao.localRotation = Quaternion.Euler(0f, angulo, 0f);
     }
 
     void Atirar()
     {
-        if (Time.time >= tempoProximoTiro)
+        if (prefabBala == null || pontoDisparo == null) return;
+        if (Time.time >= _tempoProximoTiro)
         {
-            tempoProximoTiro = Time.time + (1f / tirosPorSegundo);
+            _tempoProximoTiro = Time.time + (1f / tirosPorSegundo);
             GameObject bala = Instantiate(prefabBala, pontoDisparo.position, pontoDisparo.rotation);
             Rigidbody rb = bala.GetComponent<Rigidbody>();
             if (rb != null)
@@ -148,17 +163,29 @@ public class Torre : MonoBehaviour
 
     void Patrulhar()
     {
-        baseCanhao.Rotate(0f, direcaoAtual * velocidadeAtual * Time.deltaTime, 0f, Space.Self);
-
-        if (Time.time >= tempoProximaTroca)
+        if (baseCanhao == null) return;
+        baseCanhao.Rotate(0f, _direcaoAtual * _velocidadeAtual * Time.deltaTime, 0f, Space.Self);
+        if (Time.time >= _tempoProximaTroca)
             DefinirNovaPatrulha();
     }
 
     void DefinirNovaPatrulha()
     {
-        velocidadeAtual = Random.Range(velocidadeMin, velocidadeMax);
-        direcaoAtual = Random.value > 0.5f ? 1f : -1f;
-        tempoProximaTroca = Time.time + Random.Range(tempoTrocaMin, tempoTrocaMax);
+        _velocidadeAtual   = Random.Range(velocidadeMin, velocidadeMax);
+        _direcaoAtual      = Random.value > 0.5f ? 1f : -1f;
+        _tempoProximaTroca = Time.time + Random.Range(tempoTrocaMin, tempoTrocaMax);
+    }
+
+    private void OnValidate()
+    {
+        raioVisao         = Mathf.Max(0.5f, raioVisao);
+        intervaloBuscaAlvo = Mathf.Max(0.05f, intervaloBuscaAlvo);
+        tirosPorSegundo   = Mathf.Max(0.1f, tirosPorSegundo);
+        velocidadeBala    = Mathf.Max(0f,   velocidadeBala);
+        velocidadeMin     = Mathf.Max(0f,   velocidadeMin);
+        velocidadeMax     = Mathf.Max(velocidadeMin, velocidadeMax);
+        tempoTrocaMin     = Mathf.Max(0.1f, tempoTrocaMin);
+        tempoTrocaMax     = Mathf.Max(tempoTrocaMin, tempoTrocaMax);
     }
 
     void OnDrawGizmosSelected()
@@ -169,5 +196,4 @@ public class Torre : MonoBehaviour
 }
 
 public enum PrioridadeAlvo { MaisPerto, MaisLonge, MenorVida, MaiorVida }
-
 public interface IVida { float VidaAtual { get; } }

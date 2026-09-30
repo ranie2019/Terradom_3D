@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7692720432666145710}
   m_Layer: 6
   m_Name: Cube.007
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 328211979211033133}
   m_Layer: 6
   m_Name: Cube.005
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -193,7 +193,7 @@ GameObject:
   - component: {fileID: 7612799369601003032}
   m_Layer: 6
   m_Name: Cube.004
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -283,7 +283,7 @@ GameObject:
   - component: {fileID: 5017151337091887371}
   m_Layer: 6
   m_Name: Cube.001
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -371,9 +371,9 @@ GameObject:
   - component: {fileID: 7737897822242606831}
   - component: {fileID: 5857304078420212382}
   - component: {fileID: 6375933103792053750}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: FundoVida
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -448,9 +448,9 @@ GameObject:
   - component: {fileID: 8796561424744232759}
   - component: {fileID: 7233924468883153287}
   - component: {fileID: 6660154550960257779}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: CanvasWorld
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -565,7 +565,7 @@ GameObject:
   - component: {fileID: 4710912155955971703}
   m_Layer: 6
   m_Name: Circle.001
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -655,7 +655,7 @@ GameObject:
   - component: {fileID: 6623824579896737297}
   m_Layer: 6
   m_Name: Circle.002
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -745,7 +745,7 @@ GameObject:
   - component: {fileID: 2513932191358108002}
   m_Layer: 6
   m_Name: Cube.006
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -836,7 +836,7 @@ GameObject:
   - component: {fileID: 47205273118610313}
   m_Layer: 6
   m_Name: base
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -879,7 +879,7 @@ GameObject:
   - component: {fileID: 781937491676397756}
   m_Layer: 6
   m_Name: Cube.003
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -967,9 +967,9 @@ GameObject:
   - component: {fileID: 4529291686383517322}
   - component: {fileID: 8124304393274232776}
   - component: {fileID: 4956334658716182177}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: BarraVida
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1044,7 +1044,7 @@ GameObject:
   - component: {fileID: 9048916197489746036}
   m_Layer: 6
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1148,7 +1148,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8531998297328247488}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: -69.61873, y: 0.0000057436064, z: -325.57922}
   m_LocalScale: {x: 2.375222, y: 2.375222, z: 2.375222}
   m_ConstrainProportionsScale: 0
@@ -1245,7 +1245,7 @@ GameObject:
   - component: {fileID: 5403945957806923717}
   m_Layer: 6
   m_Name: Spawn
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1278,7 +1278,7 @@ GameObject:
   - component: {fileID: 4230432604263625891}
   m_Layer: 6
   m_Name: Cube.002
-  m_TagString: Untagged
+  m_TagString: Verde
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

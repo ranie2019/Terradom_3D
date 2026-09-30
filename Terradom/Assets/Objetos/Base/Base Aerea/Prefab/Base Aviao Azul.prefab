@@ -9,9 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7641381402809550406}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Base
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -52,9 +52,9 @@ GameObject:
   - component: {fileID: 5835019426539864444}
   - component: {fileID: 6019382842208247101}
   - component: {fileID: 947633638799358335}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SOL.004
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -140,9 +140,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 366223992175084635}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: PontoDecolagem
-  m_TagString: PontoDecolagem
+  m_TagString: Azul
   m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -173,9 +173,9 @@ GameObject:
   - component: {fileID: 8534590863905495687}
   - component: {fileID: 7682124832634201718}
   - component: {fileID: 7409604351670421668}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SOL
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -263,9 +263,9 @@ GameObject:
   - component: {fileID: 951100893581756091}
   - component: {fileID: 4567039660139130214}
   - component: {fileID: 3744556572387083271}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: BarraVida
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -339,9 +339,9 @@ GameObject:
   - component: {fileID: 616643326454083541}
   - component: {fileID: 1942897288771425687}
   - component: {fileID: 3617707412409035693}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.003
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -455,9 +455,9 @@ GameObject:
   - component: {fileID: 8214707110567809749}
   - component: {fileID: 8601790173553775601}
   - component: {fileID: 6479688918377437423}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: CanvasWorld
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -570,9 +570,9 @@ GameObject:
   - component: {fileID: 1645121665149889505}
   - component: {fileID: 8760842804809081122}
   - component: {fileID: 171837459740184332}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.006
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -660,9 +660,9 @@ GameObject:
   - component: {fileID: 3169464338525044444}
   - component: {fileID: 3272823643651886125}
   - component: {fileID: 5652197544514297844}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.005
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -748,9 +748,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5508376896372550520}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Spawn
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -781,7 +781,7 @@ GameObject:
   - component: {fileID: 5073390734189902813}
   - component: {fileID: 1876854116422503107}
   - component: {fileID: 8940893835104667806}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.004
   m_TagString: Azul
   m_Icon: {fileID: 0}
@@ -872,9 +872,9 @@ GameObject:
   - component: {fileID: 8083606984731821037}
   - component: {fileID: 921333193775308759}
   - component: {fileID: 7250665443867411751}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Exterieur DOOR Small AV_Right
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -962,9 +962,9 @@ GameObject:
   - component: {fileID: 8749651068579442923}
   - component: {fileID: 5671708898739066243}
   - component: {fileID: 1420238897994614133}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SHELTER.002
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1052,9 +1052,9 @@ GameObject:
   - component: {fileID: 8797254494993859813}
   - component: {fileID: 8431672618221056754}
   - component: {fileID: 2341359907859328588}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Exterieur DOOR Big AV_Right
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1142,9 +1142,9 @@ GameObject:
   - component: {fileID: 6854764343496661600}
   - component: {fileID: 261764345184200635}
   - component: {fileID: 3384970243602704869}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: FundoVida
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1377,9 +1377,9 @@ GameObject:
   - component: {fileID: 6035596551958743229}
   - component: {fileID: 6650225278963605497}
   - component: {fileID: 3725512826011267008}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Exterieur DOOR Big AV_Left
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -4,40 +4,45 @@ using UnityEngine;
 public class AtaqueDistancia : MonoBehaviour
 {
     [Header("Ataque à distância")]
-    [SerializeField] private float alcanceAtaque = 15f;
-    [SerializeField] private int dano = 1;
-    [SerializeField] private float cooldownAtaque = 1.2f;
+    [SerializeField] private float alcanceAtaque    = 15f;
+    [SerializeField] private int   dano             = 1;
+    [SerializeField] private float cooldownAtaque   = 1.2f;
     [SerializeField] private float duracaoAnimAtaque = 0.6f;
     [SerializeField] private float momentoDoDisparo = 0.25f;
 
     [Header("Disparo")]
     [SerializeField] private GameObject prefabBala;
-    [SerializeField] private Transform pontoDisparo;
-    [SerializeField] private float velocidadeBala = 20f;
+    [SerializeField] private Transform  pontoDisparo;
+    [SerializeField] private float      velocidadeBala = 20f;
 
     [Header("Animator")]
     [SerializeField] private Animator animator;
-    [SerializeField] private string parametroAtaque = "Atirar";
+    [SerializeField] private string   parametroAtaque = "Atirar";
 
     private Transform alvoAtual;
-    private bool estaAtacando;
-    private bool disparoFeito;
+    private bool      estaAtacando;
+    private bool      disparoFeito;
+    private float     fimAtaque;
+    private float     momentoDisparoAtual;
+    private float     proximoAtaque;
+    private bool      animTemAtaque;
 
-    private float fimAtaque;
-    private float momentoDisparoAtual;
-    private float proximoAtaque;
-
-    private bool animTemAtaque;
+    // FIX: Visao era buscada via GetComponent<Visao>() em Update toda vez que
+    // não havia alvo — chamada cara executada continuamente. Agora é cacheada
+    // em Awake e reutilizada.
+    private Visao _visaoCache;
 
     private void Awake()
     {
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
-
         if (animator != null)
             animator.applyRootMotion = false;
 
         animTemAtaque = TemParametro(parametroAtaque);
+
+        // FIX: cache do componente Visao
+        _visaoCache = GetComponent<Visao>();
     }
 
     private void Update()
@@ -54,30 +59,21 @@ public class AtaqueDistancia : MonoBehaviour
 
     public void LimparAlvo()
     {
-        alvoAtual = null;
+        alvoAtual    = null;
         estaAtacando = false;
         disparoFeito = false;
     }
 
-    public bool EstaAtacandoAgora()
-    {
-        return estaAtacando;
-    }
-
-    public float GetAlcanceAtaque()
-    {
-        return alcanceAtaque;
-    }
+    public bool EstaAtacandoAgora() => estaAtacando;
+    public float GetAlcanceAtaque() => alcanceAtaque;
 
     private void BuscarAlvoSeNecessario()
     {
-        if (alvoAtual != null && alvoAtual.gameObject.activeInHierarchy)
-            return;
+        if (alvoAtual != null && alvoAtual.gameObject.activeInHierarchy) return;
 
-        Visao visao = GetComponent<Visao>();
-
-        if (visao != null)
-            alvoAtual = visao.GetAlvoAtual();
+        // FIX: usa o cache em vez de GetComponent<Visao>() a cada frame
+        if (_visaoCache != null)
+            alvoAtual = _visaoCache.GetAlvoAtual();
     }
 
     private void AtualizarAtaque()
@@ -89,7 +85,6 @@ public class AtaqueDistancia : MonoBehaviour
         }
 
         float distancia = DistanciaXZ(transform.position, alvoAtual.position);
-
         if (distancia > alcanceAtaque)
         {
             estaAtacando = false;
@@ -104,19 +99,16 @@ public class AtaqueDistancia : MonoBehaviour
             return;
         }
 
-        if (Time.time < proximoAtaque)
-            return;
-
+        if (Time.time < proximoAtaque) return;
         IniciarAtaque();
     }
 
     private void IniciarAtaque()
     {
-        estaAtacando = true;
-        disparoFeito = false;
-
-        proximoAtaque = Time.time + cooldownAtaque;
-        fimAtaque = Time.time + duracaoAnimAtaque;
+        estaAtacando        = true;
+        disparoFeito        = false;
+        proximoAtaque       = Time.time + cooldownAtaque;
+        fimAtaque           = Time.time + duracaoAnimAtaque;
         momentoDisparoAtual = Time.time + Mathf.Clamp(momentoDoDisparo, 0f, duracaoAnimAtaque);
     }
 
@@ -140,8 +132,7 @@ public class AtaqueDistancia : MonoBehaviour
 
     private void DispararBala()
     {
-        if (prefabBala == null)
-            return;
+        if (prefabBala == null) return;
 
         Vector3 origem = pontoDisparo != null
             ? pontoDisparo.position
@@ -151,17 +142,14 @@ public class AtaqueDistancia : MonoBehaviour
         destino.y = origem.y;
 
         Vector3 direcao = destino - origem;
-
         if (direcao.sqrMagnitude < 0.001f)
             direcao = transform.forward;
 
         Quaternion rotacao = Quaternion.LookRotation(direcao.normalized, Vector3.up);
-
-        GameObject bala = Instantiate(prefabBala, origem, rotacao);
+        GameObject bala    = Instantiate(prefabBala, origem, rotacao);
         bala.SetActive(true);
 
         ProjetilDistancia projetil = bala.GetComponent<ProjetilDistancia>();
-
         if (projetil != null)
         {
             projetil.Configurar(alvoAtual, dano, velocidadeBala);
@@ -169,24 +157,17 @@ public class AtaqueDistancia : MonoBehaviour
         }
 
         Rigidbody rb = bala.GetComponent<Rigidbody>();
-
         if (rb != null)
             rb.linearVelocity = direcao.normalized * velocidadeBala;
     }
 
     private void OlharParaAlvo()
     {
-        if (alvoAtual == null)
-            return;
-
+        if (alvoAtual == null) return;
         Vector3 direcao = alvoAtual.position - transform.position;
         direcao.y = 0f;
-
-        if (direcao.sqrMagnitude < 0.001f)
-            return;
-
+        if (direcao.sqrMagnitude < 0.001f) return;
         Quaternion rotacaoAlvo = Quaternion.LookRotation(direcao.normalized, Vector3.up);
-
         transform.rotation = Quaternion.RotateTowards(
             transform.rotation,
             rotacaoAlvo,
@@ -196,28 +177,18 @@ public class AtaqueDistancia : MonoBehaviour
 
     private void AtualizarAnimacao()
     {
-        if (animator == null || !animTemAtaque)
-            return;
-
+        if (animator == null || !animTemAtaque) return;
         animator.SetBool(parametroAtaque, estaAtacando);
     }
 
     private bool AlvoValido(Transform alvo)
-    {
-        return alvo != null && alvo.gameObject.activeInHierarchy;
-    }
+        => alvo != null && alvo.gameObject.activeInHierarchy;
 
     private bool TemParametro(string nome)
     {
-        if (animator == null || string.IsNullOrWhiteSpace(nome))
-            return false;
-
+        if (animator == null || string.IsNullOrWhiteSpace(nome)) return false;
         foreach (AnimatorControllerParameter p in animator.parameters)
-        {
-            if (p.name == nome)
-                return true;
-        }
-
+            if (p.name == nome) return true;
         return false;
     }
 

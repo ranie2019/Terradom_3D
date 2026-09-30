@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 3182633234852908588}
   - component: {fileID: 7574803820285714216}
   - component: {fileID: 1066203161842846330}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.007
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -101,9 +101,9 @@ GameObject:
   - component: {fileID: 5048846143434591340}
   - component: {fileID: 6051308591562944065}
   - component: {fileID: 1514052395373656016}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.001
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -191,9 +191,9 @@ GameObject:
   - component: {fileID: 2038992387581060608}
   - component: {fileID: 417376850824456899}
   - component: {fileID: 2532914892205658638}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.006
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -284,9 +284,9 @@ GameObject:
   - component: {fileID: 3490248697752016376}
   - component: {fileID: 6304142552173722129}
   - component: {fileID: 589887048893051404}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.002
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -374,9 +374,9 @@ GameObject:
   - component: {fileID: 7307697657245320652}
   - component: {fileID: 5416829411971343463}
   - component: {fileID: 8713283644846165050}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Circle.002
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -462,9 +462,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1185763503955809205}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Spawn
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -495,9 +495,9 @@ GameObject:
   - component: {fileID: 142092319569662667}
   - component: {fileID: 5711172039398380164}
   - component: {fileID: 3802680468566871396}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: BarraVida
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -570,9 +570,9 @@ GameObject:
   - component: {fileID: 5007683192016926896}
   - component: {fileID: 730467081427485827}
   - component: {fileID: 1754145309523172466}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.005
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -662,9 +662,9 @@ GameObject:
   - component: {fileID: 2134611734615889990}
   - component: {fileID: 114978912091875634}
   - component: {fileID: 8884000575330878323}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: CanvasWorld
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -777,9 +777,9 @@ GameObject:
   - component: {fileID: 5803913480296954248}
   - component: {fileID: 760615995556865108}
   - component: {fileID: 1731873201200803951}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Circle.001
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -865,9 +865,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 552842963292007760}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: base
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -908,9 +908,9 @@ GameObject:
   - component: {fileID: 1164648045707783713}
   - component: {fileID: 796540587436749546}
   - component: {fileID: 751991883768396991}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.003
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -998,9 +998,9 @@ GameObject:
   - component: {fileID: 4413165009068270638}
   - component: {fileID: 415387252047940987}
   - component: {fileID: 6185040465779307911}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube.004
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1088,9 +1088,9 @@ GameObject:
   - component: {fileID: 8163753804403999381}
   - component: {fileID: 5651003413454967461}
   - component: {fileID: 2393545396296126530}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: FundoVida
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1322,9 +1322,9 @@ GameObject:
   - component: {fileID: 5566879698272463183}
   - component: {fileID: 3800147515433574353}
   - component: {fileID: 4736339764873790222}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Azul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

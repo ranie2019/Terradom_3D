@@ -8,6 +8,11 @@ public class BarraVidaUI : MonoBehaviour
     private float vidaMaxima;
     private float vidaAtual;
 
+    // FIX: Camera.main era chamado 2x em LateUpdate a cada frame para CADA barra de vida.
+    // Camera.main usa FindFirstObjectByType internamente — com 20+ unidades isso vira
+    // 40+ buscas por frame. Agora é cacheado uma vez em Awake e atualizado só se a câmera mudar.
+    private Camera _cameraCache;
+
     private void Awake()
     {
         // Desativa raycast em todas as imagens para não bloquear cliques na base
@@ -16,12 +21,19 @@ public class BarraVidaUI : MonoBehaviour
 
         GraphicRaycaster gr = GetComponent<GraphicRaycaster>();
         if (gr != null) gr.enabled = false;
+
+        CachearCamera();
+    }
+
+    private void CachearCamera()
+    {
+        _cameraCache = Camera.main;
     }
 
     public void Configurar(float vida)
     {
         vidaMaxima = vida;
-        vidaAtual = vida;
+        vidaAtual  = vida;
         AtualizarBarra();
     }
 
@@ -33,15 +45,18 @@ public class BarraVidaUI : MonoBehaviour
 
     private void AtualizarBarra()
     {
-        if (barraVida != null)
+        if (barraVida != null && vidaMaxima > 0f)
             barraVida.fillAmount = vidaAtual / vidaMaxima;
     }
 
     private void LateUpdate()
     {
-        if (Camera.main == null) return;
+        // Revalida o cache se a câmera foi destruída ou trocada (ex: entre cenas)
+        if (_cameraCache == null)
+            CachearCamera();
 
-        // Sempre olha para a câmera
-        transform.forward = Camera.main.transform.forward;
+        if (_cameraCache == null) return;
+
+        transform.forward = _cameraCache.transform.forward;
     }
 }

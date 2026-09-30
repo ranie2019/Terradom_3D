@@ -945,7 +945,7 @@ GameObject:
   - component: {fileID: 4634092758311527612}
   m_Layer: 11
   m_Name: Corpo
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1057,7 +1057,7 @@ GameObject:
   - component: {fileID: 6725794665147644946}
   m_Layer: 11
   m_Name: Cabeca (1)
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1782,6 +1782,18 @@ MonoBehaviour:
   usarCampoDeVisao: 0
   anguloCampoDeVisao: 180
   travarYNaVisao: 1
+  fugirDeInimigos: 1
+  tagsInimigosVisiveis:
+  - Azul
+  - Verde
+  alcanceDeteccaoInimigo: 12
+  intervaloBuscaInimigo: 0.15
+  camadasInimigosVisiveis:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  camadasBloqueiamVisaoInimigo:
+    serializedVersion: 2
+    m_Bits: 4294967295
   distanciaAcao: 1.2
   distanciaSairDaAcao: 1.2
   tempoEntreAcoes: 1
@@ -1916,7 +1928,7 @@ GameObject:
   - component: {fileID: 3325086025381812267}
   m_Layer: 11
   m_Name: Cocha E
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1952,7 +1964,7 @@ GameObject:
   - component: {fileID: 3487961108446946089}
   m_Layer: 11
   m_Name: CanvasWorld
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2065,7 +2077,7 @@ GameObject:
   - component: {fileID: 8321180544643183817}
   m_Layer: 11
   m_Name: Ombro D
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2100,7 +2112,7 @@ GameObject:
   - component: {fileID: 1747424674158598070}
   m_Layer: 11
   m_Name: Cabeca
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2209,7 +2221,7 @@ GameObject:
   - component: {fileID: 3161101488089922771}
   m_Layer: 11
   m_Name: Ombro E
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2241,7 +2253,7 @@ GameObject:
   - component: {fileID: 5953108675733200021}
   m_Layer: 11
   m_Name: Cocha D
-  m_TagString: Untagged
+  m_TagString: Vermelho
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
