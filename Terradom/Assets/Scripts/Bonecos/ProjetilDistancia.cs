@@ -42,6 +42,8 @@ public class ProjetilDistancia : MonoBehaviour
     private Transform origemDisparo;
     private TankLeve tankDono;
     private string tagEquipeDona;
+    private bool restringirDanoPorCamada;
+    private LayerMask camadasAlvoPermitidas;
     private float distanciaDoDisparo;
     private bool resultadoRegistrado;
     private Rigidbody rb;
@@ -54,6 +56,8 @@ public class ProjetilDistancia : MonoBehaviour
     private Vector3 posicaoImpacto;
     private Vector3 normalImpacto;
     private bool houveImpacto;
+
+    public string TagEquipeDona => tagEquipeDona;
 
     public void Configurar(Transform novoAlvo, int novoDano, float novaVelocidade)
     {
@@ -82,6 +86,14 @@ public class ProjetilDistancia : MonoBehaviour
         else if (tagEquipeDona == "Verde") tagsQueRecebemDano = new[] { "Azul", "Vermelho" };
 
         DefinirDirecaoInicial(pontoMira);
+    }
+
+    public void Configurar(Transform novoAlvo, int novoDano, float novaVelocidade,
+                           Transform novoDono, Vector3 pontoMira, LayerMask novasCamadasAlvo)
+    {
+        Configurar(novoAlvo, novoDano, novaVelocidade, novoDono, pontoMira);
+        camadasAlvoPermitidas = novasCamadasAlvo;
+        restringirDanoPorCamada = true;
     }
 
     private void Awake()
@@ -369,6 +381,18 @@ public class ProjetilDistancia : MonoBehaviour
         return ObterTagEquipe(objeto) == tagEquipeDona;
     }
 
+    private bool AlvoEstaEmCamadaPermitida(Transform alvoTransform)
+    {
+        Transform atual = alvoTransform;
+        while (atual != null)
+        {
+            if ((camadasAlvoPermitidas.value & (1 << atual.gameObject.layer)) != 0)
+                return true;
+            atual = atual.parent;
+        }
+        return false;
+    }
+
     private string ObterTagEquipe(Transform origem)
     {
         Transform atual = origem;
@@ -404,6 +428,9 @@ public class ProjetilDistancia : MonoBehaviour
     private bool TentarAplicarDano(Transform transformAtingido)
     {
         if (transformAtingido == null)
+            return false;
+
+        if (restringirDanoPorCamada && !AlvoEstaEmCamadaPermitida(transformAtingido))
             return false;
 
         if (aplicarDanoEmBaseVida && TentarAplicarDanoEmBaseVidaIA(transformAtingido))

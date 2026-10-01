@@ -30,7 +30,8 @@ public class RoboCriar : MonoBehaviour
         if (aviaoSpawn   == null) aviaoSpawn   = FindFirstObjectByType<AviaoSpownIA>();
 
         if (baseArea     == null) Debug.LogError  ("[RoboCriar] ❌ BaseAreaIA não encontrada!");
-        if (soldadoSpawn == null) Debug.LogError  ("[RoboCriar] ❌ SoldadoSpownIA não encontrada!");
+        // A ausência é normal enquanto não existir uma Base Soldado IA ativa.
+        // As chamadas de produção retornam false até o spawner ser encontrado.
         if (tankSpawn    == null) Debug.LogWarning("[RoboCriar] ⚠️ TankSpownIA não encontrada. Produção de tank desativada.");
         if (aviaoSpawn   == null) Debug.LogWarning("[RoboCriar] ⚠️ AviaoSpownIA não encontrada. Produção de avião desativada.");
     }

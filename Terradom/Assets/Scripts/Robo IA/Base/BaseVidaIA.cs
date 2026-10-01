@@ -98,6 +98,17 @@ public class BaseVidaIA : MonoBehaviour
 
     private bool PodeReceberDano(GameObject atacante)
     {
+        // Mantém as tags genéricas (ex.: Bala), mas bloqueia projéteis
+        // identificados como pertencentes à própria equipe da base.
+        if (atacante != null
+            && TentarObterEquipeDeProjetil(atacante, out string equipeAtacante)
+            && !string.IsNullOrEmpty(equipeAtacante))
+        {
+            string equipeDaBase = ObterTagEquipe(transform);
+            if (!string.IsNullOrEmpty(equipeDaBase) && equipeDaBase == equipeAtacante)
+                return false;
+        }
+
         if (!exigirTagPermitidaParaReceberDano)
             return true;
 
@@ -111,6 +122,45 @@ public class BaseVidaIA : MonoBehaviour
         }
 
         return false;
+    }
+
+    private static bool TentarObterEquipeDeProjetil(GameObject objeto, out string equipe)
+    {
+        equipe = string.Empty;
+        if (objeto == null)
+            return false;
+
+        ProjetilDistancia bala = objeto.GetComponentInParent<ProjetilDistancia>();
+        if (bala == null)
+            bala = objeto.GetComponentInChildren<ProjetilDistancia>(true);
+        if (bala != null && !string.IsNullOrEmpty(bala.TagEquipeDona))
+        {
+            equipe = bala.TagEquipeDona;
+            return true;
+        }
+
+        Missel missel = objeto.GetComponentInParent<Missel>();
+        if (missel == null)
+            missel = objeto.GetComponentInChildren<Missel>(true);
+        if (missel != null && !string.IsNullOrEmpty(missel.TagEquipeDona))
+        {
+            equipe = missel.TagEquipeDona;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string ObterTagEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+        return string.Empty;
     }
 
     private void ProcessarImpacto(Collider colisor)

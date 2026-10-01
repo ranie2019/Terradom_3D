@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 
 [DisallowMultipleComponent]
 public class BaseLimite : MonoBehaviour
@@ -7,7 +8,9 @@ public class BaseLimite : MonoBehaviour
     // =========================================================
     // SINGLETON - GERENCIADOR CENTRAL
     // =========================================================
-    private static Dictionary<string, List<BaseLimite>> basesPorTag = new Dictionary<string, List<BaseLimite>>();
+    private static readonly Dictionary<string, List<BaseLimite>> basesPorTag = new Dictionary<string, List<BaseLimite>>();
+    private static readonly Dictionary<string, Mesh> bordasUnificadasPorTag = new Dictionary<string, Mesh>();
+    private static readonly HashSet<string> tagsComBordaDesatualizada = new HashSet<string>();
     
     [Header("Configuração da Área de Construção")]
     [SerializeField] private float raioArea = 15f;
@@ -33,15 +36,51 @@ public class BaseLimite : MonoBehaviour
     private Material materialArea;
     private Material materialBorda;
     private Mesh meshCirculo;
-    private Mesh meshBorda;
     
     // Cache
     private float alphaAtual = 1f;
     private float timerPiscar;
     private Vector3 posicaoBase;
+    private bool mostrarAreaAnterior;
     
     // Flag para saber se foi desregistrado temporariamente
     private bool desregistradoTemporariamente = false;
+
+    private struct IntervaloAngular
+    {
+        public float inicio;
+        public float fim;
+
+        public IntervaloAngular(float inicio, float fim)
+        {
+            this.inicio = inicio;
+            this.fim = fim;
+        }
+    }
+
+    private const float CirculoCompleto = Mathf.PI * 2f;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetarEstadoEstatico()
+    {
+        foreach (Mesh mesh in bordasUnificadasPorTag.Values)
+            DestruirObjetoUnity(mesh);
+
+        basesPorTag.Clear();
+        bordasUnificadasPorTag.Clear();
+        tagsComBordaDesatualizada.Clear();
+    }
+
+    private static void DestruirObjetoUnity(Object objeto)
+    {
+        if (objeto == null)
+            return;
+
+        if (Application.isPlaying)
+            Destroy(objeto);
+        else
+            DestroyImmediate(objeto);
+    }
     
     private void Awake()
     {
@@ -63,6 +102,7 @@ public class BaseLimite : MonoBehaviour
         
         timerPiscar = 0f;
         posicaoBase = transform.position;
+        mostrarAreaAnterior = mostrarArea;
         
         if (debugLogs)
             Debug.Log($"[BaseLimite] Base registrada com tag '{tagBase}'. Total bases desta tag: {ObterTotalBasesDaTag()}");
@@ -70,16 +110,25 @@ public class BaseLimite : MonoBehaviour
     
     private void OnEnable()
     {
+        InvalidarBordaUnificada(tagBase);
+
         // Quando reativado (após posicionamento), registra novamente
         if (desregistradoTemporariamente)
         {
             desregistradoTemporariamente = false;
-            RegistrarBase();
             if (debugLogs)
                 Debug.Log($"[BaseLimite] Base re-registrada após posicionamento. Tag: '{tagBase}'");
         }
+
+        if (!desregistradoTemporariamente)
+            RegistrarBase();
     }
     
+    private void OnDisable()
+    {
+        InvalidarBordaUnificada(tagBase);
+    }
+
     private void OnDestroy()
     {
         // Remove esta base do dicionário global
@@ -92,17 +141,27 @@ public class BaseLimite : MonoBehaviour
             Destroy(materialBorda);
         if (meshCirculo != null)
             Destroy(meshCirculo);
-        if (meshBorda != null)
-            Destroy(meshBorda);
+        InvalidarBordaUnificada(tagBase);
     }
     
     private void Update()
     {
+        // Atualiza posição (a base pode ter sido movida)
+        Vector3 posicaoAtual = transform.position;
+        if (posicaoAtual != posicaoBase)
+        {
+            posicaoBase = posicaoAtual;
+            InvalidarBordaUnificada(tagBase);
+        }
+
+        if (mostrarArea != mostrarAreaAnterior)
+        {
+            mostrarAreaAnterior = mostrarArea;
+            InvalidarBordaUnificada(tagBase);
+        }
+
         if (!mostrarArea)
             return;
-        
-        // Atualiza posição (a base pode ter sido movida)
-        posicaoBase = transform.position;
         
         // Atualiza o efeito de pulsar
         timerPiscar += Time.deltaTime * velocidadePiscar;
@@ -139,6 +198,8 @@ public class BaseLimite : MonoBehaviour
         
         if (!basesPorTag[tagBase].Contains(this))
             basesPorTag[tagBase].Add(this);
+
+        InvalidarBordaUnificada(tagBase);
     }
     
     private void RemoverBase()
@@ -152,6 +213,8 @@ public class BaseLimite : MonoBehaviour
             if (basesPorTag[tagBase].Count == 0)
                 basesPorTag.Remove(tagBase);
         }
+
+        InvalidarBordaUnificada(tagBase);
     }
     
     private int ObterTotalBasesDaTag()
@@ -293,79 +356,37 @@ public class BaseLimite : MonoBehaviour
     
     private void CriarMeshes()
     {
-        // Cria malha circular para a área
-        meshCirculo = CriarMalhaCircular(raioArea, segmentosCirculo, preenchido: true);
-        
-        // Cria malha circular para a borda (anel)
-        meshBorda = CriarMalhaCircular(raioArea, segmentosCirculo, preenchido: false);
+        // Cada base continua desenhando o preenchimento leve da sua área.
+        // O contorno é gerado uma vez para a união de todas as bases da equipe.
+        meshCirculo = CriarMalhaCircular(raioArea, segmentosCirculo);
     }
     
-    private Mesh CriarMalhaCircular(float raio, int segmentos, bool preenchido)
+    private Mesh CriarMalhaCircular(float raio, int segmentos)
     {
         Mesh mesh = new Mesh();
-        mesh.name = preenchido ? "CirculoArea" : "BordaArea";
+        mesh.name = "PreenchimentoAreaBase";
         
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangulos = new List<int>();
         
-        if (preenchido)
+        // Centro do círculo
+        vertices.Add(Vector3.zero);
+
+        // Vértices da borda (no plano XZ - horizontal)
+        for (int i = 0; i <= segmentos; i++)
         {
-            // Centro do círculo
-            vertices.Add(Vector3.zero);
-            
-            // Vértices da borda (no plano XZ - horizontal)
-            for (int i = 0; i <= segmentos; i++)
-            {
-                float angulo = (float)i / segmentos * Mathf.PI * 2f;
-                float x = Mathf.Cos(angulo) * raio;
-                float z = Mathf.Sin(angulo) * raio;
-                vertices.Add(new Vector3(x, 0, z)); // Y = 0, plano horizontal
-            }
-            
-            // Triângulos (todos conectados ao centro)
-            for (int i = 1; i <= segmentos; i++)
-            {
-                triangulos.Add(0);
-                triangulos.Add(i);
-                triangulos.Add(i + 1 > segmentos ? 1 : i + 1);
-            }
+            float angulo = (float)i / segmentos * CirculoCompleto;
+            float x = Mathf.Cos(angulo) * raio;
+            float z = Mathf.Sin(angulo) * raio;
+            vertices.Add(new Vector3(x, 0, z));
         }
-        else
+
+        // Triângulos (todos conectados ao centro)
+        for (int i = 1; i <= segmentos; i++)
         {
-            // Borda - cria um anel fino
-            float larguraBorda = 0.5f;
-            float raioInterno = raio - larguraBorda;
-            
-            for (int i = 0; i <= segmentos; i++)
-            {
-                float angulo = (float)i / segmentos * Mathf.PI * 2f;
-                float x = Mathf.Cos(angulo);
-                float z = Mathf.Sin(angulo);
-                
-                // Vértice externo
-                vertices.Add(new Vector3(x * raio, 0, z * raio));
-                // Vértice interno
-                vertices.Add(new Vector3(x * raioInterno, 0, z * raioInterno));
-            }
-            
-            // Triângulos do anel
-            for (int i = 0; i < segmentos; i++)
-            {
-                int extAtual = i * 2;
-                int intAtual = i * 2 + 1;
-                int extProx = (i + 1) * 2;
-                int intProx = (i + 1) * 2 + 1;
-                
-                // Primeiro triângulo
-                triangulos.Add(extAtual);
-                triangulos.Add(intAtual);
-                triangulos.Add(extProx);
-                
-                // Segundo triângulo
-                triangulos.Add(intAtual);
-                triangulos.Add(intProx);
-                triangulos.Add(extProx);
-            }
+            triangulos.Add(0);
+            triangulos.Add(i);
+            triangulos.Add(i + 1 > segmentos ? 1 : i + 1);
         }
         
         mesh.SetVertices(vertices);
@@ -378,13 +399,7 @@ public class BaseLimite : MonoBehaviour
     
     private void OnRenderObject()
     {
-        if (!mostrarArea)
-            return;
-        
-        if (materialArea == null || materialBorda == null)
-            return;
-        
-        if (meshCirculo == null || meshBorda == null)
+        if (!mostrarArea || materialArea == null || meshCirculo == null)
             return;
         
         // Ajusta a posição Y baseada no terreno
@@ -403,32 +418,569 @@ public class BaseLimite : MonoBehaviour
         // CORREÇÃO: Sem rotação - a malha já está no plano XZ (horizontal)
         Matrix4x4 matriz = Matrix4x4.TRS(posicaoRender, Quaternion.identity, Vector3.one);
         
-        // Renderiza a área com alpha pulsante
+        // Mantém o preenchimento atual de cada área.
         Color corAreaAtual = materialArea.color;
         corAreaAtual.a = corArea.a * alphaAtual;
         materialArea.color = corAreaAtual;
         materialArea.SetPass(0);
         Graphics.DrawMeshNow(meshCirculo, matriz);
-        
-        // Renderiza a borda com alpha pulsante (um pouco mais opaco)
+
+        // Somente uma base por equipe desenha o contorno externo unificado.
+        if (this != ObterBaseResponsavelPelaBorda(tagBase))
+            return;
+
+        Mesh meshBordaUnificada = ObterMeshBordaUnificada(tagBase);
+        if (meshBordaUnificada == null || materialBorda == null)
+            return;
+
         Color corBordaAtual = materialBorda.color;
         corBordaAtual.a = corBorda.a * (0.5f + alphaAtual * 0.5f);
         materialBorda.color = corBordaAtual;
         materialBorda.SetPass(0);
-        Graphics.DrawMeshNow(meshBorda, matriz);
+        Graphics.DrawMeshNow(meshBordaUnificada, Matrix4x4.identity);
+    }
+
+    private static void InvalidarBordaUnificada(string tag)
+    {
+        if (!string.IsNullOrEmpty(tag))
+            tagsComBordaDesatualizada.Add(tag);
+    }
+
+    private static List<BaseLimite> ObterBasesDaTag(string tag)
+    {
+        List<BaseLimite> resultado = new List<BaseLimite>();
+        if (string.IsNullOrEmpty(tag))
+            return resultado;
+
+        if (Application.isPlaying)
+        {
+            if (!basesPorTag.TryGetValue(tag, out List<BaseLimite> registradas))
+                return resultado;
+
+            for (int i = registradas.Count - 1; i >= 0; i--)
+            {
+                BaseLimite baseLimite = registradas[i];
+                if (baseLimite == null)
+                {
+                    registradas.RemoveAt(i);
+                    InvalidarBordaUnificada(tag);
+                    continue;
+                }
+
+                if (baseLimite.mostrarArea && baseLimite.gameObject.activeInHierarchy)
+                    resultado.Add(baseLimite);
+            }
+        }
+        else
+        {
+            BaseLimite[] encontradas = FindObjectsByType<BaseLimite>(FindObjectsSortMode.None);
+            for (int i = 0; i < encontradas.Length; i++)
+            {
+                BaseLimite baseLimite = encontradas[i];
+                if (baseLimite != null && baseLimite.tagBase == tag &&
+                    baseLimite.mostrarArea && baseLimite.gameObject.activeInHierarchy)
+                    resultado.Add(baseLimite);
+            }
+        }
+
+        return resultado;
+    }
+
+    private static BaseLimite ObterBaseResponsavelPelaBorda(string tag)
+    {
+        BaseLimite responsavel = null;
+        int menorId = int.MaxValue;
+
+        if (Application.isPlaying)
+        {
+            if (!basesPorTag.TryGetValue(tag, out List<BaseLimite> basesRegistradas))
+                return null;
+
+            for (int i = 0; i < basesRegistradas.Count; i++)
+            {
+                BaseLimite candidata = basesRegistradas[i];
+                if (candidata == null || !candidata.isActiveAndEnabled ||
+                    !candidata.mostrarArea || !candidata.gameObject.activeInHierarchy)
+                    continue;
+
+                int id = candidata.GetInstanceID();
+                if (id < menorId)
+                {
+                    menorId = id;
+                    responsavel = candidata;
+                }
+            }
+
+            return responsavel;
+        }
+
+        List<BaseLimite> bases = ObterBasesDaTag(tag);
+        for (int i = 0; i < bases.Count; i++)
+        {
+            int id = bases[i].GetInstanceID();
+            if (id < menorId)
+            {
+                menorId = id;
+                responsavel = bases[i];
+            }
+        }
+        return responsavel;
+    }
+
+    private static Mesh ObterMeshBordaUnificada(string tag)
+    {
+        bool precisaReconstruir = tagsComBordaDesatualizada.Contains(tag) ||
+                                  !bordasUnificadasPorTag.ContainsKey(tag);
+        if (!precisaReconstruir)
+            return bordasUnificadasPorTag[tag];
+
+        if (bordasUnificadasPorTag.TryGetValue(tag, out Mesh antiga))
+        {
+            DestruirObjetoUnity(antiga);
+            bordasUnificadasPorTag.Remove(tag);
+        }
+
+        tagsComBordaDesatualizada.Remove(tag);
+        List<BaseLimite> bases = ObterBasesDaTag(tag);
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> triangulos = new List<int>();
+
+        for (int i = 0; i < bases.Count; i++)
+            AdicionarBordaVisivel(bases, bases[i], vertices, triangulos);
+
+        if (vertices.Count == 0)
+        {
+            bordasUnificadasPorTag[tag] = null;
+            return null;
+        }
+
+        Mesh mesh = new Mesh { name = "ContornoUnificadoBases_" + tag };
+        if (vertices.Count > 65535)
+            mesh.indexFormat = IndexFormat.UInt32;
+
+        mesh.SetVertices(vertices);
+        mesh.SetTriangles(triangulos, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        bordasUnificadasPorTag[tag] = mesh;
+        return mesh;
+    }
+
+    private static void AdicionarBordaVisivel(
+        List<BaseLimite> bases,
+        BaseLimite baseLimite,
+        List<Vector3> vertices,
+        List<int> triangulos)
+    {
+        if (baseLimite == null || baseLimite.raioArea <= 0f)
+            return;
+
+        List<IntervaloAngular> arcos = CalcularArcosVisiveis(bases, baseLimite);
+        int segmentosTotais = Mathf.Max(16, baseLimite.segmentosCirculo);
+        Terrain terreno = ObterTerrenoLimite(baseLimite);
+        List<Vector3> bufferA = new List<Vector3>(8);
+        List<Vector3> bufferB = new List<Vector3>(8);
+
+        for (int a = 0; a < arcos.Count; a++)
+        {
+            IntervaloAngular arco = arcos[a];
+            int passos = Mathf.Max(1, Mathf.CeilToInt(
+                (arco.fim - arco.inicio) / CirculoCompleto * segmentosTotais));
+
+            for (int passo = 0; passo < passos; passo++)
+            {
+                float tAtual = (float)passo / passos;
+                float tProximo = (float)(passo + 1) / passos;
+                float anguloAtual = Mathf.Lerp(arco.inicio, arco.fim, tAtual);
+                float anguloProximo = Mathf.Lerp(arco.inicio, arco.fim, tProximo);
+
+                ObterPontosDoAnel(baseLimite, anguloAtual, out Vector3 externoAtual, out Vector3 internoAtual);
+                ObterPontosDoAnel(baseLimite, anguloProximo, out Vector3 externoProximo, out Vector3 internoProximo);
+
+                AdicionarTrianguloRecortado(externoAtual, internoAtual, externoProximo,
+                    terreno, bufferA, bufferB, vertices, triangulos);
+                AdicionarTrianguloRecortado(internoAtual, internoProximo, externoProximo,
+                    terreno, bufferA, bufferB, vertices, triangulos);
+            }
+        }
+    }
+
+    private static Terrain ObterTerrenoLimite(BaseLimite baseLimite)
+    {
+        if (baseLimite != null && baseLimite.terrain != null && baseLimite.terrain.terrainData != null)
+            return baseLimite.terrain;
+
+        Terrain encontrado = FindFirstObjectByType<Terrain>();
+        return encontrado != null && encontrado.terrainData != null ? encontrado : null;
+    }
+
+    private static void AdicionarTrianguloRecortado(
+        Vector3 a,
+        Vector3 b,
+        Vector3 c,
+        Terrain terreno,
+        List<Vector3> bufferA,
+        List<Vector3> bufferB,
+        List<Vector3> vertices,
+        List<int> triangulos)
+    {
+        if (terreno == null || terreno.terrainData == null)
+        {
+            AdicionarTriangulo(a, b, c, vertices, triangulos);
+            return;
+        }
+
+        bufferA.Clear();
+        bufferA.Add(a);
+        bufferA.Add(b);
+        bufferA.Add(c);
+
+        List<Vector3> entrada = bufferA;
+        List<Vector3> saida = bufferB;
+        Vector3 tamanho = terreno.terrainData.size;
+
+        RecortarPoligonoNoEixo(entrada, saida, terreno, eixoX: true, limite: 0f, manterMaior: true);
+        TrocarBuffers(ref entrada, ref saida);
+        RecortarPoligonoNoEixo(entrada, saida, terreno, eixoX: true, limite: tamanho.x, manterMaior: false);
+        TrocarBuffers(ref entrada, ref saida);
+        RecortarPoligonoNoEixo(entrada, saida, terreno, eixoX: false, limite: 0f, manterMaior: true);
+        TrocarBuffers(ref entrada, ref saida);
+        RecortarPoligonoNoEixo(entrada, saida, terreno, eixoX: false, limite: tamanho.z, manterMaior: false);
+
+        if (saida.Count < 3)
+            return;
+
+        int indiceInicial = vertices.Count;
+        vertices.AddRange(saida);
+        for (int i = 1; i < saida.Count - 1; i++)
+        {
+            triangulos.Add(indiceInicial);
+            triangulos.Add(indiceInicial + i);
+            triangulos.Add(indiceInicial + i + 1);
+        }
+    }
+
+    private static void TrocarBuffers(ref List<Vector3> a, ref List<Vector3> b)
+    {
+        List<Vector3> temporario = a;
+        a = b;
+        b = temporario;
+    }
+
+    private static void RecortarPoligonoNoEixo(
+        List<Vector3> entrada,
+        List<Vector3> saida,
+        Terrain terreno,
+        bool eixoX,
+        float limite,
+        bool manterMaior)
+    {
+        saida.Clear();
+        if (entrada.Count == 0)
+            return;
+
+        Vector3 anterior = entrada[entrada.Count - 1];
+        float coordenadaAnterior = ObterCoordenadaLocal(terreno, anterior, eixoX);
+        bool anteriorDentro = manterMaior
+            ? coordenadaAnterior >= limite - 0.0001f
+            : coordenadaAnterior <= limite + 0.0001f;
+
+        for (int i = 0; i < entrada.Count; i++)
+        {
+            Vector3 atual = entrada[i];
+            float coordenadaAtual = ObterCoordenadaLocal(terreno, atual, eixoX);
+            bool atualDentro = manterMaior
+                ? coordenadaAtual >= limite - 0.0001f
+                : coordenadaAtual <= limite + 0.0001f;
+
+            if (atualDentro != anteriorDentro)
+            {
+                float denominador = coordenadaAtual - coordenadaAnterior;
+                if (Mathf.Abs(denominador) > 0.000001f)
+                {
+                    float t = Mathf.Clamp01((limite - coordenadaAnterior) / denominador);
+                    saida.Add(Vector3.Lerp(anterior, atual, t));
+                }
+            }
+
+            if (atualDentro)
+                saida.Add(atual);
+
+            anterior = atual;
+            coordenadaAnterior = coordenadaAtual;
+            anteriorDentro = atualDentro;
+        }
+    }
+
+    private static float ObterCoordenadaLocal(Terrain terreno, Vector3 ponto, bool eixoX)
+    {
+        Vector3 local = terreno.transform.InverseTransformPoint(ponto);
+        return eixoX ? local.x : local.z;
+    }
+
+    private static void AdicionarTriangulo(Vector3 a, Vector3 b, Vector3 c, List<Vector3> vertices, List<int> triangulos)
+    {
+        int inicio = vertices.Count;
+        vertices.Add(a);
+        vertices.Add(b);
+        vertices.Add(c);
+        triangulos.Add(inicio);
+        triangulos.Add(inicio + 1);
+        triangulos.Add(inicio + 2);
+    }
+
+    private static void ObterPontosDoAnel(BaseLimite baseLimite, float angulo, out Vector3 pontoExterno, out Vector3 pontoInterno)
+    {
+        Vector3 centro = baseLimite.transform.position;
+        float cos = Mathf.Cos(angulo);
+        float sin = Mathf.Sin(angulo);
+        pontoExterno = new Vector3(
+            centro.x + cos * baseLimite.raioArea,
+            centro.y,
+            centro.z + sin * baseLimite.raioArea);
+        pontoInterno = new Vector3(
+            centro.x + cos * Mathf.Max(0f, baseLimite.raioArea - 0.5f),
+            centro.y,
+            centro.z + sin * Mathf.Max(0f, baseLimite.raioArea - 0.5f));
+
+        pontoExterno.y = baseLimite.ObterAlturaVisual(pontoExterno);
+        pontoInterno.y = baseLimite.ObterAlturaVisual(pontoInterno);
+    }
+
+    private float ObterAlturaVisual(Vector3 ponto)
+    {
+        if (terrain != null)
+            return terrain.SampleHeight(ponto) + terrain.transform.position.y + alturaVisualizacao;
+
+        return transform.position.y + alturaVisualizacao;
+    }
+
+    private static List<IntervaloAngular> CalcularArcosVisiveis(List<BaseLimite> bases, BaseLimite baseLimite)
+    {
+        List<IntervaloAngular> cobertos = new List<IntervaloAngular>();
+        float raio = baseLimite.raioArea;
+        Vector3 centro = baseLimite.transform.position;
+        bool totalmenteCoberto = false;
+
+        for (int i = 0; i < bases.Count; i++)
+        {
+            BaseLimite outra = bases[i];
+            if (outra == null || outra == baseLimite || outra.raioArea <= 0f)
+                continue;
+
+            Vector3 centroOutra = outra.transform.position;
+            float dx = centroOutra.x - centro.x;
+            float dz = centroOutra.z - centro.z;
+            float distancia = Mathf.Sqrt(dx * dx + dz * dz);
+            float outroRaio = outra.raioArea;
+            const float tolerancia = 0.001f;
+
+            if (distancia <= tolerancia)
+            {
+                bool mesmoRaio = Mathf.Abs(outroRaio - raio) <= tolerancia;
+                if (outroRaio > raio + tolerancia ||
+                    (mesmoRaio && outra.GetInstanceID() < baseLimite.GetInstanceID()))
+                {
+                    totalmenteCoberto = true;
+                    break;
+                }
+                continue;
+            }
+
+            // Uma base maior que contém esta área cobre todo o seu contorno.
+            if (outroRaio >= raio && distancia + raio <= outroRaio + tolerancia)
+            {
+                totalmenteCoberto = true;
+                break;
+            }
+
+            // Se esta base contém a outra, a menor não esconde seu contorno externo.
+            if (raio >= outroRaio && distancia + outroRaio <= raio + tolerancia)
+                continue;
+
+            // Círculos separados ou apenas tangentes não escondem arcos.
+            if (distancia >= raio + outroRaio - tolerancia)
+                continue;
+
+            float cosMeioAngulo = (distancia * distancia + raio * raio - outroRaio * outroRaio) /
+                                  (2f * distancia * raio);
+            float meioAngulo = Mathf.Acos(Mathf.Clamp(cosMeioAngulo, -1f, 1f));
+            float anguloCentro = Mathf.Atan2(dz, dx);
+            AdicionarIntervaloCoberto(cobertos, anguloCentro - meioAngulo, anguloCentro + meioAngulo);
+        }
+
+        if (totalmenteCoberto)
+            return new List<IntervaloAngular>();
+
+        if (cobertos.Count == 0)
+            return new List<IntervaloAngular> { new IntervaloAngular(0f, CirculoCompleto) };
+
+        cobertos.Sort((a, b) => a.inicio.CompareTo(b.inicio));
+        List<IntervaloAngular> unidos = new List<IntervaloAngular>();
+        IntervaloAngular atual = cobertos[0];
+        for (int i = 1; i < cobertos.Count; i++)
+        {
+            IntervaloAngular proximo = cobertos[i];
+            if (proximo.inicio <= atual.fim + 0.0001f)
+            {
+                atual.fim = Mathf.Max(atual.fim, proximo.fim);
+            }
+            else
+            {
+                unidos.Add(atual);
+                atual = proximo;
+            }
+        }
+        unidos.Add(atual);
+
+        List<IntervaloAngular> visiveis = new List<IntervaloAngular>();
+        float cursor = 0f;
+        for (int i = 0; i < unidos.Count; i++)
+        {
+            if (unidos[i].inicio > cursor + 0.0001f)
+                visiveis.Add(new IntervaloAngular(cursor, unidos[i].inicio));
+            cursor = Mathf.Max(cursor, unidos[i].fim);
+        }
+
+        if (cursor < CirculoCompleto - 0.0001f)
+            visiveis.Add(new IntervaloAngular(cursor, CirculoCompleto));
+
+        return visiveis;
+    }
+
+    private static void AdicionarIntervaloCoberto(List<IntervaloAngular> intervalos, float inicio, float fim)
+    {
+        float extensao = fim - inicio;
+        float inicioNormalizado = inicio % CirculoCompleto;
+        if (inicioNormalizado < 0f)
+            inicioNormalizado += CirculoCompleto;
+
+        float fimNormalizado = inicioNormalizado + extensao;
+        if (fimNormalizado <= CirculoCompleto)
+        {
+            intervalos.Add(new IntervaloAngular(inicioNormalizado, fimNormalizado));
+        }
+        else
+        {
+            intervalos.Add(new IntervaloAngular(inicioNormalizado, CirculoCompleto));
+            intervalos.Add(new IntervaloAngular(0f, fimNormalizado - CirculoCompleto));
+        }
     }
     
     private void OnDrawGizmos()
     {
-        // Desenha a área no Editor (não pulsante)
-        if (mostrarArea && !Application.isPlaying)
+        if (!mostrarArea || Application.isPlaying)
+            return;
+
+        List<BaseLimite> bases = ObterBasesDaTag(tagBase);
+        BaseLimite responsavel = null;
+        int menorId = int.MaxValue;
+        for (int i = 0; i < bases.Count; i++)
         {
-            Gizmos.color = corArea;
-            DrawCircleGizmo(transform.position, raioArea, segmentosCirculo / 2);
-            
-            Gizmos.color = corBorda;
-            DrawCircleGizmo(transform.position, raioArea, segmentosCirculo);
+            int id = bases[i].GetInstanceID();
+            if (id < menorId)
+            {
+                menorId = id;
+                responsavel = bases[i];
+            }
         }
+
+        if (responsavel != this)
+            return;
+
+        Gizmos.color = corBorda;
+        for (int i = 0; i < bases.Count; i++)
+        {
+            BaseLimite baseLimite = bases[i];
+            List<IntervaloAngular> arcos = CalcularArcosVisiveis(bases, baseLimite);
+            for (int a = 0; a < arcos.Count; a++)
+                DesenharArcoGizmo(baseLimite, arcos[a]);
+        }
+    }
+
+    private static void DesenharArcoGizmo(BaseLimite baseLimite, IntervaloAngular arco)
+    {
+        int passos = Mathf.Max(1, Mathf.CeilToInt(
+            (arco.fim - arco.inicio) / CirculoCompleto * Mathf.Max(16, baseLimite.segmentosCirculo)));
+        Terrain terreno = ObterTerrenoLimite(baseLimite);
+        Vector3 pontoAnterior = ObterPontoNaBorda(baseLimite, arco.inicio);
+
+        for (int i = 1; i <= passos; i++)
+        {
+            float angulo = Mathf.Lerp(arco.inicio, arco.fim, (float)i / passos);
+            Vector3 pontoAtual = ObterPontoNaBorda(baseLimite, angulo);
+            if (RecortarSegmentoAoTerreno(terreno, pontoAnterior, pontoAtual,
+                    out Vector3 inicioRecortado, out Vector3 fimRecortado))
+                Gizmos.DrawLine(inicioRecortado, fimRecortado);
+            pontoAnterior = pontoAtual;
+        }
+    }
+
+    private static bool RecortarSegmentoAoTerreno(
+        Terrain terreno,
+        Vector3 inicio,
+        Vector3 fim,
+        out Vector3 inicioRecortado,
+        out Vector3 fimRecortado)
+    {
+        inicioRecortado = inicio;
+        fimRecortado = fim;
+        if (terreno == null || terreno.terrainData == null)
+            return true;
+
+        Vector3 localInicio = terreno.transform.InverseTransformPoint(inicio);
+        Vector3 localFim = terreno.transform.InverseTransformPoint(fim);
+        float deltaX = localFim.x - localInicio.x;
+        float deltaZ = localFim.z - localInicio.z;
+        float tInicio = 0f;
+        float tFim = 1f;
+        Vector3 tamanho = terreno.terrainData.size;
+
+        if (!RecortarEixo(-deltaX, localInicio.x, ref tInicio, ref tFim) ||
+            !RecortarEixo(deltaX, tamanho.x - localInicio.x, ref tInicio, ref tFim) ||
+            !RecortarEixo(-deltaZ, localInicio.z, ref tInicio, ref tFim) ||
+            !RecortarEixo(deltaZ, tamanho.z - localInicio.z, ref tInicio, ref tFim) ||
+            tInicio > tFim)
+            return false;
+
+        inicioRecortado = Vector3.Lerp(inicio, fim, tInicio);
+        fimRecortado = Vector3.Lerp(inicio, fim, tFim);
+        return true;
+    }
+
+    private static bool RecortarEixo(float p, float q, ref float tInicio, ref float tFim)
+    {
+        if (Mathf.Abs(p) <= 0.000001f)
+            return q >= -0.0001f;
+
+        float r = q / p;
+        if (p < 0f)
+        {
+            if (r > tFim)
+                return false;
+            if (r > tInicio)
+                tInicio = r;
+        }
+        else
+        {
+            if (r < tInicio)
+                return false;
+            if (r < tFim)
+                tFim = r;
+        }
+
+        return true;
+    }
+
+    private static Vector3 ObterPontoNaBorda(BaseLimite baseLimite, float angulo)
+    {
+        Vector3 centro = baseLimite.transform.position;
+        Vector3 ponto = new Vector3(
+            centro.x + Mathf.Cos(angulo) * baseLimite.raioArea,
+            centro.y,
+            centro.z + Mathf.Sin(angulo) * baseLimite.raioArea);
+        ponto.y = baseLimite.ObterAlturaVisual(ponto);
+        return ponto;
     }
     
     private void OnDrawGizmosSelected()
@@ -450,28 +1002,6 @@ public class BaseLimite : MonoBehaviour
             }
         }
         
-        // Destaca a área desta base
-        Gizmos.color = new Color(corArea.r, corArea.g, corArea.b, 0.3f);
-        DrawCircleGizmo(transform.position, raioArea, segmentosCirculo);
-    }
-    
-    private void DrawCircleGizmo(Vector3 centro, float raio, int segmentos)
-    {
-        float anguloPasso = 360f / segmentos;
-        Vector3 pontoAnterior = centro + new Vector3(raio, 0, 0);
-        
-        for (int i = 1; i <= segmentos; i++)
-        {
-            float angulo = anguloPasso * i * Mathf.Deg2Rad;
-            Vector3 pontoAtual = centro + new Vector3(
-                Mathf.Cos(angulo) * raio,
-                0,
-                Mathf.Sin(angulo) * raio
-            );
-            
-            Gizmos.DrawLine(pontoAnterior, pontoAtual);
-            pontoAnterior = pontoAtual;
-        }
     }
     
     // =========================================================
@@ -488,10 +1018,9 @@ public class BaseLimite : MonoBehaviour
     {
         raioArea = Mathf.Max(5f, novoRaio);
         
-        // Recria os meshes com o novo raio
+        // Recria o preenchimento e atualiza o contorno da equipe.
         if (meshCirculo != null) Destroy(meshCirculo);
-        if (meshBorda != null) Destroy(meshBorda);
-        
+        InvalidarBordaUnificada(tagBase);
         CriarMeshes();
     }
     
@@ -512,10 +1041,13 @@ public class BaseLimite : MonoBehaviour
         // Registra com a nova tag (se não estiver desregistrado temporariamente)
         if (!desregistradoTemporariamente)
             RegistrarBase();
+        else
+            InvalidarBordaUnificada(novaTag);
     }
     
     private void OnValidate()
     {
+        InvalidarBordaUnificada(tagBase);
         raioArea = Mathf.Max(5f, raioArea);
         velocidadePiscar = Mathf.Max(0.1f, velocidadePiscar);
         alturaVisualizacao = Mathf.Max(0.01f, alturaVisualizacao);
@@ -528,8 +1060,6 @@ public class BaseLimite : MonoBehaviour
         if (materialArea != null) { Destroy(materialArea); materialArea = null; }
         if (materialBorda != null) { Destroy(materialBorda); materialBorda = null; }
         if (meshCirculo  != null) { Destroy(meshCirculo);   meshCirculo  = null; }
-        if (meshBorda    != null) { Destroy(meshBorda);     meshBorda    = null; }
-
         CriarMateriais();
         CriarMeshes();
     }

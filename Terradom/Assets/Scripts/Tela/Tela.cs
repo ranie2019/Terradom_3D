@@ -52,6 +52,57 @@ public class Tela : MonoBehaviour
     {
         MoverCameraComTeclado();
         AjustarAlturaComScroll();
+        VerificarAtalhoBaseSoldado();
+        VerificarAtalhoBaseTank();
+        VerificarAtalhoBaseAerea();
+    }
+
+    private void VerificarAtalhoBaseSoldado()
+    {
+        if (Keyboard.current == null || !Keyboard.current.f1Key.wasPressedThisFrame)
+            return;
+
+        BaseSelecionavel baseSelecionada = BaseSelecionavel.SelecionarProximaBaseSoldado();
+        if (baseSelecionada == null)
+            return;
+
+        // Esta camera aponta para baixo: mover X/Z centraliza a base sem mudar a altura.
+        Vector3 novaPosicao = transform.position;
+        novaPosicao.x = baseSelecionada.transform.position.x;
+        novaPosicao.z = baseSelecionada.transform.position.z;
+        transform.position = AplicarLimitesXZ(novaPosicao);
+    }
+
+    private void VerificarAtalhoBaseTank()
+    {
+        if (Keyboard.current == null || !Keyboard.current.f2Key.wasPressedThisFrame)
+            return;
+
+        BaseSelecionavel baseSelecionada = BaseSelecionavel.SelecionarProximaBaseTank();
+        if (baseSelecionada == null)
+            return;
+
+        // Preserva a altura atual e centraliza a camera na base de tanques.
+        Vector3 novaPosicao = transform.position;
+        novaPosicao.x = baseSelecionada.transform.position.x;
+        novaPosicao.z = baseSelecionada.transform.position.z;
+        transform.position = AplicarLimitesXZ(novaPosicao);
+    }
+
+    private void VerificarAtalhoBaseAerea()
+    {
+        if (Keyboard.current == null || !Keyboard.current.f3Key.wasPressedThisFrame)
+            return;
+
+        BaseSelecionavel baseSelecionada = BaseSelecionavel.SelecionarProximaBaseAerea();
+        if (baseSelecionada == null)
+            return;
+
+        // Preserva a altura atual e centraliza a camera na base aerea.
+        Vector3 novaPosicao = transform.position;
+        novaPosicao.x = baseSelecionada.transform.position.x;
+        novaPosicao.z = baseSelecionada.transform.position.z;
+        transform.position = AplicarLimitesXZ(novaPosicao);
     }
 
     private void ConfigurarCanvas()

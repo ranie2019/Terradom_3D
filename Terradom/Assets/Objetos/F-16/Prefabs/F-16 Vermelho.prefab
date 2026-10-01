@@ -854,12 +854,13 @@ MonoBehaviour:
   - {fileID: 8527386041466824113}
   - {fileID: 5744225653920100204}
   intervaloMissel: 2
+  tempoRecargaMisseis: 15
   tagsInimigoPai:
   - Azul
   - Verde
   layersApenasMetralhadora:
     serializedVersion: 2
-    m_Bits: 57344
+    m_Bits: 51200
   desenharGizmosNoEditor: 1
   misseisRestantes: 8
 --- !u!114 &3502975617175563294

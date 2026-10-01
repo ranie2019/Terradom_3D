@@ -109,6 +109,16 @@ public class RoboIA : MonoBehaviour
         quantidadeTorreTerra  = roboCriar.ContarTorreTerra();
         quantidadeTorreAr     = roboCriar.ContarTorreAr();
 
+        // Sem nenhuma Base Soldado, interrompe a produção de unidades e
+        // prioriza reconstruí-la. A tentativa ocorre imediatamente e se repete
+        // pelo ciclo normal enquanto a IA aguarda recursos ou espaço válido.
+        if (quantidadeBaseSoldado == 0)
+        {
+            baseAtual = TipoBaseAtual.Soldado;
+            timerBaseSoldado = 0f;
+            aguardandoBase = true;
+        }
+
         if (baseAtual == TipoBaseAtual.Nenhuma)
         {
             if      (quantidadeBaseSoldado < maxBaseSoldado) baseAtual = TipoBaseAtual.Soldado;

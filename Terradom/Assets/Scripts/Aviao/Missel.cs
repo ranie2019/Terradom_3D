@@ -15,16 +15,15 @@ using UnityEngine;
 ///     • Passa a ignorar colisões e dano no objeto que o disparou.
 ///
 /// POOL:
-///   Ao terminar seu ciclo (colisão ou tempo esgotado), o míssil NÃO se destrói.
-///   Em vez disso, avisa a TorreAr via DevolverMisselAoPool() para ser reaproveitado
-///   na próxima recarga, evitando alocações desnecessárias.
+///   Ao terminar seu ciclo (colisão ou tempo esgotado), mísseis da TorreAr voltam
+///   ao pool da torre e mísseis de avião retornam ao suporte para recarga.
 ///
 /// Fluxo (TorreAr):
 ///   1. TorreAr desparenta o míssil do ponto (SetParent null).
 ///   2. TorreAr ativa o GameObject → Awake() roda com parent = null.
-///   3. TorreAr chama missel.Lancar(alvo, torreTranform, pontoOrigem, torre).
+///   3. TorreAr ou AviaoAtaque inicia o míssil com o dono e o ponto de retorno.
 ///   4. O míssil acelera para frente e gira suavemente em direção ao alvo.
-///   5. Ao colidir ou ao expirar o tempo de vida, avisa a torre e volta ao pool.
+///   5. Ao colidir ou expirar, o míssil retorna ao pool da torre ou do avião.
 /// </summary>
 [DisallowMultipleComponent]
 public class Missel : MonoBehaviour
@@ -107,6 +106,11 @@ public class Missel : MonoBehaviour
     private Transform origemDisparo;     // torre ou avião que disparou — nunca recebe colisão/dano
     private Transform pontoOrigem;       // ponto de lançamento para devolução ao pool
     private TorreAr   torreDonoDoPool;   // referência para devolver ao pool (null se veio de avião)
+    private AviaoAtaque aviaoDonoDoPool;
+    private int slotDonoDoAviao = -1;
+    private string tagEquipeDona;
+    private bool restringirCamadasDeAlvo;
+    private LayerMask camadasAlvoPermitidas;
 
     private Rigidbody rb;
     private Collider  col;
@@ -134,6 +138,8 @@ public class Missel : MonoBehaviour
     /// false = inerte no ponto, pronto para ser lançado.
     /// </summary>
     public bool EstaLancado => foiLancado;
+    public Transform AlvoAtual => alvo;
+    public string TagEquipeDona => tagEquipeDona;
 
     /// <summary>
     /// Assinatura original (compatibilidade com AviaoAtaque).
@@ -152,12 +158,41 @@ public class Missel : MonoBehaviour
     public void Lancar(Transform novoAlvo, Transform transformOrigem,
                        Transform pontoDeOrigem, TorreAr torre)
     {
+        IniciarLancamento(novoAlvo, transformOrigem, pontoDeOrigem, torre, null, -1, 0, false);
+    }
+
+    public void LancarParaAviao(Transform novoAlvo, AviaoAtaque aviaoDono, int slotIndex,
+                                Transform pontoDeOrigem, LayerMask novasCamadasAlvo)
+    {
+        if (aviaoDono == null) return;
+        IniciarLancamento(
+            novoAlvo,
+            aviaoDono.transform,
+            pontoDeOrigem,
+            null,
+            aviaoDono,
+            slotIndex,
+            novasCamadasAlvo,
+            true);
+    }
+
+    private void IniciarLancamento(Transform novoAlvo, Transform transformOrigem,
+                                   Transform pontoDeOrigem, TorreAr torre,
+                                   AviaoAtaque aviaoDono, int slotIndex,
+                                   LayerMask novasCamadasAlvo, bool restringirAlvos)
+    {
         if (foiLancado) return;
 
         alvo             = novoAlvo;
         origemDisparo    = transformOrigem;
         pontoOrigem      = pontoDeOrigem;
         torreDonoDoPool  = torre;
+        aviaoDonoDoPool  = aviaoDono;
+        slotDonoDoAviao  = slotIndex;
+        restringirCamadasDeAlvo = restringirAlvos;
+        camadasAlvoPermitidas = novasCamadasAlvo;
+        tagEquipeDona = ObterTagEquipe(transformOrigem);
+        ConfigurarTagsInimigas();
         foiLancado       = true;
 
         // Ativa o collider — enquanto inerte ele fica desligado
@@ -200,12 +235,12 @@ public class Missel : MonoBehaviour
         PararRastro();
     }
 
-    // OnEnable não é mais usado para reset (o GameObject nunca é desativado no pool)
+    // OnEnable não reseta o estado; os pools chamam ResetarParaPool explicitamente.
     private void OnEnable() { }
 
     /// <summary>
-    /// Chamado por TorreAr.DevolverMisselAoPool — reseta o míssil sem desativar o GameObject.
-    /// O míssil volta a ser visível no ponto de lançamento, pronto para o próximo disparo.
+    /// Reseta o míssil no suporte da torre ou do avião. O dono decide se deve
+    /// deixá-lo visível ou recolhê-lo até terminar a recarga.
     /// </summary>
     public void ResetarParaPool(Transform pontoDeOrigem)
     {
@@ -224,6 +259,11 @@ public class Missel : MonoBehaviour
         origemDisparo   = null;
         pontoOrigem     = null;
         torreDonoDoPool = null;
+        aviaoDonoDoPool = null;
+        slotDonoDoAviao = -1;
+        tagEquipeDona = string.Empty;
+        restringirCamadasDeAlvo = false;
+        camadasAlvoPermitidas = 0;
 
         transform.SetParent(pontoDeOrigem);
         transform.localPosition = Vector3.zero;
@@ -386,6 +426,7 @@ public class Missel : MonoBehaviour
             if (col == null)                           continue;
             if (EhDoProprioMissel(col.transform))      continue;
             if (EhDoOrigemDisparo(col.transform))      continue;
+            if (EhEquipeAliada(col.transform))          continue;
 
             if (hits[i].distance < menorDistancia)
             {
@@ -414,6 +455,47 @@ public class Missel : MonoBehaviour
         return false;
     }
 
+    private bool EhEquipeAliada(Transform alvoTransform)
+    {
+        return alvoTransform != null
+            && !string.IsNullOrEmpty(tagEquipeDona)
+            && ObterTagEquipe(alvoTransform) == tagEquipeDona;
+    }
+
+    private bool AlvoEstaEmCamadasPermitidas(Transform alvoTransform)
+    {
+        if (!restringirCamadasDeAlvo) return true;
+        if (alvoTransform == null || camadasAlvoPermitidas.value == 0) return false;
+
+        Transform atual = alvoTransform;
+        while (atual != null)
+        {
+            if ((camadasAlvoPermitidas.value & (1 << atual.gameObject.layer)) != 0)
+                return true;
+            atual = atual.parent;
+        }
+        return false;
+    }
+
+    private void ConfigurarTagsInimigas()
+    {
+        if (tagEquipeDona == "Azul") tagsQueRecebemDano = new[] { "Vermelho", "Verde" };
+        else if (tagEquipeDona == "Vermelho") tagsQueRecebemDano = new[] { "Azul", "Verde" };
+        else if (tagEquipeDona == "Verde") tagsQueRecebemDano = new[] { "Azul", "Vermelho" };
+    }
+
+    private static string ObterTagEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+        return string.Empty;
+    }
+
     // =====================================================================
     // COLISÃO FÍSICA (Unity callbacks — redundância segura)
     // =====================================================================
@@ -423,6 +505,7 @@ public class Missel : MonoBehaviour
         if (!foiLancado) return;
         if (collision == null || collision.collider == null) return;
         if (EhDoOrigemDisparo(collision.collider.transform)) return;
+        if (EhEquipeAliada(collision.collider.transform)) return;
 
         if (collision.contactCount > 0)
         {
@@ -439,6 +522,7 @@ public class Missel : MonoBehaviour
         if (!foiLancado) return;
         if (other == null)                      return;
         if (EhDoOrigemDisparo(other.transform)) return;
+        if (EhEquipeAliada(other.transform)) return;
 
         ColidiuComCollider(other);
     }
@@ -452,6 +536,7 @@ public class Missel : MonoBehaviour
         if (colisor == null)                        return;
         if (EhDoProprioMissel(colisor.transform))   return;
         if (EhDoOrigemDisparo(colisor.transform))   return;
+        if (EhEquipeAliada(colisor.transform))      return;
 
         ColidiuComTransform(colisor.transform);
     }
@@ -475,9 +560,8 @@ public class Missel : MonoBehaviour
     // =====================================================================
 
     /// <summary>
-    /// Chamado tanto ao colidir quanto ao expirar o tempo de vida.
-    /// Se pertence a um pool (torreDonoDoPool != null), devolve o míssil ao pool.
-    /// Caso contrário (lançado por avião), destrói o GameObject normalmente.
+    /// Chamado ao colidir ou expirar. Devolve o míssil à torre ou ao avião;
+    /// lançamentos legados sem dono continuam sendo destruídos.
     /// </summary>
     private void EncerrarCicloDeMissil(bool houveColisao)
     {
@@ -506,6 +590,13 @@ public class Missel : MonoBehaviour
             ResetarParaPool(pontoOrigem);
             torre.NotificarMisselDevolvido();
         }
+        else if (aviaoDonoDoPool != null && pontoOrigem != null)
+        {
+            AviaoAtaque aviao = aviaoDonoDoPool;
+            int slotIndex = slotDonoDoAviao;
+            ResetarParaPool(pontoOrigem);
+            aviao.NotificarMisselDevolvido(this, slotIndex);
+        }
         else
         {
             // SEM POOL (ex.: avião): destrói normalmente
@@ -522,6 +613,11 @@ public class Missel : MonoBehaviour
         if (transformAtingido == null) return false;
 
         if (EhDoOrigemDisparo(transformAtingido)) return false;
+        if (EhEquipeAliada(transformAtingido)) return false;
+        if (!AlvoEstaEmCamadasPermitidas(transformAtingido)) return false;
+        if (restringirCamadasDeAlvo
+            && !ObjetoOuFamiliaTemTagPermitida(transformAtingido))
+            return false;
 
         if (aplicarDanoEmBaseVida && TentarDanoBaseVida(transformAtingido))
             return true;

@@ -5,13 +5,11 @@
 ///
 /// Fluxo:
 ///   1. AviaoControler ativa este componente junto com AviaoVisao (fase Patrulha).
-///   2. AviaoVisao filtra por CONE FRONTAL — só reporta alvo quando o inimigo está à frente.
-///   3. Assim que AviaoVisao.AlvoAtual != null, este script dispara:
-///        • Míssil       — um por vez, com cooldown, em ordem de slot 0→7.
-///        • Metralhadora — disparada continuamente na cadência configurada.
-///   4. O míssil recebe Lancar(alvo, transformDoAviao) — tipado, sem SendMessage.
-///        • Dentro do Lancar, o míssil se desparenta e vira agente autônomo.
-///        • O avião de origem é passado para o míssil ignorá-lo em colisões e dano.
+///   2. AviaoVisao escolhe um alvo visível por categoria e mantém o combate durante as curvas.
+///   3. Mísseis atacam aviões, tanques e estruturas; metralhadoras atacam apenas
+///      coletores, soldados e guerreiros.
+///   4. Os mísseis retornam ao suporte depois do voo e são repostos 15 s após
+///      o lançamento do último míssil.
 ///
 /// Componente PASSIVO — não se auto-inicializa.
 /// O AviaoControler é responsável por habilitar este componente.
@@ -49,16 +47,17 @@ public class AviaoAtaque : MonoBehaviour
              "Devem ter o componente Missel.")]
     [SerializeField] private GameObject[] slotsMisseis = new GameObject[8];
     [SerializeField] private float        intervaloMissel = 2f;
+    [Tooltip("Tempo para repor todos os mísseis depois que o último for lançado.")]
+    [SerializeField] private float        tempoRecargaMisseis = 15f;
 
     // =====================================================================
     // INSPECTOR — FILTRO MÍSSIL
     // =====================================================================
 
-    [Header("Filtro míssil")]
+    [Header("Validação de alvos")]
     [Tooltip("Tags do PAI que confirmam que o objeto é inimigo")]
-    [SerializeField] private string[] tagsInimigoPai = { "Vermelho", "Azul" };
-    [Tooltip("Layers que indicam unidade pequena — só metralhadora, sem míssil.\n" +
-             "Se o alvo tiver uma das tagsInimigoPai E estiver numa dessas layers, usa metralhadora.")]
+    [SerializeField] private string[] tagsInimigoPai = { "Azul", "Vermelho", "Verde" };
+    [Tooltip("Máscara preenchida pelas layers Coletor, Soldado e Guerreiro. Mantida no Inspector para facilitar a conferência.")]
     [SerializeField] private LayerMask layersApenasMetralhadora;
 
     // =====================================================================
@@ -77,6 +76,17 @@ public class AviaoAtaque : MonoBehaviour
     private float     proximoTiroMetralhadora;
     private float     proximoLancamentoMissel;
     private int       indexMetralhadoraAtual = 0;
+    private Transform[] pontosMontagemMisseis;
+    private Vector3[]   posicoesLocaisMisseis;
+    private Quaternion[] rotacoesLocaisMisseis;
+    private Vector3[]   escalasLocaisMisseis;
+    private GameObject[] misseisAguardandoRecarga;
+    private bool[] slotsMisseisConfigurados;
+    private LayerMask camadasAlvoMissel;
+    private int quantidadeMaximaMisseis;
+    private bool recarregandoMisseis;
+    private float instanteFimRecarga;
+    private bool suportesMisseisPreparados;
 
     // =====================================================================
     // PROPRIEDADES PÚBLICAS
@@ -95,6 +105,7 @@ public class AviaoAtaque : MonoBehaviour
         if (aviaoVisao == null)
             aviaoVisao = GetComponent<AviaoVisao>();
 
+        PrepararSuportesMisseis();
         misseisRestantes = ContarMisseisDisponiveis();
     }
 
@@ -104,9 +115,52 @@ public class AviaoAtaque : MonoBehaviour
 
     private void OnEnable()
     {
+        if (!suportesMisseisPreparados)
+        {
+            PrepararSuportesMisseis();
+            misseisRestantes = ContarMisseisDisponiveis();
+        }
+
         proximoTiroMetralhadora = Time.time + 1f;
         proximoLancamentoMissel = Time.time + 1f;
         alvoAtual               = null;
+    }
+
+    private void PrepararSuportesMisseis()
+    {
+        if (suportesMisseisPreparados) return;
+
+        if (slotsMisseis == null)
+            slotsMisseis = new GameObject[0];
+
+        int quantidade = slotsMisseis.Length;
+        pontosMontagemMisseis = new Transform[quantidade];
+        posicoesLocaisMisseis = new Vector3[quantidade];
+        rotacoesLocaisMisseis = new Quaternion[quantidade];
+        escalasLocaisMisseis = new Vector3[quantidade];
+        misseisAguardandoRecarga = new GameObject[quantidade];
+        slotsMisseisConfigurados = new bool[quantidade];
+
+        layersApenasMetralhadora = CriarMascaraCamadas("Coletor", "Soldado", "Guerreiro");
+        camadasAlvoMissel = CriarMascaraCamadas(
+            "Aviao", "Tank", "BaseTank", "BaseAviao", "BaseSoldado");
+
+        for (int i = 0; i < quantidade; i++)
+        {
+            GameObject slot = slotsMisseis[i];
+            if (slot == null || slot.GetComponent<Missel>() == null)
+                continue;
+
+            Transform montagem = slot.transform.parent != null ? slot.transform.parent : transform;
+            pontosMontagemMisseis[i] = montagem;
+            posicoesLocaisMisseis[i] = slot.transform.localPosition;
+            rotacoesLocaisMisseis[i] = slot.transform.localRotation;
+            escalasLocaisMisseis[i] = slot.transform.localScale;
+            slotsMisseisConfigurados[i] = true;
+            quantidadeMaximaMisseis++;
+        }
+
+        suportesMisseisPreparados = true;
     }
 
     // =====================================================================
@@ -115,18 +169,23 @@ public class AviaoAtaque : MonoBehaviour
 
     private void Update()
     {
+        AtualizarRecargaMisseis();
+
         // Obtém o alvo direto do AviaoVisao.
         // O cone frontal já foi aplicado lá — se há alvo, está à frente do avião.
         alvoAtual = (aviaoVisao != null && aviaoVisao.TemAlvo) ? aviaoVisao.AlvoAtual : null;
 
-        if (alvoAtual == null) return;
+        if (!AlvoEhInimigo(alvoAtual)) return;
 
-        // ── Míssil ────────────────────────────────────────────────────────
-        if (misseisRestantes > 0 && PodeUsarMissel(alvoAtual))
+        AviaoVisao.ClasseAlvoCombate classe = ObterClasseAlvoAtual(alvoAtual);
+        if (classe == AviaoVisao.ClasseAlvoCombate.Unidade)
+        {
+            TentarAtirarMetralhadora();
+            return;
+        }
+
+        if (misseisRestantes > 0 && PodeUsarMissel(alvoAtual, classe))
             TentarLancarMissel();
-
-        // ── Metralhadora ──────────────────────────────────────────────────
-        TentarAtirarMetralhadora();
     }
 
     // =====================================================================
@@ -154,7 +213,13 @@ public class AviaoAtaque : MonoBehaviour
 
         ProjetilDistancia projetil = balaGO.GetComponent<ProjetilDistancia>();
         if (projetil != null)
-            projetil.Configurar(alvoAtual, danoMetralhadora, velocidadeMetralhadora);
+            projetil.Configurar(
+                alvoAtual,
+                danoMetralhadora,
+                velocidadeMetralhadora,
+                transform,
+                pontoAlvo,
+                layersApenasMetralhadora);
 
         indexMetralhadoraAtual  = (indexMetralhadoraAtual + 1) % 2;
         proximoTiroMetralhadora = Time.time + Mathf.Max(0.02f, intervaloMetralhadora);
@@ -195,32 +260,50 @@ public class AviaoAtaque : MonoBehaviour
         if (Time.time < proximoLancamentoMissel) return;
 
         int slotIndex = EncontrarProximoSlotDisponivel();
-        if (slotIndex < 0) return;
+        if (slotIndex < 0)
+        {
+            misseisRestantes = ContarMisseisDisponiveis();
+            IniciarRecargaSeEsgotado();
+            return;
+        }
 
         GameObject go = slotsMisseis[slotIndex];
-        if (go == null) { slotsMisseis[slotIndex] = null; return; }
+        if (go == null)
+        {
+            slotsMisseis[slotIndex] = null;
+            misseisRestantes = ContarMisseisDisponiveis();
+            IniciarRecargaSeEsgotado();
+            return;
+        }
 
         Missel misselScript = go.GetComponent<Missel>();
         if (misselScript == null)
         {
             Debug.LogWarning($"[AviaoAtaque] Slot {slotIndex} não tem componente Missel!", this);
             slotsMisseis[slotIndex] = null;
-            misseisRestantes--;
+            misseisRestantes = ContarMisseisDisponiveis();
+            IniciarRecargaSeEsgotado();
             return;
         }
 
         // 1. Desparenta ANTES de Lancar — a partir daqui o míssil não segue mais o avião
         go.transform.SetParent(null);
 
-        // 2. Ativa o míssil passando o alvo E o Transform deste avião
-        //    O míssil usará o Transform do avião para nunca colidir ou causar dano nele
-        misselScript.Lancar(alvoAtual, transform);
+        // O míssil ignora aliados, aceita apenas classes de alvo permitidas e
+        // retorna ao suporte correto para a recarga depois de explodir/expirar.
+        misselScript.LancarParaAviao(
+            alvoAtual,
+            this,
+            slotIndex,
+            pontosMontagemMisseis[slotIndex],
+            camadasAlvoMissel);
 
         // 3. Remove o slot e contabiliza
         slotsMisseis[slotIndex] = null;
-        misseisRestantes--;
+        misseisRestantes = ContarMisseisDisponiveis();
 
         proximoLancamentoMissel = Time.time + Mathf.Max(0.1f, intervaloMissel);
+        IniciarRecargaSeEsgotado();
     }
 
     /// <summary>
@@ -234,50 +317,186 @@ public class AviaoAtaque : MonoBehaviour
         return -1;
     }
 
-    private int ContarMisseisDisponiveis()
-    {
-        int count = 0;
-        foreach (GameObject slot in slotsMisseis)
-            if (slot != null) count++;
-        return count;
-    }
-
     // =====================================================================
     // FILTRO DE MÍSSIL
     // =====================================================================
 
     /// <summary>
-    /// Retorna false (só metralhadora) se o alvo for inimigo (tag pai)
-    /// E estiver numa das layers configuradas como "unidade pequena".
-    /// Retorna true (pode usar míssil) nos demais casos.
+    /// Mísseis ficam reservados para aviões, tanques e estruturas inimigas.
     /// </summary>
-    private bool PodeUsarMissel(Transform alvo)
+    private bool PodeUsarMissel(Transform alvo, AviaoVisao.ClasseAlvoCombate classe)
     {
-        if (alvo == null) return true;
-
-        // Só aplica filtro se o alvo for reconhecido como inimigo pela tag do pai
-        if (!ObjetoOuAncestralTemTag(alvo, tagsInimigoPai)) return true;
-
-        // Se a layer do alvo está entre as layers "só metralhadora", bloqueia míssil
-        return !AlvoEstaEmLayerMetralhadora(alvo);
+        return AlvoEhInimigo(alvo)
+            && (classe == AviaoVisao.ClasseAlvoCombate.Aereo
+                || classe == AviaoVisao.ClasseAlvoCombate.Tanque
+                || classe == AviaoVisao.ClasseAlvoCombate.Base);
     }
 
-    /// <summary>
-    /// Verifica se o alvo (ou qualquer ancestral) está numa layer de "unidade pequena".
-    /// Sobe na hierarquia porque o Collider pode estar num filho mas a layer no pai.
-    /// </summary>
-    private bool AlvoEstaEmLayerMetralhadora(Transform alvo)
+    private bool AlvoEhInimigo(Transform alvo)
+    {
+        if (alvo == null)
+            return false;
+
+        string equipePropria = ObterTagEquipe(transform);
+        string equipeAlvo = ObterTagEquipe(alvo);
+
+        // A lista do Inspector pode ficar desatualizada; a equipe nunca pode
+        // atacar um objeto da própria equipe, mesmo que a tag esteja liberada.
+        if (!string.IsNullOrEmpty(equipePropria)
+            && !string.IsNullOrEmpty(equipeAlvo)
+            && equipePropria == equipeAlvo)
+            return false;
+
+        return ObjetoOuAncestralTemTag(alvo, tagsInimigoPai);
+    }
+
+    private static string ObterTagEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+        return string.Empty;
+    }
+
+    private AviaoVisao.ClasseAlvoCombate ObterClasseAlvoAtual(Transform alvo)
+    {
+        if (aviaoVisao != null && aviaoVisao.AlvoAtual == alvo)
+            return aviaoVisao.ClasseAlvoAtual;
+
+        if (alvo == null) return AviaoVisao.ClasseAlvoCombate.Nenhum;
+        if (AlvoEstaEmLayer(alvo, "Aviao")) return AviaoVisao.ClasseAlvoCombate.Aereo;
+        if (AlvoEstaEmLayer(alvo, "Tank")) return AviaoVisao.ClasseAlvoCombate.Tanque;
+        if (AlvoEstaEmLayer(alvo, "BaseTank", "BaseAviao", "BaseSoldado"))
+            return AviaoVisao.ClasseAlvoCombate.Base;
+        if (AlvoEstaEmLayer(alvo, "Coletor", "Soldado", "Guerreiro"))
+            return AviaoVisao.ClasseAlvoCombate.Unidade;
+        return AviaoVisao.ClasseAlvoCombate.OutroTerrestre;
+    }
+
+    private void IniciarRecargaSeEsgotado()
+    {
+        if (misseisRestantes > 0 || recarregandoMisseis || quantidadeMaximaMisseis <= 0)
+            return;
+
+        recarregandoMisseis = true;
+        instanteFimRecarga = Time.time + Mathf.Max(0.1f, tempoRecargaMisseis);
+    }
+
+    private void AtualizarRecargaMisseis()
+    {
+        IniciarRecargaSeEsgotado();
+        if (!recarregandoMisseis || Time.time < instanteFimRecarga)
+            return;
+
+        for (int i = 0; i < slotsMisseis.Length; i++)
+        {
+            if (!slotsMisseisConfigurados[i] || slotsMisseis[i] != null)
+                continue;
+
+            GameObject misselGuardado = misseisAguardandoRecarga[i];
+            Transform montagem = pontosMontagemMisseis[i];
+            if (misselGuardado == null || montagem == null)
+            {
+                // Um míssil ainda está em voo ou o suporte foi removido.
+                instanteFimRecarga = Time.time + 0.25f;
+                return;
+            }
+
+            Missel componenteMissel = misselGuardado.GetComponent<Missel>();
+            if (componenteMissel == null)
+            {
+                instanteFimRecarga = Time.time + 0.25f;
+                return;
+            }
+
+            componenteMissel.ResetarParaPool(montagem);
+            RestaurarTransformLocal(misselGuardado.transform, i);
+            misselGuardado.SetActive(true);
+            slotsMisseis[i] = misselGuardado;
+            misseisAguardandoRecarga[i] = null;
+        }
+
+        misseisRestantes = ContarMisseisDisponiveis();
+        if (misseisRestantes > 0)
+        {
+            recarregandoMisseis = false;
+            proximoLancamentoMissel = Time.time + 0.5f;
+        }
+        else
+        {
+            instanteFimRecarga = Time.time + 0.25f;
+        }
+    }
+
+    /// <summary>Chamado pelo míssil ao terminar o voo, para guardá-lo até a recarga.</summary>
+    public void NotificarMisselDevolvido(Missel missel, int slotIndex)
+    {
+        if (missel == null || slotIndex < 0 || slotIndex >= misseisAguardandoRecarga.Length)
+            return;
+
+        GameObject objeto = missel.gameObject;
+        RestaurarTransformLocal(objeto.transform, slotIndex);
+        objeto.SetActive(false);
+        misseisAguardandoRecarga[slotIndex] = objeto;
+    }
+
+    private void RestaurarTransformLocal(Transform alvo, int slotIndex)
+    {
+        if (alvo == null || slotIndex < 0 || slotIndex >= pontosMontagemMisseis.Length)
+            return;
+
+        Transform montagem = pontosMontagemMisseis[slotIndex];
+        if (montagem == null) return;
+
+        alvo.SetParent(montagem, false);
+        alvo.localPosition = posicoesLocaisMisseis[slotIndex];
+        alvo.localRotation = rotacoesLocaisMisseis[slotIndex];
+        alvo.localScale = escalasLocaisMisseis[slotIndex];
+    }
+
+    private int ContarMisseisDisponiveis()
+    {
+        if (slotsMisseis == null) return 0;
+        int count = 0;
+        for (int i = 0; i < slotsMisseis.Length; i++)
+            if (slotsMisseis[i] != null && slotsMisseis[i].GetComponent<Missel>() != null)
+                count++;
+        return count;
+    }
+
+    private bool AlvoEstaEmLayer(Transform alvo, params string[] nomes)
     {
         if (alvo == null) return false;
 
         Transform atual = alvo;
         while (atual != null)
         {
-            if ((layersApenasMetralhadora.value & (1 << atual.gameObject.layer)) != 0)
-                return true;
+            string nomeLayer = LayerMask.LayerToName(atual.gameObject.layer);
+            for (int i = 0; i < nomes.Length; i++)
+                if (nomeLayer == nomes[i]) return true;
             atual = atual.parent;
         }
         return false;
+    }
+
+    private static LayerMask CriarMascaraCamadas(params string[] nomes)
+    {
+        int mascara = 0;
+        for (int layer = 0; layer < 32; layer++)
+        {
+            string nomeLayer = LayerMask.LayerToName(layer);
+            for (int i = 0; i < nomes.Length; i++)
+                if (!string.IsNullOrEmpty(nomeLayer) && nomeLayer == nomes[i])
+                {
+                    mascara |= 1 << layer;
+                    break;
+                }
+        }
+        return mascara;
     }
 
     private bool ObjetoOuAncestralTemTag(Transform alvo, string[] tags)
@@ -314,6 +533,7 @@ public class AviaoAtaque : MonoBehaviour
     {
         intervaloMetralhadora  = Mathf.Max(0.02f, intervaloMetralhadora);
         intervaloMissel        = Mathf.Max(0.1f,  intervaloMissel);
+        tempoRecargaMisseis    = Mathf.Max(0.1f,  tempoRecargaMisseis);
         anguloMiraMetralhadora = Mathf.Clamp(anguloMiraMetralhadora, 1f, 45f);
         danoMetralhadora       = Mathf.Max(0, danoMetralhadora);
         velocidadeMetralhadora = Mathf.Max(1f, velocidadeMetralhadora);

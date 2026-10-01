@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 [DisallowMultipleComponent]
-public class SoldadoSpownIA : MonoBehaviour
+public class SoldadoSpownIA : MonoBehaviour, IGameOverRecoverySpawner
 {
     [Header("Ponto de Spawn (OBRIGATÓRIO)")]
     [SerializeField] private Transform pontoSpawn;
@@ -84,6 +84,18 @@ public class SoldadoSpownIA : MonoBehaviour
     public bool PodeCriarRecurso() => PodeCriarUnidade(prefabRecurso, custoPedraRecurso, custoMadeiraRecurso, custoMetalRecurso, proximoSpawnRecursoPermitido);
     public bool PodeCriarColetor() => PodeCriarRecurso();
     public bool PodeCriarSoldado() => PodeCriarUnidade(prefabSoldado, custoPedraSoldado, custoMadeiraSoldado, custoMetalSoldado, proximoSpawnSoldadoPermitido);
+
+    public bool TemRecursosParaCriarColetor()
+    {
+        return tagDoTime == "Vermelho"
+            && prefabRecurso != null
+            && pontoSpawn != null
+            && GameControllerRecursosIA.Instance != null
+            && GameControllerRecursosIA.Instance.TemRecursos(
+                custoPedraRecurso,
+                custoMadeiraRecurso,
+                custoMetalRecurso);
+    }
 
     // =====================================================================
     // TENTAR CRIAR (Retorna bool)

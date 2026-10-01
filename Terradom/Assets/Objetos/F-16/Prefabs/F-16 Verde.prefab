@@ -1561,12 +1561,13 @@ MonoBehaviour:
   - {fileID: 2375074125585414911}
   - {fileID: 870539004671560062}
   intervaloMissel: 2
+  tempoRecargaMisseis: 15
   tagsInimigoPai:
   - Vermelho
   - Azul
   layersApenasMetralhadora:
     serializedVersion: 2
-    m_Bits: 57344
+    m_Bits: 51200
   desenharGizmosNoEditor: 1
   misseisRestantes: 8
 --- !u!114 &2948920361710199428

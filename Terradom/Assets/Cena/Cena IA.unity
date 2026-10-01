@@ -1853,7 +1853,6 @@ MonoBehaviour:
   botaoMenuPrincipal: {fileID: 797348620}
   nomeSceneMenu: MenuPrincipal
   intervaloVerificacao: 2
-  limiteRecursos: 100
 --- !u!4 &187314467
 Transform:
   m_ObjectHideFlags: 0

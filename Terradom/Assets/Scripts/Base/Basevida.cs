@@ -136,6 +136,18 @@ public class BaseVida : MonoBehaviour
 
     public bool PodeReceberDanoDe(GameObject atacante)
     {
+        // Projéteis de unidades carregam a equipe de origem. Essa checagem é
+        // independente da whitelist para evitar que a tag genérica "Bala"
+        // permita dano aliado por colisão automática.
+        if (atacante != null
+            && TentarObterEquipeDeProjetil(atacante, out string equipeAtacante)
+            && !string.IsNullOrEmpty(equipeAtacante))
+        {
+            string equipeDaBase = ObterTagEquipe(transform);
+            if (!string.IsNullOrEmpty(equipeDaBase) && equipeDaBase == equipeAtacante)
+                return false;
+        }
+
         if (!exigirTagPermitidaParaReceberDano)
             return true;
 
@@ -143,6 +155,45 @@ public class BaseVida : MonoBehaviour
             return false;
 
         return ObjetoOuPaisTemTagPermitida(atacante.transform);
+    }
+
+    private static bool TentarObterEquipeDeProjetil(GameObject objeto, out string equipe)
+    {
+        equipe = string.Empty;
+        if (objeto == null)
+            return false;
+
+        ProjetilDistancia bala = objeto.GetComponentInParent<ProjetilDistancia>();
+        if (bala == null)
+            bala = objeto.GetComponentInChildren<ProjetilDistancia>(true);
+        if (bala != null && !string.IsNullOrEmpty(bala.TagEquipeDona))
+        {
+            equipe = bala.TagEquipeDona;
+            return true;
+        }
+
+        Missel missel = objeto.GetComponentInParent<Missel>();
+        if (missel == null)
+            missel = objeto.GetComponentInChildren<Missel>(true);
+        if (missel != null && !string.IsNullOrEmpty(missel.TagEquipeDona))
+        {
+            equipe = missel.TagEquipeDona;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string ObterTagEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+        return string.Empty;
     }
 
     public void Curar(int valor)

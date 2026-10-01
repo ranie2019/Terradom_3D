@@ -3,9 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
-public class GameControllerRecursos : MonoBehaviour
+public class GameControllerRecursos : MonoBehaviour, IGameOverRecoveryEconomy
 {
     public static GameControllerRecursos Instance;
+
+    public string TagEquipe => "Azul";
+    public bool PodeReconstruirBaseSoldado => PodeCriarBaseSoldado();
 
     [Header("Recursos")]
     public int pedra = 0;

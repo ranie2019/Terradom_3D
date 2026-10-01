@@ -24,6 +24,7 @@ public class AviaoVisao : MonoBehaviour
     public enum TipoAlvoAviao  { Nenhum, Terrestre, Aereo }
     public enum PrioridadeAlvo { AereosPrimeiro, TerrestresPrimeiro, MaisProximo }
     public enum EstadoVisao    { Patrulhando, EmAtaque }
+    public enum ClasseAlvoCombate { Nenhum, Unidade, Base, Tanque, Aereo, OutroTerrestre }
 
     // =====================================================================
     // INSPECTOR — VOO
@@ -92,19 +93,24 @@ public class AviaoVisao : MonoBehaviour
     [Header("Detecção Terrestre")]
     [SerializeField] private bool     usarVisaoTerrestre            = true;
     [SerializeField] private float    alcanceVisaoTerrestre         = 80f;
-    [SerializeField] private string[] tagsInimigosTerrestres        = { "Vermelho" };
+    [SerializeField] private string[] tagsInimigosTerrestres        = { "Azul", "Vermelho", "Verde" };
     [SerializeField] private bool     ignorarAvioesNaVisaoTerrestre = true;
     [SerializeField] private LayerMask layerAviao;
 
     [Header("Detecção Aérea")]
     [SerializeField] private bool      usarVisaoAerea     = true;
     [SerializeField] private float     alcanceVisaoAerea  = 200f;
-    [SerializeField] private string[]  tagsInimigosAereos = { "Vermelho" };
+    [SerializeField] private string[]  tagsInimigosAereos = { "Azul", "Vermelho", "Verde" };
 
     [Header("Filtro geral")]
     [SerializeField] private bool           detectarTriggers = false;
     [SerializeField] private float          intervaloBusca   = 0.12f;
     [SerializeField] private PrioridadeAlvo prioridadeAlvo   = PrioridadeAlvo.AereosPrimeiro;
+
+    [Header("Manobra defensiva contra aviões")]
+    [Tooltip("Pequena oscilação de guinada durante o combate aéreo para o avião não voar em linha reta previsível.")]
+    [SerializeField] private float amplitudeEvasivaAerea = 5f;
+    [SerializeField] private float frequenciaEvasivaAerea = 1.5f;
 
     [Header("Debug")]
     [SerializeField] private bool  desenharGizmosNoEditor = true;
@@ -137,7 +143,16 @@ public class AviaoVisao : MonoBehaviour
     private Transform     alvoAtual;
     private Transform     alvoTerrestreAtual;
     private Transform     alvoAereoAtual;
+    private Transform     alvoTanqueAtual;
+    private Transform     alvoBaseAtual;
+    private Transform     alvoUnidadeAtual;
+    private ClasseAlvoCombate classeAlvoTerrestreMaisProximo = ClasseAlvoCombate.Nenhum;
     private TipoAlvoAviao tipoAlvoAtual = TipoAlvoAviao.Nenhum;
+    private ClasseAlvoCombate classeAlvoAtual = ClasseAlvoCombate.Nenhum;
+    private LayerMask layersTanques;
+    private LayerMask layersBases;
+    private LayerMask layersUnidades;
+    private bool misselInimigoNaVisao;
     private float         proximaBusca;
     private EstadoVisao   estadoAtual = EstadoVisao.Patrulhando;
 
@@ -149,6 +164,7 @@ public class AviaoVisao : MonoBehaviour
     public Transform      AlvoTerrestreAtual => alvoTerrestreAtual;
     public Transform      AlvoAereoAtual     => alvoAereoAtual;
     public TipoAlvoAviao  TipoAlvoAtual      => tipoAlvoAtual;
+    public ClasseAlvoCombate ClasseAlvoAtual => classeAlvoAtual;
     public bool           TemAlvo            => alvoAtual != null;
     public bool           TemAlvoTerrestre   => alvoTerrestreAtual != null;
     public bool           TemAlvoAereo       => alvoAereoAtual != null;
@@ -183,6 +199,10 @@ public class AviaoVisao : MonoBehaviour
         if (origemVisao       == null) origemVisao       = transform;
         if (terrainReferencia == null) terrainReferencia = Terrain.activeTerrain;
 
+        layersTanques  = CriarMascaraCamadas("Tank");
+        layersBases    = CriarMascaraCamadas("BaseTank", "BaseAviao", "BaseSoldado");
+        layersUnidades = CriarMascaraCamadas("Coletor", "Soldado", "Guerreiro");
+
         GerarOrdemDeSetores();
     }
 
@@ -201,6 +221,16 @@ public class AviaoVisao : MonoBehaviour
         proximaBusca        = 0f;
         estadoAtual         = EstadoVisao.Patrulhando;
         sensorVeTerrain     = true;
+        alvoAtual           = null;
+        alvoTerrestreAtual  = null;
+        alvoAereoAtual      = null;
+        alvoTanqueAtual     = null;
+        alvoBaseAtual       = null;
+        alvoUnidadeAtual    = null;
+        classeAlvoTerrestreMaisProximo = ClasseAlvoCombate.Nenhum;
+        tipoAlvoAtual       = TipoAlvoAviao.Nenhum;
+        classeAlvoAtual     = ClasseAlvoCombate.Nenhum;
+        misselInimigoNaVisao = false;
 
         wpAtual   = GerarWaypointNoSetor(setorAtual);
         AvançarSetor();
@@ -301,11 +331,16 @@ public class AviaoVisao : MonoBehaviour
         // 2. YAW — curva aberta proporcional à velocidade
         float yawMaxEfetivo = taxaYawMaxima * (60f / Mathf.Max(velocidadeAtual, 1f));
         yawMaxEfetivo = Mathf.Clamp(yawMaxEfetivo, 3f, taxaYawMaxima);
+        if (estadoAtual == EstadoVisao.EmAtaque)
+            yawMaxEfetivo = Mathf.Max(yawMaxEfetivo, Mathf.Min(taxaYawMaxima, 12f));
 
         Vector3 paraWp      = new Vector3(wpAtual.x - transform.position.x, 0f,
                                           wpAtual.z - transform.position.z).normalized;
         float   yawAlvo     = AnguloSignado(direcaoHorizontal, paraWp);
-        float   yawDesejado = Mathf.Clamp(yawAlvo, -yawMaxEfetivo, yawMaxEfetivo);
+        float desvioEvasivo = (classeAlvoAtual == ClasseAlvoCombate.Aereo || misselInimigoNaVisao)
+            ? Mathf.Sin(Time.time * frequenciaEvasivaAerea) * amplitudeEvasivaAerea
+            : 0f;
+        float yawDesejado = Mathf.Clamp(yawAlvo + desvioEvasivo, -yawMaxEfetivo, yawMaxEfetivo);
 
         yawRateAtual = Mathf.Lerp(yawRateAtual, yawDesejado, suavizacaoYaw * dt);
 
@@ -357,8 +392,14 @@ public class AviaoVisao : MonoBehaviour
     /// </summary>
     private void AtualizarDeteccao()
     {
+        misselInimigoNaVisao = false;
         alvoTerrestreAtual = null;
         alvoAereoAtual     = null;
+        alvoTanqueAtual    = null;
+        alvoBaseAtual      = null;
+        alvoUnidadeAtual   = null;
+        classeAlvoTerrestreMaisProximo = ClasseAlvoCombate.Nenhum;
+        float menorDistanciaTerrestre = float.MaxValue;
 
         float alcanceMax = Mathf.Max(alcanceVisaoTerrestre, alcanceVisaoAerea);
 
@@ -371,6 +412,15 @@ public class AviaoVisao : MonoBehaviour
         {
             if (col == null || EhDoProprioAviao(col.transform)) continue;
 
+            Missel misselDetectado = col.GetComponentInParent<Missel>();
+            if (misselDetectado != null && misselDetectado.EstaLancado
+                && (misselDetectado.AlvoAtual == transform
+                    || (misselDetectado.AlvoAtual != null && misselDetectado.AlvoAtual.IsChildOf(transform)))
+                && misselDetectado.TagEquipeDona != ObterTagEquipePropria())
+            {
+                misselInimigoNaVisao = true;
+            }
+
             Transform raiz      = ObterRaizDoAlvo(col.transform);
             float     distancia = Vector3.Distance(ObterOrigemVisao(), raiz.position);
 
@@ -378,25 +428,37 @@ public class AviaoVisao : MonoBehaviour
             if (!NoCone(raiz.position)) continue;
 
             // ── Verifica se é inimigo terrestre ───────────────────────────
+            bool camadaAerea = ObjetoOuPaisTemLayerNaMascara(col.transform, layerAviao);
+            bool inimigoAereo = ObjetoOuPaisTemAlgumaTag(col.transform, tagsInimigosAereos);
+            bool inimigoTerrestre = ObjetoOuPaisTemAlgumaTag(col.transform, tagsInimigosTerrestres);
+
             if (usarVisaoTerrestre
                 && distancia <= alcanceVisaoTerrestre
-                && !ObjetoOuPaisTemLayerNaMascara(col.transform, layerAviao)
-                && ObjetoOuPaisTemAlgumaTag(col.transform, tagsInimigosTerrestres))
+                && !camadaAerea
+                && inimigoTerrestre)
             {
-                if (alvoTerrestreAtual == null
-                    || distancia < Vector3.Distance(ObterOrigemVisao(), alvoTerrestreAtual.position))
+                if (distancia < menorDistanciaTerrestre)
+                {
+                    menorDistanciaTerrestre = distancia;
                     alvoTerrestreAtual = raiz;
+                    classeAlvoTerrestreMaisProximo = ClassificarAlvoTerrestre(col.transform);
+                }
+
+                if (ObjetoOuPaisTemLayerNaMascara(col.transform, layersTanques))
+                    AtualizarAlvoMaisProximo(ref alvoTanqueAtual, raiz, distancia);
+                else if (ObjetoOuPaisTemLayerNaMascara(col.transform, layersBases))
+                    AtualizarAlvoMaisProximo(ref alvoBaseAtual, raiz, distancia);
+                else if (ObjetoOuPaisTemLayerNaMascara(col.transform, layersUnidades))
+                    AtualizarAlvoMaisProximo(ref alvoUnidadeAtual, raiz, distancia);
             }
 
             // ── Verifica se é inimigo aéreo ───────────────────────────────
             if (usarVisaoAerea
                 && distancia <= alcanceVisaoAerea
-                && ObjetoOuPaisTemLayerNaMascara(col.transform, layerAviao)
-                && ObjetoOuPaisTemAlgumaTag(col.transform, tagsInimigosAereos))
+                && camadaAerea
+                && inimigoAereo)
             {
-                if (alvoAereoAtual == null
-                    || distancia < Vector3.Distance(ObterOrigemVisao(), alvoAereoAtual.position))
-                    alvoAereoAtual = raiz;
+                AtualizarAlvoMaisProximo(ref alvoAereoAtual, raiz, distancia);
             }
         }
 
@@ -420,32 +482,141 @@ public class AviaoVisao : MonoBehaviour
 
     private void EscolherAlvoAtual()
     {
-        alvoAtual     = null;
-        tipoAlvoAtual = TipoAlvoAviao.Nenhum;
+        Transform melhorAlvoTerrestre = alvoTanqueAtual != null ? alvoTanqueAtual
+            : alvoBaseAtual != null ? alvoBaseAtual
+            : alvoUnidadeAtual;
+        ClasseAlvoCombate classeTerrestre = alvoTanqueAtual != null ? ClasseAlvoCombate.Tanque
+            : alvoBaseAtual != null ? ClasseAlvoCombate.Base
+            : alvoUnidadeAtual != null ? ClasseAlvoCombate.Unidade
+            : ClasseAlvoCombate.Nenhum;
 
-        bool temT = alvoTerrestreAtual != null;
-        bool temA = alvoAereoAtual     != null;
-        if (!temT && !temA) return;
+        Transform alvoTerrestreMaisProximo = ObterAlvoTerrestrePermitidoMaisProximo(
+            out ClasseAlvoCombate classeTerrestreMaisProximo);
 
-        switch (prioridadeAlvo)
+        Transform novoAlvo = null;
+        ClasseAlvoCombate novaClasse = ClasseAlvoCombate.Nenhum;
+
+        if (prioridadeAlvo == PrioridadeAlvo.MaisProximo
+            && alvoAereoAtual != null && alvoTerrestreMaisProximo != null)
         {
-            case PrioridadeAlvo.AereosPrimeiro:
-                if (temA) { alvoAtual = alvoAereoAtual;     tipoAlvoAtual = TipoAlvoAviao.Aereo;     return; }
-                if (temT) { alvoAtual = alvoTerrestreAtual; tipoAlvoAtual = TipoAlvoAviao.Terrestre; return; }
-                break;
-            case PrioridadeAlvo.TerrestresPrimeiro:
-                if (temT) { alvoAtual = alvoTerrestreAtual; tipoAlvoAtual = TipoAlvoAviao.Terrestre; return; }
-                if (temA) { alvoAtual = alvoAereoAtual;     tipoAlvoAtual = TipoAlvoAviao.Aereo;     return; }
-                break;
-            case PrioridadeAlvo.MaisProximo:
-                if (temT && !temA) { alvoAtual = alvoTerrestreAtual; tipoAlvoAtual = TipoAlvoAviao.Terrestre; return; }
-                if (temA && !temT) { alvoAtual = alvoAereoAtual;     tipoAlvoAtual = TipoAlvoAviao.Aereo;     return; }
-                float dT = Vector3.Distance(ObterOrigemVisao(), alvoTerrestreAtual.position);
-                float dA = Vector3.Distance(ObterOrigemVisao(), alvoAereoAtual.position);
-                if (dT <= dA) { alvoAtual = alvoTerrestreAtual; tipoAlvoAtual = TipoAlvoAviao.Terrestre; }
-                else          { alvoAtual = alvoAereoAtual;     tipoAlvoAtual = TipoAlvoAviao.Aereo;     }
-                break;
+            bool aereoMaisProximo = Vector3.Distance(ObterOrigemVisao(), alvoAereoAtual.position)
+                <= Vector3.Distance(ObterOrigemVisao(), alvoTerrestreMaisProximo.position);
+            novoAlvo = aereoMaisProximo ? alvoAereoAtual : alvoTerrestreMaisProximo;
+            novaClasse = aereoMaisProximo ? ClasseAlvoCombate.Aereo : classeTerrestreMaisProximo;
         }
+        else if (prioridadeAlvo == PrioridadeAlvo.MaisProximo && alvoTerrestreMaisProximo != null)
+        {
+            novoAlvo = alvoTerrestreMaisProximo;
+            novaClasse = classeTerrestreMaisProximo;
+        }
+        else if (prioridadeAlvo == PrioridadeAlvo.TerrestresPrimeiro)
+        {
+            if (melhorAlvoTerrestre != null) { novoAlvo = melhorAlvoTerrestre; novaClasse = classeTerrestre; }
+            else if (alvoAereoAtual != null) { novoAlvo = alvoAereoAtual; novaClasse = ClasseAlvoCombate.Aereo; }
+        }
+        else
+        {
+            if (alvoAereoAtual != null) { novoAlvo = alvoAereoAtual; novaClasse = ClasseAlvoCombate.Aereo; }
+            else if (melhorAlvoTerrestre != null) { novoAlvo = melhorAlvoTerrestre; novaClasse = classeTerrestre; }
+        }
+
+        // Mantém o combate ao sair momentaneamente do cone. Um alvo de categoria
+        // mais alta continua sendo perseguido; alvos prioritários novos podem
+        // substituir imediatamente um alvo terrestre inferior.
+        if (novoAlvo != null && alvoAtual != null && novoAlvo != alvoAtual
+            && EhAlvoInimigo(alvoAtual)
+            && PontuacaoPrioridade(classeAlvoAtual) < PontuacaoPrioridade(novaClasse))
+            return;
+
+        if (novoAlvo != null)
+        {
+            alvoAtual = novoAlvo;
+            classeAlvoAtual = novaClasse;
+            tipoAlvoAtual = novaClasse == ClasseAlvoCombate.Aereo
+                ? TipoAlvoAviao.Aereo
+                : TipoAlvoAviao.Terrestre;
+            return;
+        }
+
+        if (alvoAtual != null && EhAlvoInimigo(alvoAtual))
+            return;
+
+        alvoAtual = null;
+        tipoAlvoAtual = TipoAlvoAviao.Nenhum;
+        classeAlvoAtual = ClasseAlvoCombate.Nenhum;
+    }
+
+    private int PontuacaoPrioridade(ClasseAlvoCombate classe)
+    {
+        if (prioridadeAlvo == PrioridadeAlvo.MaisProximo)
+            return 0;
+
+        if (prioridadeAlvo == PrioridadeAlvo.TerrestresPrimeiro)
+        {
+            switch (classe)
+            {
+                case ClasseAlvoCombate.Tanque: return 0;
+                case ClasseAlvoCombate.Base: return 1;
+                case ClasseAlvoCombate.Unidade: return 2;
+                case ClasseAlvoCombate.OutroTerrestre: return 3;
+                case ClasseAlvoCombate.Aereo: return 4;
+                default: return int.MaxValue;
+            }
+        }
+
+        switch (classe)
+        {
+            case ClasseAlvoCombate.Aereo: return 0;
+            case ClasseAlvoCombate.Tanque: return 1;
+            case ClasseAlvoCombate.Base: return 2;
+            case ClasseAlvoCombate.Unidade: return 3;
+            case ClasseAlvoCombate.OutroTerrestre: return 4;
+            default: return int.MaxValue;
+        }
+    }
+
+    private void AtualizarAlvoMaisProximo(ref Transform alvo, Transform candidato, float distancia)
+    {
+        if (candidato == null) return;
+        if (alvo == null || distancia < Vector3.Distance(ObterOrigemVisao(), alvo.position))
+            alvo = candidato;
+    }
+
+    private Transform ObterAlvoTerrestrePermitidoMaisProximo(out ClasseAlvoCombate classe)
+    {
+        Transform melhor = null;
+        float menorDistancia = float.MaxValue;
+        classe = ClasseAlvoCombate.Nenhum;
+
+        ConsiderarAlvoTerrestre(alvoTanqueAtual, ClasseAlvoCombate.Tanque,
+            ref melhor, ref classe, ref menorDistancia);
+        ConsiderarAlvoTerrestre(alvoBaseAtual, ClasseAlvoCombate.Base,
+            ref melhor, ref classe, ref menorDistancia);
+        ConsiderarAlvoTerrestre(alvoUnidadeAtual, ClasseAlvoCombate.Unidade,
+            ref melhor, ref classe, ref menorDistancia);
+
+        return melhor;
+    }
+
+    private void ConsiderarAlvoTerrestre(Transform candidato, ClasseAlvoCombate classeCandidata,
+                                        ref Transform melhor, ref ClasseAlvoCombate classeMelhor,
+                                        ref float menorDistancia)
+    {
+        if (candidato == null) return;
+        float distancia = Vector3.Distance(ObterOrigemVisao(), candidato.position);
+        if (distancia >= menorDistancia) return;
+
+        menorDistancia = distancia;
+        melhor = candidato;
+        classeMelhor = classeCandidata;
+    }
+
+    private ClasseAlvoCombate ClassificarAlvoTerrestre(Transform alvo)
+    {
+        if (ObjetoOuPaisTemLayerNaMascara(alvo, layersTanques)) return ClasseAlvoCombate.Tanque;
+        if (ObjetoOuPaisTemLayerNaMascara(alvo, layersBases)) return ClasseAlvoCombate.Base;
+        if (ObjetoOuPaisTemLayerNaMascara(alvo, layersUnidades)) return ClasseAlvoCombate.Unidade;
+        return ClasseAlvoCombate.OutroTerrestre;
     }
 
     // =====================================================================
@@ -563,18 +734,83 @@ public class AviaoVisao : MonoBehaviour
     private Transform ObterRaizDoAlvo(Transform alvo)
     {
         if (alvo == null) return null;
+        Transform raizInimiga = null;
         Transform atual = alvo;
-        while (atual.parent != null)
+        while (atual != null && atual != transform)
         {
-            if (atual.parent == transform) break;
+            if (ObjetoTemTagInimiga(atual))
+                raizInimiga = atual;
             atual = atual.parent;
         }
-        return atual;
+        return raizInimiga != null ? raizInimiga : alvo;
+    }
+
+    private bool ObjetoTemTagInimiga(Transform alvo)
+    {
+        if (alvo == null || EhDaPropriaEquipe(alvo)) return false;
+        return ObjetoTemAlgumaTag(alvo, tagsInimigosAereos)
+            || ObjetoTemAlgumaTag(alvo, tagsInimigosTerrestres);
+    }
+
+    private bool ObjetoTemAlgumaTag(Transform alvo, string[] tags)
+    {
+        if (alvo == null || tags == null) return false;
+        for (int i = 0; i < tags.Length; i++)
+            if (!string.IsNullOrWhiteSpace(tags[i]) && alvo.CompareTag(tags[i]))
+                return true;
+        return false;
+    }
+
+    private bool EhAlvoInimigo(Transform alvo)
+        => alvo != null && ObjetoTemTagInimiga(alvo);
+
+    private string ObterTagEquipePropria()
+        => ObterTagEquipe(transform);
+
+    private bool EhDaPropriaEquipe(Transform alvo)
+    {
+        if (alvo == null)
+            return false;
+
+        string equipePropria = ObterTagEquipePropria();
+        string equipeAlvo = ObterTagEquipe(alvo);
+        return !string.IsNullOrEmpty(equipePropria)
+            && !string.IsNullOrEmpty(equipeAlvo)
+            && equipePropria == equipeAlvo;
+    }
+
+    private static string ObterTagEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (atual.CompareTag("Azul") || atual.CompareTag("Vermelho") || atual.CompareTag("Verde"))
+                return atual.tag;
+            atual = atual.parent;
+        }
+        return string.Empty;
+    }
+
+    private static LayerMask CriarMascaraCamadas(params string[] nomes)
+    {
+        int mascara = 0;
+        for (int layer = 0; layer < 32; layer++)
+        {
+            string nomeLayer = LayerMask.LayerToName(layer);
+            if (string.IsNullOrEmpty(nomeLayer)) continue;
+            for (int i = 0; i < nomes.Length; i++)
+                if (nomeLayer == nomes[i])
+                {
+                    mascara |= 1 << layer;
+                    break;
+                }
+        }
+        return mascara;
     }
 
     private bool ObjetoOuPaisTemAlgumaTag(Transform alvo, string[] tags)
     {
-        if (alvo == null || tags == null || tags.Length == 0) return false;
+        if (alvo == null || tags == null || tags.Length == 0 || EhDaPropriaEquipe(alvo)) return false;
         Transform atual = alvo;
         while (atual != null)
         {

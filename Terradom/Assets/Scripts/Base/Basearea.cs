@@ -63,6 +63,11 @@ public class BaseArea : MonoBehaviour
     private int custoPendenteMadeira;
     private int custoPendenteMetal;
 
+    public bool EstaPosicionandoBaseSoldado =>
+        estaPosicionando && tipoBaseAtual == TipoBaseAtual.Soldado;
+
+    public string TagDoJogador => tagDoJogador;
+
     private void Awake()
     {
         if (cameraPrincipal == null)
@@ -74,7 +79,7 @@ public class BaseArea : MonoBehaviour
         if (!estaPosicionando)
             return;
 
-        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        if (TeclaEscapePressionada())
         {
             CancelarPosicionamento();
             return;
@@ -97,6 +102,26 @@ public class BaseArea : MonoBehaviour
 
         VerificarColisao(baseAtual);
         ConfirmarComBotaoEsquerdo();
+    }
+
+    // Mantém o cancelamento disponível também quando o evento de teclado é
+    // entregue pelo fluxo IMGUI/UI antes da atualização do Input System.
+    private void OnGUI()
+    {
+        if (!estaPosicionando || Event.current == null)
+            return;
+
+        if (Event.current.type != EventType.KeyDown || Event.current.keyCode != KeyCode.Escape)
+            return;
+
+        Event.current.Use();
+        CancelarPosicionamento();
+    }
+
+    private static bool TeclaEscapePressionada()
+    {
+        Keyboard teclado = Keyboard.current;
+        return teclado != null && teclado.escapeKey.wasPressedThisFrame;
     }
 
     // =====================================================================

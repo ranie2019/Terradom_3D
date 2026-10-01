@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class SoldadoSpown : MonoBehaviour
+public class SoldadoSpown : MonoBehaviour, IGameOverRecoverySpawner
 {
     [Header("Guerreiro")]
     [SerializeField] private GameObject prefabGuerreiro;
@@ -164,6 +164,21 @@ public class SoldadoSpown : MonoBehaviour
     public bool PodeCriarColetor()
     {
         return PodeCriarRecurso();
+    }
+
+    /// <summary>
+    /// Informa se esta base consegue pagar por um coletor, sem considerar o
+    /// cooldown. Usado para evitar Game Over durante uma pausa curta de produção.
+    /// </summary>
+    public bool TemRecursosParaCriarColetor()
+    {
+        return prefabRecurso != null
+            && pontoSpawn != null
+            && GameControllerRecursos.Instance != null
+            && GameControllerRecursos.Instance.TemRecursos(
+                custoPedraRecurso,
+                custoMadeiraRecurso,
+                custoMetalRecurso);
     }
 
     public bool PodeCriarSoldado()

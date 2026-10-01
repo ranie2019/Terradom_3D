@@ -1,9 +1,12 @@
 ﻿using UnityEngine;
 
 [DisallowMultipleComponent]
-public class GameControllerRecursosIA : MonoBehaviour
+public class GameControllerRecursosIA : MonoBehaviour, IGameOverRecoveryEconomy
 {
     public static GameControllerRecursosIA Instance;
+
+    public string TagEquipe => "Vermelho";
+    public bool PodeReconstruirBaseSoldado => PodeCriarBaseSoldado();
 
     [Header("Recursos IA")]
     public int pedra = 1000;
