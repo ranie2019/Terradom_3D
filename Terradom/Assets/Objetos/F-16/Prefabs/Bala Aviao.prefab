@@ -54,6 +54,7 @@ MonoBehaviour:
   tagsQueRecebemDano:
   - Vermelho
   - Azul
+  - Verde
   camadasDeImpacto:
     serializedVersion: 2
     m_Bits: 4294967295

@@ -136,13 +136,16 @@ public class BaseVida : MonoBehaviour
 
     public bool PodeReceberDanoDe(GameObject atacante)
     {
-        // Projéteis de unidades carregam a equipe de origem. Essa checagem é
-        // independente da whitelist para evitar que a tag genérica "Bala"
-        // permita dano aliado por colisão automática.
-        if (atacante != null
-            && TentarObterEquipeDeProjetil(atacante, out string equipeAtacante)
-            && !string.IsNullOrEmpty(equipeAtacante))
+        // Projéteis carregam a equipe de origem; para qualquer outro atacante
+        // (unidade, avião...) usa a tag de equipe da hierarquia. Essa checagem é
+        // independente da whitelist: evita dano aliado por colisão automática.
+        if (atacante != null)
         {
+            string equipeAtacante;
+            if (!TentarObterEquipeDeProjetil(atacante, out equipeAtacante)
+                || string.IsNullOrEmpty(equipeAtacante))
+                equipeAtacante = ObterTagEquipe(atacante.transform);
+
             string equipeDaBase = ObterTagEquipe(transform);
             if (!string.IsNullOrEmpty(equipeDaBase) && equipeDaBase == equipeAtacante)
                 return false;
@@ -261,10 +264,25 @@ public class BaseVida : MonoBehaviour
             return;
 
         ultimoDanoAutomaticoPorAtacante[idAtacante] = Time.time;
+        if (ultimoDanoAutomaticoPorAtacante.Count > 128)
+            LimparCooldownsAntigos();
         AplicarDano(dano, atacantePrincipal);
 
         if (destruirAtacante)
             Destroy(atacantePrincipal);
+    }
+
+    private void LimparCooldownsAntigos()
+    {
+        List<int> remover = new List<int>();
+        foreach (KeyValuePair<int, float> par in ultimoDanoAutomaticoPorAtacante)
+        {
+            if (Time.time - par.Value > 1f)
+                remover.Add(par.Key);
+        }
+
+        for (int i = 0; i < remover.Count; i++)
+            ultimoDanoAutomaticoPorAtacante.Remove(remover[i]);
     }
 
     private bool TentarObterDanoDoImpacto(Collider colisorAtacante, GameObject atacantePrincipal, out int dano, out bool destruirAtacante)
@@ -313,6 +331,41 @@ public class BaseVida : MonoBehaviour
         return false;
     }
 
+    private static readonly string[] NomesCampoDano =
+    {
+        "dano", "Dano", "danoBala", "DanoBala", "danoAtaque", "DanoAtaque",
+        "danoCausado", "DanoCausado", "danoAoAcertar", "DanoAoAcertar",
+        "valorDano", "ValorDano", "damage", "Damage"
+    };
+
+    // Reflection resolvida uma vez por tipo (antes era refeita a cada colisão).
+    private static readonly Dictionary<System.Type, MemberInfo[]> membrosDanoPorTipo =
+        new Dictionary<System.Type, MemberInfo[]>();
+
+    private static MemberInfo[] ObterMembrosDeDano(System.Type tipo)
+    {
+        if (membrosDanoPorTipo.TryGetValue(tipo, out MemberInfo[] cache))
+            return cache;
+
+        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        List<MemberInfo> encontrados = new List<MemberInfo>();
+
+        for (int i = 0; i < NomesCampoDano.Length; i++)
+        {
+            FieldInfo campo = tipo.GetField(NomesCampoDano[i], flags);
+            if (campo != null)
+                encontrados.Add(campo);
+
+            PropertyInfo propriedade = tipo.GetProperty(NomesCampoDano[i], flags);
+            if (propriedade != null && propriedade.CanRead)
+                encontrados.Add(propriedade);
+        }
+
+        MemberInfo[] resultado = encontrados.ToArray();
+        membrosDanoPorTipo[tipo] = resultado;
+        return resultado;
+    }
+
     private bool TentarLerDanoDeComponente(Component componente, out int dano)
     {
         dano = 0;
@@ -326,29 +379,23 @@ public class BaseVida : MonoBehaviour
         if (componente is BaseVidaColliderFilho)
             return false;
 
-        System.Type tipo = componente.GetType();
+        MemberInfo[] membros = ObterMembrosDeDano(componente.GetType());
 
-        string[] nomesPossiveis =
+        for (int i = 0; i < membros.Length; i++)
         {
-            "dano",
-            "Dano",
-            "danoBala",
-            "DanoBala",
-            "danoAtaque",
-            "DanoAtaque",
-            "danoCausado",
-            "DanoCausado",
-            "danoAoAcertar",
-            "DanoAoAcertar",
-            "valorDano",
-            "ValorDano",
-            "damage",
-            "Damage"
-        };
+            object valor = null;
 
-        for (int i = 0; i < nomesPossiveis.Length; i++)
-        {
-            if (TentarLerCampoOuPropriedadeInteira(tipo, componente, nomesPossiveis[i], out dano))
+            FieldInfo campo = membros[i] as FieldInfo;
+            if (campo != null)
+                valor = campo.GetValue(componente);
+            else
+            {
+                PropertyInfo propriedade = membros[i] as PropertyInfo;
+                if (propriedade != null)
+                    valor = propriedade.GetValue(componente, null);
+            }
+
+            if (TentarConverterParaInteiro(valor, out dano))
                 return true;
         }
 
@@ -495,6 +542,11 @@ public class BaseVida : MonoBehaviour
             if (col.transform == transform)
                 continue;
 
+            // Misseis/projeteis guardados como filhos (ex.: torre) nao podem
+            // reportar impactos como se fossem a propria base.
+            if (EhColliderDeProjetil(col))
+                continue;
+
             BaseVidaColliderFilho ponte = col.GetComponent<BaseVidaColliderFilho>();
 
             if (ponte == null)
@@ -502,6 +554,12 @@ public class BaseVida : MonoBehaviour
 
             ponte.Configurar(this);
         }
+    }
+
+    private static bool EhColliderDeProjetil(Collider col)
+    {
+        return col.GetComponentInParent<Missel>(true) != null
+            || col.GetComponentInParent<ProjetilDistancia>(true) != null;
     }
 
     private void ReceberImpactoDoColliderFilho(Collider colisorAtacante)

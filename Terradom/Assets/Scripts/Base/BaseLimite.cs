@@ -91,6 +91,12 @@ public class BaseLimite : MonoBehaviour
         // Usa a tag do GameObject se tagBase estiver vazia
         if (string.IsNullOrEmpty(tagBase))
             tagBase = gameObject.tag;
+
+        // Aviso: prefab de uma equipe com tagBase de outra (o padrão do campo é "Vermelho").
+        string tagObjeto = gameObject.tag;
+        if ((tagObjeto == "Azul" || tagObjeto == "Vermelho" || tagObjeto == "Verde") && tagObjeto != tagBase)
+            Debug.LogWarning($"[BaseLimite] '{name}' tem a tag '{tagObjeto}' mas tagBase='{tagBase}'. " +
+                             "A área será registrada para a equipe da tagBase.", this);
         
         // Registra esta base no dicionário global
         if (!desregistradoTemporariamente)
@@ -345,6 +351,18 @@ public class BaseLimite : MonoBehaviour
         Shader shaderTransparente = Shader.Find("Sprites/Default");
         if (shaderTransparente == null)
             shaderTransparente = Shader.Find("Unlit/Color");
+        if (shaderTransparente == null)
+            shaderTransparente = Shader.Find("Hidden/Internal-Colored");
+
+        // Em builds (ex.: WebGL) o shader pode ter sido removido: sem ele o
+        // 'new Material' lançaria exceção e quebraria o Awake da base.
+        if (shaderTransparente == null)
+        {
+            Debug.LogError("[BaseLimite] Nenhum shader encontrado para desenhar a área. " +
+                           "Adicione 'Sprites/Default' em Project Settings > Graphics > Always Included Shaders.", this);
+            mostrarArea = false;
+            return;
+        }
         
         materialArea = new Material(shaderTransparente);
         materialArea.color = corArea;

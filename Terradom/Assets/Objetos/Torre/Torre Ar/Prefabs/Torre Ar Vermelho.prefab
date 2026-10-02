@@ -73,6 +73,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 4676868825471178250}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -501,6 +503,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 3157539825845705539}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -754,6 +758,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 8399369320459741345}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -942,6 +948,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 7163591289409615667}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -1098,6 +1106,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 4384965751136416006}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -1368,6 +1378,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 2775448478634463927}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -1748,6 +1760,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 6729778134386828388}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -2097,6 +2111,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 6397404137559262692}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -2263,6 +2279,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 5622204812943353950}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -2449,6 +2467,7 @@ GameObject:
   - component: {fileID: 7065634906704601218}
   - component: {fileID: 3143859800070782049}
   - component: {fileID: 774062886363416922}
+  - component: {fileID: 1515062155769153517}
   m_Layer: 10
   m_Name: Torre Ar Vermelho
   m_TagString: Vermelho
@@ -2522,29 +2541,137 @@ MonoBehaviour:
   layerAviao:
     serializedVersion: 2
     m_Bits: 512
+  intervaloBuscaAlvo: 0.2
+  histereseSaida: 0.1
+  detectarEquipeAutomaticamente: 1
   tagsInimigos:
   - Azul
+  - Verde
   cabeca: {fileID: 6827186707091247927}
   baseMissel: {fileID: 2502863190394260452}
   limiteYMin: 0
   limiteYMax: 90
   velocidadeMira: 5
+  exigirMiraAlinhada: 0
+  toleranciaMira: 15
+  prefabMissel: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
   pontosMisseis:
-  - {fileID: 1494658680748971980}
-  - {fileID: 2152750635867195598}
-  - {fileID: 5622204812943353950}
-  - {fileID: 3157539825845705539}
-  - {fileID: 4676868825471178250}
-  - {fileID: 6729778134386828388}
-  - {fileID: 5127692871046377338}
-  - {fileID: 9109790407343312867}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
   intervaloEntreLancamentos: 1
   tempoRecarga: 20
+  fonteAudio: {fileID: 1515062155769153517}
+  audioLancamento: {fileID: 8300000, guid: aef9e4adad2f2fa429ae5ee6b2ed907e, type: 3}
+  volumeLancamento: 1
+  distanciaMaximaAudio: 80
   prioridade: 0
   velocidadeMin: 8
   velocidadeMax: 25
   tempoTrocaMin: 1
   tempoTrocaMax: 3
+--- !u!82 &1515062155769153517
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5573215296906669854}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &5754016706874530618
 GameObject:
   m_ObjectHideFlags: 0
@@ -2698,6 +2825,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 2325381118929182265}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -2774,6 +2903,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 1494658680748971980}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -3117,6 +3248,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 7211573109789188156}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -3472,6 +3605,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 9109790407343312867}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -3844,6 +3979,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 0}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 7788094300343551952}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -4010,6 +4147,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 5127692871046377338}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -4183,6 +4322,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 2152750635867195598}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3

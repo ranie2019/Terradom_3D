@@ -1675,6 +1675,7 @@ GameObject:
   - component: {fileID: 8189533269061005446}
   - component: {fileID: 338929744936273744}
   - component: {fileID: 7159418256598338517}
+  - component: {fileID: 1025301106467292418}
   m_Layer: 13
   m_Name: Tank Verde
   m_TagString: Vermelho
@@ -1758,6 +1759,8 @@ MonoBehaviour:
   pararParaAlvoTerrestre: 1
   pararParaAlvoAereo: 1
   velocidadeDuranteCombate: 0
+  velocidadeMinimaDuranteCombate: 3
+  distanciaPreferidaCombate: 28
   freioAoEncontrarInimigo: 18
   tempoContinuarParadoAposPerderAlvo: 0.15
   tankLeveGerenciaAtaque: 1
@@ -1854,13 +1857,13 @@ MonoBehaviour:
   origemVisao: {fileID: 1161988200171583386}
   alturaOrigemVisao: 2
   usarVisaoTerrestre: 1
-  raioVisaoTerrestre: 80
+  raioVisaoTerrestre: 200
   tagsInimigosTerrestres:
   - Azul
   - Vermelho
   ignorarLayersAereasNaVisaoTerrestre: 1
   usarVisaoAerea: 1
-  raioVisaoAerea: 300
+  raioVisaoAerea: 350
   layersAvioesInimigos:
     serializedVersion: 2
     m_Bits: 512
@@ -1871,6 +1874,10 @@ MonoBehaviour:
   detectarTriggers: 0
   intervaloBusca: 0.15
   prioridadeAlvo: 2
+  exigirLinhaDeVisao: 1
+  camadasBloqueiamVisao:
+    serializedVersion: 2
+    m_Bits: 4294967295
   desenharVisaoNoEditor: 1
 --- !u!114 &338929744936273744
 MonoBehaviour:
@@ -1897,11 +1904,15 @@ MonoBehaviour:
   atacarAlvoTerrestre: 1
   atacarAutomaticamente: 1
   prefabBala: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
+  danoBala: 5
   intervaloEntreTiros: 0.5
   velocidadeBala: 80
   tempoVidaBala: 10
   toleranciaMiraParaAtirar: 6
   alturaExtraMiraAlvo: 0.2
+  audioSourceDisparo: {fileID: 1025301106467292418}
+  audioClipDisparo: {fileID: 8300000, guid: 8fd0543b6619e1f4ebda89f6d191466a, type: 3}
+  distanciaMaximaAudioDisparo: 400
   miraAereaGiroY360: {fileID: 1236163295848011056}
   miraAereaElevacaoZ: {fileID: 3911767968643076021}
   spawnBalaAerea: {fileID: 168203290874119318}
@@ -1914,6 +1925,7 @@ MonoBehaviour:
   atacarAlvoAereo: 1
   atacarAutomaticamenteAerea: 1
   prefabBalaAerea: {fileID: 5341742223406746680, guid: 9c3cddd6060b7cc4eadfb9cefcf6e7db, type: 3}
+  danoBalaAerea: 5
   intervaloEntreTirosAerea: 0.4
   velocidadeBalaAerea: 45
   tempoVidaBalaAerea: 6
@@ -1946,6 +1958,103 @@ MonoBehaviour:
   - Missel
   - Vermelho
   cooldownDano: 0.25
+--- !u!82 &1025301106467292418
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5296673597470861128}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: 8fd0543b6619e1f4ebda89f6d191466a, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 5000
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &5360424626817801994
 GameObject:
   m_ObjectHideFlags: 0

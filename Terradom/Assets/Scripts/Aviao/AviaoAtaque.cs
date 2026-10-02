@@ -38,6 +38,24 @@ public class AviaoAtaque : MonoBehaviour
     [Tooltip("Ângulo máximo em graus entre o nariz do avião e o alvo para autorizar o disparo.\nMenor = mais preciso, dispara menos. Recomendado: 5-8°.")]
     [SerializeField] private float      anguloMiraMetralhadora = 6f;
 
+    [Header("Áudio de disparo")]
+    [Tooltip("AudioSource 3D do avião. Se estiver vazio, será criado no objeto raiz para não reutilizar o áudio dos mísseis.")]
+    [SerializeField] private AudioSource audioSourceDisparo;
+    [Tooltip("Som da metralhadora e do lançamento de míssil. A referência explícita também funciona com Audio Resource no Unity 6.")]
+    [SerializeField] private AudioClip audioClipDisparo;
+    [Tooltip("Distância máxima para ouvir o disparo.")]
+    [SerializeField, Min(1f)] private float distanciaMaximaAudioDisparo = 200f;
+    [Tooltip("Intervalo mínimo entre sons da metralhadora para evitar dezenas de sons sobrepostos por segundo.")]
+    [SerializeField, Min(0.02f)] private float intervaloAudioMetralhadora = 0.15f;
+
+    [Header("Áudio de voo")]
+    [Tooltip("AudioSource 3D separado do disparo para manter o motor em loop sem interromper os tiros.")]
+    [SerializeField] private AudioSource audioSourceVoo;
+    [Tooltip("Som contínuo do avião, iniciado pelo controlador apenas quando ele já saiu do chão.")]
+    [SerializeField] private AudioClip audioClipVoo;
+    [Tooltip("Distância máxima para ouvir o som de voo.")]
+    [SerializeField, Min(1f)] private float distanciaMaximaAudioVoo = 400f;
+
     // =====================================================================
     // INSPECTOR — MÍSSEIS
     // =====================================================================
@@ -76,6 +94,7 @@ public class AviaoAtaque : MonoBehaviour
     private float     proximoTiroMetralhadora;
     private float     proximoLancamentoMissel;
     private int       indexMetralhadoraAtual = 0;
+    private float     proximoAudioMetralhadora;
     private Transform[] pontosMontagemMisseis;
     private Vector3[]   posicoesLocaisMisseis;
     private Quaternion[] rotacoesLocaisMisseis;
@@ -104,6 +123,15 @@ public class AviaoAtaque : MonoBehaviour
     {
         if (aviaoVisao == null)
             aviaoVisao = GetComponent<AviaoVisao>();
+
+        if (audioSourceDisparo == null)
+            audioSourceDisparo = GetComponent<AudioSource>();
+        if (audioSourceDisparo == audioSourceVoo)
+            audioSourceDisparo = null;
+        if (audioSourceDisparo == null)
+            audioSourceDisparo = gameObject.AddComponent<AudioSource>();
+        ConfigurarAudioDisparo();
+        PrepararAudioVoo();
 
         PrepararSuportesMisseis();
         misseisRestantes = ContarMisseisDisponiveis();
@@ -221,6 +249,8 @@ public class AviaoAtaque : MonoBehaviour
                 pontoAlvo,
                 layersApenasMetralhadora);
 
+        TocarAudioMetralhadora();
+
         indexMetralhadoraAtual  = (indexMetralhadoraAtual + 1) % 2;
         proximoTiroMetralhadora = Time.time + Mathf.Max(0.02f, intervaloMetralhadora);
     }
@@ -297,6 +327,8 @@ public class AviaoAtaque : MonoBehaviour
             slotIndex,
             pontosMontagemMisseis[slotIndex],
             camadasAlvoMissel);
+
+        TocarAudioDisparo();
 
         // 3. Remove o slot e contabiliza
         slotsMisseis[slotIndex] = null;
@@ -458,6 +490,74 @@ public class AviaoAtaque : MonoBehaviour
         alvo.localScale = escalasLocaisMisseis[slotIndex];
     }
 
+    private void TocarAudioMetralhadora()
+    {
+        if (Time.time < proximoAudioMetralhadora)
+            return;
+
+        TocarAudioDisparo();
+        proximoAudioMetralhadora = Time.time + Mathf.Max(0.02f, intervaloAudioMetralhadora);
+    }
+
+    private void TocarAudioDisparo()
+    {
+        if (audioSourceDisparo == null || !audioSourceDisparo.isActiveAndEnabled || audioClipDisparo == null)
+            return;
+
+        audioSourceDisparo.PlayOneShot(audioClipDisparo);
+    }
+
+    private void ConfigurarAudioDisparo()
+    {
+        if (audioSourceDisparo == null)
+            return;
+
+        audioSourceDisparo.playOnAwake = false;
+        audioSourceDisparo.spatialBlend = 1f;
+        audioSourceDisparo.rolloffMode = AudioRolloffMode.Linear;
+        audioSourceDisparo.maxDistance = Mathf.Max(
+            audioSourceDisparo.minDistance + 0.1f,
+            distanciaMaximaAudioDisparo);
+        audioSourceDisparo.dopplerLevel = 0f;
+    }
+
+    /// <summary>
+    /// Chamado pelo AviaoControler quando AviaoVoo confirma que o avião já
+    /// atingiu a altura mínima de decolagem. Pode ser chamado mesmo com este
+    /// componente desabilitado durante a fase de voo.
+    /// </summary>
+    public bool IniciarAudioVoo()
+    {
+        if (audioClipVoo == null)
+            return false;
+
+        PrepararAudioVoo();
+        if (audioSourceVoo.isPlaying)
+            return true;
+
+        audioSourceVoo.resource = audioClipVoo;
+        audioSourceVoo.loop = true;
+        audioSourceVoo.Play();
+        return true;
+    }
+
+    private void PrepararAudioVoo()
+    {
+        if (audioSourceVoo == null || audioSourceVoo == audioSourceDisparo)
+            audioSourceVoo = gameObject.AddComponent<AudioSource>();
+
+        audioSourceVoo.playOnAwake = false;
+        if (!audioSourceVoo.isPlaying)
+            audioSourceVoo.resource = audioClipVoo;
+        audioSourceVoo.loop = true;
+        audioSourceVoo.spatialBlend = 1f;
+        audioSourceVoo.rolloffMode = AudioRolloffMode.Linear;
+        audioSourceVoo.maxDistance = Mathf.Max(
+            audioSourceVoo.minDistance + 0.1f,
+            distanciaMaximaAudioVoo);
+        audioSourceVoo.dopplerLevel = 0f;
+    }
+
     private int ContarMisseisDisponiveis()
     {
         if (slotsMisseis == null) return 0;
@@ -531,6 +631,9 @@ public class AviaoAtaque : MonoBehaviour
 
     private void OnValidate()
     {
+        distanciaMaximaAudioDisparo = Mathf.Max(1f, distanciaMaximaAudioDisparo);
+        intervaloAudioMetralhadora = Mathf.Max(0.02f, intervaloAudioMetralhadora);
+        distanciaMaximaAudioVoo = Mathf.Max(1f, distanciaMaximaAudioVoo);
         intervaloMetralhadora  = Mathf.Max(0.02f, intervaloMetralhadora);
         intervaloMissel        = Mathf.Max(0.1f,  intervaloMissel);
         tempoRecargaMisseis    = Mathf.Max(0.1f,  tempoRecargaMisseis);

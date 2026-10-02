@@ -245,6 +245,7 @@ MonoBehaviour:
   tagsQueRecebemDano:
   - Vermelho
   - Azul
+  - Verde
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -262,7 +263,7 @@ MonoBehaviour:
   tempoParaDestruirExplosao: 4
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
-  distanciaMaximaAudio: 50
+  distanciaMaximaAudio: 400
   spawnRastro: {fileID: 8362204632683389280}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3

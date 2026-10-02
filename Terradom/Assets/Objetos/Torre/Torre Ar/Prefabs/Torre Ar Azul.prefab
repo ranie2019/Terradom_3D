@@ -73,6 +73,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 7804820075508551172}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -894,6 +896,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 7741332083168760334}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -1067,6 +1071,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 6897521576942348287}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -1762,6 +1768,7 @@ GameObject:
   - component: {fileID: 2577879591723620776}
   - component: {fileID: 2631612231300145340}
   - component: {fileID: 5425889061982433893}
+  - component: {fileID: 2393661327145675168}
   m_Layer: 0
   m_Name: Torre Ar Azul
   m_TagString: Azul
@@ -1859,29 +1866,137 @@ MonoBehaviour:
   layerAviao:
     serializedVersion: 2
     m_Bits: 512
+  intervaloBuscaAlvo: 0.2
+  histereseSaida: 0.1
+  detectarEquipeAutomaticamente: 1
   tagsInimigos:
   - Vermelho
+  - Verde
   cabeca: {fileID: 5869266334202842147}
   baseMissel: {fileID: 6404959072178445745}
   limiteYMin: 0
   limiteYMax: 90
   velocidadeMira: 5
+  exigirMiraAlinhada: 0
+  toleranciaMira: 15
+  prefabMissel: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
   pontosMisseis:
-  - {fileID: 5582513182418499072}
-  - {fileID: 7804820075508551172}
-  - {fileID: 2974632543993991388}
-  - {fileID: 9028802317340585496}
-  - {fileID: 6897521576942348287}
-  - {fileID: 8170035471583925295}
-  - {fileID: 7741332083168760334}
-  - {fileID: 7124887203121056282}
-  intervaloEntreLancamentos: 1
-  tempoRecarga: 20
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  intervaloEntreLancamentos: 0.5
+  tempoRecarga: 10
+  fonteAudio: {fileID: 2393661327145675168}
+  audioLancamento: {fileID: 8300000, guid: aef9e4adad2f2fa429ae5ee6b2ed907e, type: 3}
+  volumeLancamento: 1
+  distanciaMaximaAudio: 80
   prioridade: 0
   velocidadeMin: 8
   velocidadeMax: 25
   tempoTrocaMin: 1
   tempoTrocaMax: 3
+--- !u!82 &2393661327145675168
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4951675882668848792}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &6507289300114062840
 GameObject:
   m_ObjectHideFlags: 0
@@ -1955,6 +2070,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 9028802317340585496}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -2250,6 +2367,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 5582513182418499072}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -2812,6 +2931,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 8170035471583925295}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -3075,6 +3196,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 7124887203121056282}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -3280,6 +3403,8 @@ MonoBehaviour:
   audioExplosao: {fileID: 8300000, guid: fd6e798123382304c95e2e25f456b367, type: 3}
   volumeExplosao: 1
   distanciaMaximaAudio: 50
+  audioLancamento: {fileID: 0}
+  volumeLancamento: 1
   spawnRastro: {fileID: 2974632543993991388}
   rastroFumaca: {fileID: 6840374917319404534, guid: 3d0998d3a93f5d344ac58e674cd670ee, type: 3}
   tempoRastroAposDestruir: 3
@@ -3522,6 +3647,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
       value: 500
@@ -3599,6 +3732,14 @@ PrefabInstance:
     - target: {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
@@ -3678,6 +3819,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
       value: 500
@@ -3755,6 +3904,14 @@ PrefabInstance:
     - target: {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
@@ -3834,6 +3991,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
       value: 500
@@ -3911,6 +4076,14 @@ PrefabInstance:
     - target: {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
@@ -3990,6 +4163,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance
       value: 500
@@ -4067,6 +4248,14 @@ PrefabInstance:
     - target: {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tempoDeVida
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+      propertyPath: tagsQueRecebemDano.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8500944231902654283, guid: 755483d487096104bb68dae06884a1ad, type: 3}
       propertyPath: MaxDistance

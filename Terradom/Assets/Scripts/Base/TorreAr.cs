@@ -1,44 +1,73 @@
-﻿using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
+/// <summary>
+/// Torre antiaerea: detecta avioes inimigos dentro do raio de visao e dispara
+/// um missel a cada "intervaloEntreLancamentos" enquanto houver alvo.
+///
+/// MISSEIS: cada missel lancado e DESTRUIDO ao acertar ou ao fim do tempo de vida.
+/// Quando todos os pontos ficam vazios, a torre espera "tempoRecarga" e instancia
+/// NOVOS misseis a partir do prefab em cada ponto vazio.
+///
+/// EQUIPE: descoberta pela tag da hierarquia (Azul/Vermelho/Verde);
+/// qualquer outra equipe e considerada inimiga.
+/// </summary>
 [DisallowMultipleComponent]
 public class TorreAr : MonoBehaviour
 {
+    private static readonly string[] TagsDeEquipe = { "Azul", "Vermelho", "Verde" };
+
     // =====================================================================
     // INSPECTOR
     // =====================================================================
-    [Header("Visão")]
+    [Header("Visao")]
     public float raioVisao = 80f;
+    [Tooltip("Layer em que ficam os colliders dos AVIOES. Obrigatorio.")]
     [SerializeField] private LayerMask layerAviao;
-    [SerializeField] private string[] tagsInimigos = { "Vermelho" };
-
-    // FIX: intervalo de busca de alvo.
-    // Antes: Physics.OverlapSphere rodava todo frame (Update).
-    // Com 10 torres = 10 OverlapSpheres/frame. Agora roda a cada 0.2s por padrão.
     [SerializeField] private float intervaloBuscaAlvo = 0.2f;
+    [Tooltip("Folga (em %) para o alvo sair do raio antes de ser perdido.")]
+    [SerializeField, Range(0f, 0.5f)] private float histereseSaida = 0.1f;
 
-    [Header("Referências de Mira")]
+    [Header("Equipe")]
+    [Tooltip("Descobre a equipe da torre pela tag da hierarquia e ataca qualquer outra equipe.")]
+    [SerializeField] private bool detectarEquipeAutomaticamente = true;
+    [Tooltip("Usadas apenas se a equipe automatica nao for encontrada ou estiver desligada.")]
+    [SerializeField] private string[] tagsInimigos = { "Vermelho", "Verde" };
+
+    [Header("Referencias de Mira")]
     [Tooltip("Filho direto da torre. Gira somente no eixo Y (horizontal), limitado.")]
     [SerializeField] private Transform cabeca;
-    [Tooltip("Filho da Cabeca. Gira somente no eixo Z (elevação). NÃO gira Y independente.")]
+    [Tooltip("Filho da Cabeca. Gira somente no eixo Z (elevacao).")]
     [SerializeField] private Transform baseMissel;
 
     [Header("Limites de Mira")]
-    [SerializeField] private float limiteYMin     = -180f;
-    [SerializeField] private float limiteYMax     =  180f;
-    [SerializeField] private float velocidadeMira =    5f;
+    [SerializeField] private float limiteYMin = -180f;
+    [SerializeField] private float limiteYMax = 180f;
+    [SerializeField] private float velocidadeMira = 5f;
+    [Tooltip("Se ligado, so dispara quando a cabeca ja estiver apontada para o alvo.")]
+    [SerializeField] private bool exigirMiraAlinhada = false;
+    [SerializeField] private float toleranciaMira = 15f;
 
-    [Header("Pontos de Míssel")]
-    [Tooltip("Cada ponto deve ter o prefab do Míssel como filho INATIVO.")]
+    [Header("Misseis")]
+    [Tooltip("PREFAB do Missel (arraste do Project, NAO da cena). Usado para recarregar a torre.")]
+    [SerializeField] private Missel prefabMissel;
+    [Tooltip("Pontos onde os misseis ficam. Pontos sem missel recebem um novo a partir do prefab.")]
     [SerializeField] private Transform[] pontosMisseis;
 
-    [Header("Cadência de disparo")]
+    [Header("Cadencia de disparo")]
+    [Tooltip("Tempo entre um missel e o proximo enquanto o aviao estiver no campo de visao.")]
     [SerializeField] private float intervaloEntreLancamentos = 0.5f;
 
     [Header("Recarga")]
-    [Tooltip("Tempo para recarregar depois que TODOS os pontos ficarem vazios.")]
+    [Tooltip("Espera depois que TODOS os pontos ficarem vazios, antes de instanciar novos misseis.")]
     [SerializeField] private float tempoRecarga = 6f;
+
+    [Header("Audio de lancamento")]
+    [Tooltip("Opcional. Se vazio e houver clipe, a torre cria um AudioSource 3D automaticamente.")]
+    [SerializeField] private AudioSource fonteAudio;
+    [SerializeField] private AudioClip audioLancamento;
+    [SerializeField, Range(0f, 1f)] private float volumeLancamento = 1f;
+    [SerializeField] private float distanciaMaximaAudio = 80f;
 
     [Header("Prioridade de Alvo")]
     [SerializeField] private PrioridadeAlvoAr prioridade = PrioridadeAlvoAr.MaisPerto;
@@ -46,135 +75,279 @@ public class TorreAr : MonoBehaviour
     [Header("Patrulha (sem alvo)")]
     [SerializeField] private float velocidadeMin = 10f;
     [SerializeField] private float velocidadeMax = 30f;
-    [SerializeField] private float tempoTrocaMin =  1f;
-    [SerializeField] private float tempoTrocaMax =  3f;
+    [SerializeField] private float tempoTrocaMin = 1f;
+    [SerializeField] private float tempoTrocaMax = 3f;
 
     // =====================================================================
     // ESTADO INTERNO
     // =====================================================================
     private Transform alvoAtual;
-    private int       indicePontoAtual;
-    private bool      recarregando;
-    private bool      disparando;
-    private float     anguloYAtual;
-    private float     anguloZAtual;
-    private float     velocidadeAtual;
-    private float     direcaoAtual;
-    private float     tempoProximaTroca;
+    private Missel[] carregados;          // missel pronto em cada ponto (null = ponto vazio)
+    private int indicePontoAtual;
+    private float anguloYAtual;
+    private float anguloZAtual;
+    private float erroMiraY;
+    private float velocidadeAtual;
+    private float direcaoAtual;
+    private float tempoProximaTroca;
 
-    // FIX: timer de busca de alvo
-    private float _proximaBusca;
+    private float proximaBusca;
+    private float proximoDisparo;
+    private float fimRecarga = -1f;
 
-    private readonly HashSet<Transform> _jaAvaliados = new HashSet<Transform>();
-
-    // Pool: guarda os mísseis originais (filhos dos pontos) para reutilizá-los após recarga
-    private Dictionary<Transform, List<Missel>> _pool = new Dictionary<Transform, List<Missel>>();
+    private readonly Collider[] bufferColliders = new Collider[64];
+    private readonly HashSet<Transform> jaAvaliados = new HashSet<Transform>();
 
     // =====================================================================
     // UNITY
     // =====================================================================
-    void Start()
+    private void Start()
     {
-        if (cabeca     != null) anguloYAtual = cabeca.localEulerAngles.y;
-        if (baseMissel != null) anguloZAtual = baseMissel.localEulerAngles.z;
+        if (cabeca != null) anguloYAtual = Mathf.DeltaAngle(0f, cabeca.localEulerAngles.y);
+        if (baseMissel != null) anguloZAtual = Mathf.DeltaAngle(0f, baseMissel.localEulerAngles.z);
+
+        if (layerAviao.value == 0)
+            Debug.LogWarning($"[TorreAr] '{name}': layerAviao nao configurado. A torre nao vai detectar nenhum aviao.", this);
+
+        if (detectarEquipeAutomaticamente && string.IsNullOrEmpty(ObterEquipe(transform)))
+            Debug.LogWarning($"[TorreAr] '{name}': sem tag de equipe (Azul/Vermelho/Verde) na torre ou nos pais. " +
+                             "Usando a lista 'Tags Inimigos' como alvos.", this);
+
+        if (prefabMissel == null)
+            Debug.LogWarning($"[TorreAr] '{name}': 'Prefab Missel' nao atribuido. A torre NAO vai recarregar.", this);
+        else if (prefabMissel.gameObject.scene.IsValid())
+            Debug.LogWarning($"[TorreAr] '{name}': 'Prefab Missel' aponta para um objeto da CENA. " +
+                             "Arraste o prefab da pasta Project.", this);
+
+        PrepararAudio();
         DefinirNovaPatrulha();
-        ConstruirPool();
-        _proximaBusca = Time.time; // primeira busca imediata
+        LerMisseisIniciais();
+        CarregarPontosVazios(); // preenche pontos que comecaram sem missel
+
+        proximaBusca = Time.time + Random.Range(0f, intervaloBuscaAlvo);
     }
 
-    void Update()
+    private void Update()
     {
-        // FIX: só busca alvo quando o timer vencer — não mais todo frame
-        if (Time.time >= _proximaBusca)
+        AtualizarRecarga();
+
+        if (Time.time >= proximaBusca)
         {
-            _proximaBusca = Time.time + intervaloBuscaAlvo;
+            proximaBusca = Time.time + intervaloBuscaAlvo;
             ProcurarAlvo();
         }
 
-        // Valida se alvo ainda existe (pode ter sido destruído entre buscas)
-        if (alvoAtual != null && !alvoAtual.gameObject.activeInHierarchy)
+        if (alvoAtual != null && !AlvoValido(alvoAtual))
             alvoAtual = null;
 
-        if (alvoAtual != null)
-        {
-            GirarCabecaY();
-            GirarBaseMisselZ();
-            if (!disparando && !recarregando && TemMisselDisponivel())
-                StartCoroutine(RotinaDeLancamento());
-        }
-        else
+        if (alvoAtual == null)
         {
             Patrulhar();
+            return;
         }
+
+        GirarCabecaY();
+        GirarBaseMisselZ();
+        TentarDisparar();
     }
 
     // =====================================================================
-    // POOL DE MÍSSEIS
+    // MISSEIS: CARGA, DISPARO E RECARGA
     // =====================================================================
-    void ConstruirPool()
+    private void LerMisseisIniciais()
     {
-        if (pontosMisseis == null) return;
-        foreach (Transform ponto in pontosMisseis)
+        int n = pontosMisseis != null ? pontosMisseis.Length : 0;
+        carregados = new Missel[n];
+
+        for (int i = 0; i < n; i++)
         {
+            Transform ponto = pontosMisseis[i];
             if (ponto == null) continue;
-            var lista = new List<Missel>();
-            for (int i = 0; i < ponto.childCount; i++)
+
+            for (int c = 0; c < ponto.childCount; c++)
             {
-                Missel m = ponto.GetChild(i).GetComponent<Missel>();
-                if (m != null)
-                    lista.Add(m);
+                Missel m = ponto.GetChild(c).GetComponent<Missel>();
+                if (m != null && !m.EstaLancado)
+                {
+                    carregados[i] = m;
+                    break;
+                }
             }
-            _pool[ponto] = lista;
         }
     }
 
-    Missel PegarMisselDoPool(Transform ponto)
+    private bool TemMisselCarregado()
     {
-        if (ponto == null) return null;
-        if (!_pool.TryGetValue(ponto, out var lista)) return null;
-        foreach (Missel m in lista)
-            if (m != null && !m.EstaLancado) return m;
-        return null;
+        if (carregados == null) return false;
+        for (int i = 0; i < carregados.Length; i++)
+            if (carregados[i] != null && !carregados[i].EstaLancado) return true;
+        return false;
     }
 
-    public void NotificarMisselDevolvido()
+    private int ProximoPontoCarregado()
     {
-        // Reservado para extensões futuras (ex.: atualizar UI de munição)
+        if (carregados == null || carregados.Length == 0) return -1;
+
+        for (int i = 0; i < carregados.Length; i++)
+        {
+            int idx = (indicePontoAtual + i) % carregados.Length;
+            if (carregados[idx] != null && !carregados[idx].EstaLancado)
+            {
+                indicePontoAtual = (idx + 1) % carregados.Length;
+                return idx;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>Quando todos os pontos esvaziam, espera tempoRecarga e instancia novos misseis.</summary>
+    private void AtualizarRecarga()
+    {
+        if (prefabMissel == null || carregados == null || carregados.Length == 0) return;
+
+        if (TemMisselCarregado())
+        {
+            fimRecarga = -1f;
+            return;
+        }
+
+        if (fimRecarga < 0f)
+        {
+            fimRecarga = Time.time + tempoRecarga;
+            return;
+        }
+
+        if (Time.time >= fimRecarga)
+        {
+            CarregarPontosVazios();
+            fimRecarga = -1f;
+        }
+    }
+
+    private void CarregarPontosVazios()
+    {
+        if (prefabMissel == null || carregados == null) return;
+
+        for (int i = 0; i < carregados.Length; i++)
+        {
+            Transform ponto = pontosMisseis[i];
+            if (ponto == null) continue;
+            if (carregados[i] != null && !carregados[i].EstaLancado) continue;
+
+            Missel novo = Instantiate(prefabMissel, ponto.position, ponto.rotation, ponto);
+            if (!novo.gameObject.activeSelf)
+                novo.gameObject.SetActive(true);
+
+            carregados[i] = novo;
+        }
+    }
+
+    private void TentarDisparar()
+    {
+        // Intervalo entre misseis: vale mesmo se o alvo sair e voltar.
+        if (Time.time < proximoDisparo)
+            return;
+
+        int idx = ProximoPontoCarregado();
+        if (idx < 0)
+            return; // sem municao: AtualizarRecarga cuida da recarga
+
+        if (exigirMiraAlinhada && erroMiraY > toleranciaMira)
+            return;
+
+        Missel missel = carregados[idx];
+        carregados[idx] = null; // ponto fica vazio ate a recarga
+        proximoDisparo = Time.time + intervaloEntreLancamentos;
+
+        missel.transform.SetParent(null);
+
+        // Se o missel estiver inativo, ativa antes de lancar
+        // (StartCoroutine e FixedUpdate nao funcionam em objeto inativo).
+        if (!missel.gameObject.activeSelf)
+            missel.gameObject.SetActive(true);
+
+        // Assinatura sem pool: o Missel se DESTROI ao acertar ou ao fim do tempo de vida.
+        missel.Lancar(alvoAtual, transform);
+
+        TocarAudioLancamento();
+    }
+
+    /// <summary>Mantido por compatibilidade com o Missel (modo pool nao e mais usado).</summary>
+    public void NotificarMisselDevolvido() { }
+
+    // =====================================================================
+    // AUDIO
+    // =====================================================================
+    private void PrepararAudio()
+    {
+        if (audioLancamento == null || fonteAudio != null) return;
+
+        fonteAudio = gameObject.AddComponent<AudioSource>();
+        fonteAudio.playOnAwake  = false;
+        fonteAudio.loop         = false;
+        fonteAudio.spatialBlend = 1f; // 3D: some com a distancia
+        fonteAudio.rolloffMode  = AudioRolloffMode.Linear;
+        fonteAudio.minDistance  = 5f;
+        fonteAudio.maxDistance  = distanciaMaximaAudio;
+    }
+
+    private void TocarAudioLancamento()
+    {
+        if (audioLancamento == null) return;
+        if (fonteAudio == null) PrepararAudio();
+        if (fonteAudio != null)
+            fonteAudio.PlayOneShot(audioLancamento, volumeLancamento);
     }
 
     // =====================================================================
     // MIRA
     // =====================================================================
-    void GirarCabecaY()
+    private bool GiroCompleto => (limiteYMax - limiteYMin) >= 359f;
+
+    private void GirarCabecaY()
     {
         if (cabeca == null || alvoAtual == null) return;
+
         Vector3 dirWorld = alvoAtual.position - cabeca.position;
         dirWorld.y = 0f;
         if (dirWorld.sqrMagnitude < 0.001f) return;
-        Vector3 dirLocal  = transform.InverseTransformDirection(dirWorld);
-        float   anguloAlvo = Mathf.Atan2(dirLocal.x, dirLocal.z) * Mathf.Rad2Deg;
-        anguloAlvo  = Mathf.Clamp(anguloAlvo, limiteYMin, limiteYMax);
-        anguloYAtual = Mathf.LerpAngle(anguloYAtual, anguloAlvo, Time.deltaTime * velocidadeMira);
+
+        Vector3 dirLocal = transform.InverseTransformDirection(dirWorld);
+        float anguloDesejado = Mathf.Atan2(dirLocal.x, dirLocal.z) * Mathf.Rad2Deg;
+        float anguloAlvo = Mathf.Clamp(anguloDesejado, limiteYMin, limiteYMax);
+
+        float t = 1f - Mathf.Exp(-velocidadeMira * Time.deltaTime);
+
+        // Com arco limitado nao pode usar LerpAngle: ele pode girar pelo lado proibido.
+        anguloYAtual = GiroCompleto
+            ? Mathf.LerpAngle(anguloYAtual, anguloAlvo, t)
+            : Mathf.Lerp(anguloYAtual, anguloAlvo, t);
+
+        erroMiraY = Mathf.Abs(Mathf.DeltaAngle(anguloYAtual, anguloDesejado));
         cabeca.localRotation = Quaternion.Euler(0f, anguloYAtual, 0f);
     }
 
-    void GirarBaseMisselZ()
+    private void GirarBaseMisselZ()
     {
         if (baseMissel == null || alvoAtual == null) return;
-        Vector3 alvoLocalDaCabeca = cabeca.InverseTransformPoint(alvoAtual.position);
-        float   distH             = Mathf.Sqrt(alvoLocalDaCabeca.x * alvoLocalDaCabeca.x +
-                                               alvoLocalDaCabeca.z * alvoLocalDaCabeca.z);
-        float elevacao    = Mathf.Atan2(alvoLocalDaCabeca.y, distH) * Mathf.Rad2Deg;
-        float anguloZAlvo = -elevacao;
-        anguloZAtual = Mathf.LerpAngle(anguloZAtual, anguloZAlvo, Time.deltaTime * velocidadeMira);
+
+        Transform referencia = cabeca != null ? cabeca : transform;
+        Vector3 alvoLocal = referencia.InverseTransformPoint(alvoAtual.position);
+        float distH = Mathf.Sqrt(alvoLocal.x * alvoLocal.x + alvoLocal.z * alvoLocal.z);
+        float elevacao = Mathf.Atan2(alvoLocal.y, distH) * Mathf.Rad2Deg;
+
+        float t = 1f - Mathf.Exp(-velocidadeMira * Time.deltaTime);
+        anguloZAtual = Mathf.LerpAngle(anguloZAtual, -elevacao, t);
         baseMissel.localRotation = Quaternion.Euler(0f, 0f, anguloZAtual);
     }
 
     // =====================================================================
     // PATRULHA (sem alvo)
     // =====================================================================
-    void Patrulhar()
+    private void Patrulhar()
     {
+        erroMiraY = 180f;
+
         if (cabeca != null)
         {
             anguloYAtual += direcaoAtual * velocidadeAtual * Time.deltaTime;
@@ -190,167 +363,159 @@ public class TorreAr : MonoBehaviour
             }
             cabeca.localRotation = Quaternion.Euler(0f, anguloYAtual, 0f);
         }
+
         if (baseMissel != null)
         {
-            anguloZAtual = Mathf.LerpAngle(anguloZAtual, 0f, Time.deltaTime * velocidadeMira);
+            float t = 1f - Mathf.Exp(-velocidadeMira * Time.deltaTime);
+            anguloZAtual = Mathf.LerpAngle(anguloZAtual, 0f, t);
             baseMissel.localRotation = Quaternion.Euler(0f, 0f, anguloZAtual);
         }
+
         if (Time.time >= tempoProximaTroca)
             DefinirNovaPatrulha();
     }
 
-    void DefinirNovaPatrulha()
+    private void DefinirNovaPatrulha()
     {
-        velocidadeAtual   = Random.Range(velocidadeMin, velocidadeMax);
-        direcaoAtual      = Random.value > 0.5f ? 1f : -1f;
+        velocidadeAtual = Random.Range(velocidadeMin, velocidadeMax);
+        direcaoAtual = Random.value > 0.5f ? 1f : -1f;
         tempoProximaTroca = Time.time + Random.Range(tempoTrocaMin, tempoTrocaMax);
     }
 
     // =====================================================================
-    // DETECÇÃO DE ALVO
+    // DETECCAO DE ALVO
     // =====================================================================
-    void ProcurarAlvo()
+    private bool AlvoValido(Transform alvo)
     {
-        Collider[] coliders = Physics.OverlapSphere(transform.position, raioVisao, layerAviao);
-        _jaAvaliados.Clear();
+        if (alvo == null || !alvo.gameObject.activeInHierarchy)
+            return false;
 
-        Transform melhorAlvo  = null;
-        float     melhorValor = prioridade == PrioridadeAlvoAr.MaisLonge
-            ? Mathf.NegativeInfinity
-            : Mathf.Infinity;
+        float limite = raioVisao * (1f + histereseSaida);
+        return (alvo.position - transform.position).sqrMagnitude <= limite * limite;
+    }
 
-        foreach (Collider col in coliders)
+    private void ProcurarAlvo()
+    {
+        int total = Physics.OverlapSphereNonAlloc(transform.position, raioVisao, bufferColliders, layerAviao);
+        jaAvaliados.Clear();
+
+        string minhaEquipe = detectarEquipeAutomaticamente ? ObterEquipe(transform) : null;
+
+        Transform melhorAlvo = null;
+        bool maiorEMelhor = prioridade == PrioridadeAlvoAr.MaisLonge;
+        float melhorValor = maiorEMelhor ? float.NegativeInfinity : float.PositiveInfinity;
+
+        for (int i = 0; i < total; i++)
         {
-            Transform raiz = PegarTransformComTag(col.transform);
-            if (raiz == null) continue;
-            if (_jaAvaliados.Contains(raiz)) continue;
-            _jaAvaliados.Add(raiz);
+            Collider col = bufferColliders[i];
+            if (col == null) continue;
 
-            float valor    = CalcularValorPrioridade(raiz);
-            bool  ehMelhor = prioridade == PrioridadeAlvoAr.MaisLonge
-                ? valor > melhorValor
-                : valor < melhorValor;
+            Transform raiz = PegarRaizInimiga(col.transform, minhaEquipe);
+            if (raiz == null || !jaAvaliados.Add(raiz)) continue;
+
+            float valor = CalcularValorPrioridade(raiz);
+            bool ehMelhor = maiorEMelhor ? valor > melhorValor : valor < melhorValor;
 
             if (ehMelhor)
             {
                 melhorValor = valor;
-                melhorAlvo  = raiz;
+                melhorAlvo = raiz;
             }
         }
+
         alvoAtual = melhorAlvo;
     }
 
-    float CalcularValorPrioridade(Transform alvo)
+    private float CalcularValorPrioridade(Transform alvo)
     {
         switch (prioridade)
         {
-            case PrioridadeAlvoAr.MaisPerto:
-            case PrioridadeAlvoAr.MaisLonge:
-                return Vector3.Distance(transform.position, alvo.position);
             case PrioridadeAlvoAr.MenorVida:
             case PrioridadeAlvoAr.MaiorVida:
-                IVidaAr vida = alvo.GetComponentInChildren<IVidaAr>()
-                            ?? alvo.GetComponentInParent<IVidaAr>();
-                if (vida == null) return Mathf.Infinity;
+                IVidaAr vida = alvo.GetComponentInChildren<IVidaAr>();
+                if (vida == null) vida = alvo.GetComponentInParent<IVidaAr>();
+
+                // Sem IVidaAr: valor alto e finito para ainda poder ser escolhido.
+                if (vida == null) return 1e9f;
                 return prioridade == PrioridadeAlvoAr.MenorVida ? vida.VidaAtual : -vida.VidaAtual;
-            default:
-                return Vector3.Distance(transform.position, alvo.position);
+
+            default: // MaisPerto / MaisLonge
+                return (transform.position - alvo.position).sqrMagnitude;
         }
     }
 
-    Transform PegarTransformComTag(Transform origem)
+    /// <summary>
+    /// Sobe a hierarquia ate achar a tag de equipe. Retorna o transform dono da tag
+    /// somente se ele for INIMIGO desta torre.
+    /// </summary>
+    private Transform PegarRaizInimiga(Transform origem, string minhaEquipe)
     {
         Transform atual = origem;
         while (atual != null)
         {
-            foreach (string tag in tagsInimigos)
-                if (atual.CompareTag(tag)) return atual;
+            if (EhTagDeEquipe(atual))
+            {
+                string equipe = atual.tag;
+
+                if (!string.IsNullOrEmpty(minhaEquipe))
+                    return equipe != minhaEquipe ? atual : null;
+
+                return TagEstaNaListaDeInimigos(equipe) ? atual : null;
+            }
+            atual = atual.parent;
+        }
+        return null;
+    }
+
+    private bool TagEstaNaListaDeInimigos(string tag)
+    {
+        if (tagsInimigos == null) return false;
+        for (int i = 0; i < tagsInimigos.Length; i++)
+            if (tagsInimigos[i] == tag) return true;
+        return false;
+    }
+
+    private static bool EhTagDeEquipe(Transform t)
+    {
+        for (int i = 0; i < TagsDeEquipe.Length; i++)
+            if (t.CompareTag(TagsDeEquipe[i])) return true;
+        return false;
+    }
+
+    private static string ObterEquipe(Transform origem)
+    {
+        Transform atual = origem;
+        while (atual != null)
+        {
+            if (EhTagDeEquipe(atual)) return atual.tag;
             atual = atual.parent;
         }
         return null;
     }
 
     // =====================================================================
-    // DISPARO
-    // =====================================================================
-    bool TemMisselDisponivel()
-    {
-        if (pontosMisseis == null || pontosMisseis.Length == 0) return false;
-        foreach (Transform ponto in pontosMisseis)
-            if (PegarMisselDoPool(ponto) != null) return true;
-        return false;
-    }
-
-    IEnumerator RotinaDeLancamento()
-    {
-        if (pontosMisseis == null || pontosMisseis.Length == 0)
-        {
-            disparando = false;
-            yield break;
-        }
-
-        disparando = true;
-        int tentativas = 0;
-
-        while (TemMisselDisponivel() && alvoAtual != null)
-        {
-            Transform ponto  = pontosMisseis[indicePontoAtual];
-            Missel    missel = PegarMisselDoPool(ponto);
-
-            if (missel != null)
-            {
-                LancarMissel(missel, ponto);
-                tentativas       = 0;
-                indicePontoAtual = (indicePontoAtual + 1) % pontosMisseis.Length;
-                yield return new WaitForSeconds(intervaloEntreLancamentos);
-            }
-            else
-            {
-                tentativas++;
-                if (tentativas >= pontosMisseis.Length) break;
-                indicePontoAtual = (indicePontoAtual + 1) % pontosMisseis.Length;
-            }
-        }
-
-        disparando = false;
-        if (!TemMisselDisponivel())
-            StartCoroutine(Recarregar());
-    }
-
-    void LancarMissel(Missel missel, Transform pontoOrigem)
-    {
-        missel.transform.SetParent(null);
-        missel.Lancar(alvoAtual, transform, pontoOrigem, this);
-    }
-
-    IEnumerator Recarregar()
-    {
-        recarregando = true;
-        yield return new WaitForSeconds(tempoRecarga);
-        indicePontoAtual = 0;
-        recarregando     = false;
-    }
-
-    // =====================================================================
-    // VALIDAÇÃO
+    // VALIDACAO
     // =====================================================================
     private void OnValidate()
     {
-        raioVisao              = Mathf.Max(1f,   raioVisao);
-        intervaloBuscaAlvo     = Mathf.Max(0.05f, intervaloBuscaAlvo);
-        velocidadeMira         = Mathf.Max(0.1f,  velocidadeMira);
+        raioVisao = Mathf.Max(1f, raioVisao);
+        intervaloBuscaAlvo = Mathf.Max(0.05f, intervaloBuscaAlvo);
+        velocidadeMira = Mathf.Max(0.1f, velocidadeMira);
+        toleranciaMira = Mathf.Max(1f, toleranciaMira);
         intervaloEntreLancamentos = Mathf.Max(0.05f, intervaloEntreLancamentos);
-        tempoRecarga           = Mathf.Max(0.5f,  tempoRecarga);
-        velocidadeMin          = Mathf.Max(0f,    velocidadeMin);
-        velocidadeMax          = Mathf.Max(velocidadeMin, velocidadeMax);
-        tempoTrocaMin          = Mathf.Max(0.1f,  tempoTrocaMin);
-        tempoTrocaMax          = Mathf.Max(tempoTrocaMin, tempoTrocaMax);
+        tempoRecarga = Mathf.Max(0.5f, tempoRecarga);
+        distanciaMaximaAudio = Mathf.Max(1f, distanciaMaximaAudio);
+        limiteYMax = Mathf.Max(limiteYMin, limiteYMax);
+        velocidadeMin = Mathf.Max(0f, velocidadeMin);
+        velocidadeMax = Mathf.Max(velocidadeMin, velocidadeMax);
+        tempoTrocaMin = Mathf.Max(0.1f, tempoTrocaMin);
+        tempoTrocaMax = Mathf.Max(tempoTrocaMin, tempoTrocaMax);
     }
 
     // =====================================================================
     // GIZMOS
     // =====================================================================
-    void OnDrawGizmosSelected()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 0.8f, 1f, 0.35f);
         Gizmos.DrawWireSphere(transform.position, raioVisao);
@@ -364,8 +529,8 @@ public class TorreAr : MonoBehaviour
 
         if (cabeca != null)
         {
-            Vector3    origem = cabeca.position;
-            float      r      = raioVisao * 0.4f;
+            Vector3 origem = cabeca.position;
+            float r = raioVisao * 0.4f;
             Quaternion rotMin = transform.rotation * Quaternion.Euler(0f, limiteYMin, 0f);
             Quaternion rotMax = transform.rotation * Quaternion.Euler(0f, limiteYMax, 0f);
             Gizmos.color = Color.yellow;

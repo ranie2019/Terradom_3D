@@ -1453,6 +1453,7 @@ GameObject:
   - component: {fileID: 7686631217234085654}
   - component: {fileID: 4843904732050496637}
   - component: {fileID: 8610520208465946372}
+  - component: {fileID: 957006650426782952}
   m_Layer: 13
   m_Name: Tank Azul
   m_TagString: Azul
@@ -1634,13 +1635,13 @@ MonoBehaviour:
   origemVisao: {fileID: 8556418976620853741}
   alturaOrigemVisao: 2
   usarVisaoTerrestre: 1
-  raioVisaoTerrestre: 80
+  raioVisaoTerrestre: 200
   tagsInimigosTerrestres:
   - Vermelho
   - Verde
   ignorarLayersAereasNaVisaoTerrestre: 1
   usarVisaoAerea: 1
-  raioVisaoAerea: 300
+  raioVisaoAerea: 350
   layersAvioesInimigos:
     serializedVersion: 2
     m_Bits: 512
@@ -1651,6 +1652,10 @@ MonoBehaviour:
   detectarTriggers: 0
   intervaloBusca: 0.15
   prioridadeAlvo: 2
+  exigirLinhaDeVisao: 1
+  camadasBloqueiamVisao:
+    serializedVersion: 2
+    m_Bits: 4294967295
   desenharVisaoNoEditor: 1
 --- !u!114 &4843904732050496637
 MonoBehaviour:
@@ -1683,6 +1688,9 @@ MonoBehaviour:
   tempoVidaBala: 10
   toleranciaMiraParaAtirar: 6
   alturaExtraMiraAlvo: 0.2
+  audioSourceDisparo: {fileID: 957006650426782952}
+  audioClipDisparo: {fileID: 8300000, guid: 8fd0543b6619e1f4ebda89f6d191466a, type: 3}
+  distanciaMaximaAudioDisparo: 400
   miraAereaGiroY360: {fileID: 7824499784419276503}
   miraAereaElevacaoZ: {fileID: 691902807334229308}
   spawnBalaAerea: {fileID: 8781663301846283919}
@@ -1728,6 +1736,103 @@ MonoBehaviour:
   - Missel
   - Verde
   cooldownDano: 0.25
+--- !u!82 &957006650426782952
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4952290172439605243}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 5000
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &5198013775936986468
 GameObject:
   m_ObjectHideFlags: 0

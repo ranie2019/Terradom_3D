@@ -55,6 +55,7 @@ public class AviaoControler : MonoBehaviour
     // =====================================================================
 
     private Terrain terrainRef;
+    private bool audioVooIniciado;
 
     // =====================================================================
     // PROPRIEDADES PÚBLICAS
@@ -157,6 +158,17 @@ public class AviaoControler : MonoBehaviour
 
             // Avião atingiu altitude de transição em estado EmVoo → inicia Patrulha
             case Fase.Voo:
+                // AviaoAtaque permanece desabilitado durante a decolagem,
+                // mas seu AudioSource de voo precisa começar assim que o
+                // AviaoVoo confirma que a aeronave saiu do chão.
+                if (!audioVooIniciado
+                    && aviaoVoo != null
+                    && aviaoVoo.EstadoAtual == AviaoVoo.EstadoVoo.EmVoo
+                    && aviaoAtaque != null)
+                {
+                    audioVooIniciado = aviaoAtaque.IniciarAudioVoo();
+                }
+
                 if (aviaoVoo != null
                     && aviaoVoo.EstadoAtual == AviaoVoo.EstadoVoo.EmVoo
                     && alturaAcimaTerrain  >= alturaTransicaoPatrulha)

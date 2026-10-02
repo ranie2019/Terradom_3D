@@ -1,21 +1,23 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 [DisallowMultipleComponent]
 public class GameOverController : MonoBehaviour
 {
-    [Header("Canvas Game Over")]
+    [Header("Imagem de Game Over (no Canvas do jogo, desativada)")]
     [SerializeField] private GameObject painelGameOver;
 
-    [Header("Botoes")]
-    [SerializeField] private Button botaoSair;
-    [SerializeField] private Button botaoMenuPrincipal;
+    [Header("Audio")]
+    [SerializeField] private AudioSource fonteAudio;
+    [SerializeField] private AudioClip somGameOver;
+    [Tooltip("Tempo de espera se nao houver audio atribuido.")]
+    [SerializeField] private float tempoSemAudio = 3f;
 
     [Header("Configuracoes")]
-    [SerializeField] private string nomeSceneMenu = "Inicio";
+    [SerializeField] private string nomeSceneGameOver = "GameOver";
     [SerializeField] private float intervaloVerificacao = 2f;
 
     private readonly HashSet<string> equipesAtivas = new HashSet<string>(StringComparer.Ordinal);
@@ -28,12 +30,6 @@ public class GameOverController : MonoBehaviour
     {
         if (painelGameOver != null)
             painelGameOver.SetActive(false);
-
-        if (botaoSair != null)
-            botaoSair.onClick.AddListener(Sair);
-
-        if (botaoMenuPrincipal != null)
-            botaoMenuPrincipal.onClick.AddListener(VoltarMenu);
 
         intervaloVerificacao = Mathf.Max(0.1f, intervaloVerificacao);
         proximaVerificacao = Time.time + intervaloVerificacao;
@@ -102,16 +98,16 @@ public class GameOverController : MonoBehaviour
 
             economias.TryGetValue(tagEquipe, out IGameOverRecoveryEconomy economiaEquipe);
 
-            // Sem base, mas com recursos para reconstruí-la, a partida fica ativa.
+            // Sem base, mas com recursos para reconstrui-la, a partida fica ativa.
             if (!temBaseSoldado && economiaEquipe != null && economiaEquipe.PodeReconstruirBaseSoldado)
                 continue;
 
-            // Com base, ainda há recuperação possível se ela puder criar um coletor.
+            // Com base, ainda ha recuperacao possivel se ela puder criar um coletor.
             if (temBaseSoldado && BasePodeCriarColetor(tagEquipe, basesSoldado))
                 continue;
 
             equipeEmDerrota = tagEquipe;
-            Debug.Log($"[GameOver] Equipe {tagEquipe} ficou sem uma condição de recuperação.");
+            Debug.Log($"[GameOver] Equipe {tagEquipe} ficou sem uma condicao de recuperacao.");
             return true;
         }
 
@@ -120,8 +116,6 @@ public class GameOverController : MonoBehaviour
 
     private void RegistrarEquipesAtivas()
     {
-        // A primeira verificacao ja registra equipes com gerenciador de recursos,
-        // bases e coletores presentes na cena. A lista persiste se forem destruidos.
         MonoBehaviour[] componentes = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
         foreach (MonoBehaviour componente in componentes)
         {
@@ -228,27 +222,44 @@ public class GameOverController : MonoBehaviour
     {
         gameOverAtivado = true;
         Debug.Log($"[GameOver] GAME OVER! Equipe eliminada: {equipeEmDerrota}.");
+
+        // Congela o jogo; o audio continua tocando e a espera usa tempo real.
         Time.timeScale = 0f;
 
         if (painelGameOver != null)
             painelGameOver.SetActive(true);
         else
-            Debug.LogError("[GameOver] PainelGameOver não atribuído no Inspector!");
+            Debug.LogError("[GameOver] Imagem de Game Over nao atribuida no Inspector!");
+
+        StartCoroutine(RotinaGameOver());
     }
 
-    private void VoltarMenu()
+    private IEnumerator RotinaGameOver()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(nomeSceneMenu);
-    }
+        float espera = tempoSemAudio;
 
-    private void Sair()
-    {
+        if (somGameOver != null)
+        {
+            if (fonteAudio == null)
+                fonteAudio = gameObject.AddComponent<AudioSource>();
+
+            fonteAudio.playOnAwake = false;
+            fonteAudio.spatialBlend = 0f; // 2D, sem atenuacao por distancia
+            fonteAudio.PlayOneShot(somGameOver);
+            espera = somGameOver.length;
+        }
+        else
+        {
+            Debug.LogWarning("[GameOver] Nenhum AudioClip atribuido; usando tempo fixo.");
+        }
+
+        yield return new WaitForSecondsRealtime(espera);
+
         Time.timeScale = 1f;
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+
+        if (Application.CanStreamedLevelBeLoaded(nomeSceneGameOver))
+            SceneManager.LoadScene(nomeSceneGameOver);
+        else
+            Debug.LogError($"[GameOver] Cena '{nomeSceneGameOver}' nao esta no Build Settings.");
     }
 }

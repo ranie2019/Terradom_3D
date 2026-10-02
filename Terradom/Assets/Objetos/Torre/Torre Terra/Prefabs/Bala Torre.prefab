@@ -54,6 +54,7 @@ MonoBehaviour:
   tagsQueRecebemDano:
   - Vermelho
   - Azul
+  - Verde
   camadasDeImpacto:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -68,6 +69,10 @@ MonoBehaviour:
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
   aplicarDanoEmVida: 1
   aplicarDanoPorMetodos: 1
+  prefabEfeitoImpacto: {fileID: 0}
+  tocarEfeitoSomenteNoImpacto: 1
+  alinharEfeitoComNormal: 1
+  tempoParaDestruirEfeito: 3
 --- !u!65 &5475417847993347554
 BoxCollider:
   m_ObjectHideFlags: 0

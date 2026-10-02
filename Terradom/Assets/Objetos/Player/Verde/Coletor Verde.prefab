@@ -2382,7 +2382,7 @@ MonoBehaviour:
   distanciaMinimaParaConsiderarMovimento: 0.12
   tempoDesvioQuandoTravado: 1.3
   limparAlvoQuandoTravado: 1
-  alcanceVisao: 150
+  alcanceVisao: 200
   intervaloBuscaAlvo: 0.2
   camadasDetectaveis:
     serializedVersion: 2
@@ -2390,6 +2390,15 @@ MonoBehaviour:
   usarCampoDeVisao: 0
   anguloCampoDeVisao: 180
   travarYNaVisao: 1
+  fugirDeInimigos: 1
+  alcanceDeteccaoInimigo: 12
+  intervaloBuscaInimigo: 0.15
+  camadasInimigosVisiveis:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  camadasBloqueiamVisaoInimigo:
+    serializedVersion: 2
+    m_Bits: 4294967295
   distanciaAcao: 1.2
   distanciaSairDaAcao: 1.2
   tempoEntreAcoes: 1

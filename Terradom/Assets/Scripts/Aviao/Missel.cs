@@ -86,6 +86,11 @@ public class Missel : MonoBehaviour
     [SerializeField] private float      volumeExplosao = 1f;
     [SerializeField] private float      distanciaMaximaAudio = 50f;
 
+    [Header("Audio de lançamento")]
+    [Tooltip("Tocado uma vez no instante em que o míssil é lançado. Usa 'Distancia Maxima Audio' como alcance.")]
+    [SerializeField] private AudioClip audioLancamento;
+    [SerializeField, Range(0f, 1f)] private float volumeLancamento = 1f;
+
     // =====================================================================
     // INSPECTOR — RASTRO DE FUMAÇA
     // =====================================================================
@@ -124,6 +129,9 @@ public class Missel : MonoBehaviour
 
     // Coroutine do tempo de vida (guardada para cancelar se necessário)
     private Coroutine _coroutineVida;
+
+    // AudioSource criado sob demanda para o som de lançamento.
+    private AudioSource _audioSource;
 
     // O Inspector aponta para o asset do rastro. Só instanciamos esse prefab;
     // nunca alteramos ou destruímos o asset original.
@@ -204,6 +212,9 @@ public class Missel : MonoBehaviour
         // Ativa o rastro de fumaça
         AtivarRastro();
 
+        // Som de lançamento
+        TocarAudioLancamento();
+
         Debug.Log($"[Missel] {gameObject.name} — lançado contra {(alvo != null ? alvo.name : "null")}");
     }
 
@@ -216,10 +227,21 @@ public class Missel : MonoBehaviour
         rb  = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
 
-        if (rastroFumaca != null && !rastroFumaca.gameObject.scene.IsValid())
+        if (rastroFumaca != null)
         {
-            _prefabRastroFumaca = rastroFumaca;
-            rastroFumaca = null;
+            if (!rastroFumaca.gameObject.scene.IsValid())
+            {
+                _prefabRastroFumaca = rastroFumaca;
+                rastroFumaca = null;
+            }
+            else
+            {
+                // O rastro e filho deste míssil. DesligarRastro() o destrói ao fim do
+                // 1o voo, então guardamos um molde inativo para os próximos lançamentos
+                // do mesmo míssil (pool). Sem isso o 2o disparo sairia sem fumaça.
+                _prefabRastroFumaca = Instantiate(rastroFumaca, transform);
+                _prefabRastroFumaca.gameObject.SetActive(false);
+            }
         }
 
         ConfigurarRigidbody();
@@ -285,6 +307,28 @@ public class Missel : MonoBehaviour
     // =====================================================================
     // RASTRO DE FUMAÇA
     // =====================================================================
+
+    // =====================================================================
+    // AUDIO DE LANÇAMENTO
+    // =====================================================================
+
+    private void TocarAudioLancamento()
+    {
+        if (audioLancamento == null) return;
+
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+            _audioSource.playOnAwake  = false;
+            _audioSource.loop         = false;
+            _audioSource.spatialBlend = 1f; // 3D: some com a distancia
+            _audioSource.rolloffMode  = AudioRolloffMode.Linear;
+            _audioSource.minDistance  = 5f;
+            _audioSource.maxDistance  = distanciaMaximaAudio;
+        }
+
+        _audioSource.PlayOneShot(audioLancamento, volumeLancamento);
+    }
 
     private void PararRastro()
     {

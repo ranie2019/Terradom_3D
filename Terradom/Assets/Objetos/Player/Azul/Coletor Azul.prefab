@@ -811,7 +811,7 @@ MonoBehaviour:
   distanciaMinimaParaConsiderarMovimento: 0.12
   tempoDesvioQuandoTravado: 1.3
   limparAlvoQuandoTravado: 1
-  alcanceVisao: 150
+  alcanceVisao: 200
   intervaloBuscaAlvo: 0.2
   camadasDetectaveis:
     serializedVersion: 2

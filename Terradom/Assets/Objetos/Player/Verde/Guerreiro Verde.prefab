@@ -1090,7 +1090,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 424a09bb6b306ea40b3f14beaa29d249, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Visao
-  raioVisao: 100
+  raioVisao: 200
   anguloCampoDeVisao: 140
   tagsAlvo:
   - Vermelho

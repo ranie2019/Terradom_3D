@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Cena/Inicio.unity
     guid: c702d0ea043e02145b67ef9152868605
+  - enabled: 1
+    path: Assets/Cena/GameOver.unity
+    guid: 2b0670cf5f671a449b19deb6c711a82a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

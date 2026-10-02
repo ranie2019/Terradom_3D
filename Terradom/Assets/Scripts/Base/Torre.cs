@@ -4,61 +4,112 @@ using System.Collections.Generic;
 [DisallowMultipleComponent]
 public class Torre : MonoBehaviour
 {
+    // =====================================================================
+    // VISÃO
+    // =====================================================================
     [Header("Visão")]
     public float raioVisao = 10f;
-    [SerializeField] private string[] tagsInimigos;
 
-    // FIX: adicionado intervalo de busca de alvo.
-    // Antes: Physics.OverlapSphere rodava todo frame (Update).
-    // Com 10 torres = 10 OverlapSpheres/frame. Agora roda a cada 0.2s por padrão.
+    // BUG 1 CORRIGIDO: tagsInimigos era acessado sem null-check em PegarTransformComTag.
+    // Um foreach em array null lança NullReferenceException. Valor padrão adicionado.
+    [SerializeField] private string[] tagsInimigos = { "Vermelho" };
+
+    [Tooltip("Intervalo entre buscas de alvo. Antes rodava OverlapSphere todo frame.")]
     [SerializeField] private float intervaloBuscaAlvo = 0.2f;
 
+    // =====================================================================
+    // REFERÊNCIAS
+    // =====================================================================
     [Header("Referências")]
     [SerializeField] private Transform baseCanhao;
     [SerializeField] private Transform pontoDisparo;
 
+    // =====================================================================
+    // DISPARO
+    // =====================================================================
     [Header("Disparo")]
     [SerializeField] private GameObject prefabBala;
     [SerializeField] private float velocidadeBala  = 20f;
     [SerializeField] private float tirosPorSegundo = 2f;
 
+    // =====================================================================
+    // PRIORIDADE DE ALVO
+    // =====================================================================
     [Header("Prioridade de Alvo")]
     [SerializeField] private PrioridadeAlvo prioridade = PrioridadeAlvo.MaisPerto;
 
+    // =====================================================================
+    // PATRULHA (sem alvo)
+    // =====================================================================
     [Header("Patrulha (sem alvo)")]
     [SerializeField] private float velocidadeMin = 10f;
     [SerializeField] private float velocidadeMax = 30f;
     [SerializeField] private float tempoTrocaMin =  1f;
     [SerializeField] private float tempoTrocaMax =  3f;
 
+    // =====================================================================
+    // ÁUDIO
+    // =====================================================================
+    [Header("Áudio")]
+    [Tooltip("AudioSource da torre. Se vazio, cria automaticamente no Awake.")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Tooltip("Som tocado a cada tiro disparado.")]
+    [SerializeField] private AudioClip clipDisparo;
+
+    [Tooltip("Som tocado quando a torre é destruída.")]
+    [SerializeField] private AudioClip clipDestruicao;
+
+    [Range(0f, 1f)]
+    [SerializeField] private float volumeDisparo = 1f;
+
+    [Range(0f, 1f)]
+    [SerializeField] private float volumeDestruicao = 1f;
+
+    [Tooltip("Variação aleatória de pitch no disparo para soar mais natural (0 = sem variação).")]
+    [Range(0f, 0.3f)]
+    [SerializeField] private float variacaoPitchDisparo = 0.05f;
+
+    // =====================================================================
+    // PRIVADOS
+    // =====================================================================
     private Transform _alvoAtual;
     private float     _tempoProximoTiro;
     private float     _velocidadeAtual;
     private float     _direcaoAtual;
     private float     _tempoProximaTroca;
+    private float     _proximaBusca;
 
-    // FIX: timer de busca de alvo
-    private float _proximaBusca;
-
-    // Reutilizado a cada busca para evitar alocação de HashSet novo
     private readonly HashSet<Transform> _jaAvaliados = new HashSet<Transform>();
+
+    // =====================================================================
+    // UNITY
+    // =====================================================================
+    void Awake()
+    {
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
+        audioSource.playOnAwake  = false;
+        audioSource.spatialBlend = 1f; // som 3D
+    }
 
     void Start()
     {
         DefinirNovaPatrulha();
-        _proximaBusca = Time.time; // primeira busca imediata
+        _proximaBusca = Time.time;
     }
 
     void Update()
     {
-        // FIX: só busca alvo quando o timer vencer — não mais todo frame
         if (Time.time >= _proximaBusca)
         {
             _proximaBusca = Time.time + intervaloBuscaAlvo;
             ProcurarAlvo();
         }
 
-        // Valida se alvo ainda existe (pode ter sido destruído entre buscas)
         if (_alvoAtual != null && !_alvoAtual.gameObject.activeInHierarchy)
             _alvoAtual = null;
 
@@ -73,6 +124,9 @@ public class Torre : MonoBehaviour
         }
     }
 
+    // =====================================================================
+    // DETECÇÃO DE ALVO
+    // =====================================================================
     void ProcurarAlvo()
     {
         Collider[] coliders = Physics.OverlapSphere(transform.position, raioVisao);
@@ -87,6 +141,9 @@ public class Torre : MonoBehaviour
         {
             Transform raiz = PegarTransformComTag(col.transform);
             if (raiz == null) continue;
+
+            // BUG 4 CORRIGIDO: torre podia se auto-targetar se tivesse tag inimiga
+            if (raiz == transform || raiz.IsChildOf(transform)) continue;
 
             if (_jaAvaliados.Contains(raiz)) continue;
             _jaAvaliados.Add(raiz);
@@ -118,7 +175,15 @@ public class Torre : MonoBehaviour
             case PrioridadeAlvo.MaiorVida:
                 IVida vida = alvo.GetComponentInChildren<IVida>()
                           ?? alvo.GetComponentInParent<IVida>();
-                if (vida == null) return Mathf.Infinity;
+
+                // BUG 3 CORRIGIDO: vida == null retornava Mathf.Infinity para ambos os modos.
+                // No modo MaiorVida, melhorValor começa em NegativeInfinity →
+                // Infinity > NegativeInfinity = true → alvo sem vida era selecionado erroneamente.
+                if (vida == null)
+                    return prioridade == PrioridadeAlvo.MenorVida
+                        ? Mathf.Infinity          // pior valor para MenorVida → nunca selecionado
+                        : Mathf.NegativeInfinity; // pior valor para MaiorVida → nunca selecionado
+
                 return prioridade == PrioridadeAlvo.MenorVida ? vida.VidaAtual : -vida.VidaAtual;
 
             default:
@@ -128,39 +193,63 @@ public class Torre : MonoBehaviour
 
     Transform PegarTransformComTag(Transform origem)
     {
+        // BUG 1 CORRIGIDO: foreach em array null lança NullReferenceException
+        if (tagsInimigos == null || tagsInimigos.Length == 0) return null;
+
         Transform atual = origem;
         while (atual != null)
         {
             foreach (string tag in tagsInimigos)
-                if (atual.CompareTag(tag)) return atual;
+            {
+                // BUG 2 CORRIGIDO: CompareTag("") lança "UnityException: Tag is empty"
+                // e CompareTag com tag não registrada lança "Tag: X is not defined"
+                if (!string.IsNullOrWhiteSpace(tag) && atual.CompareTag(tag))
+                    return atual;
+            }
             atual = atual.parent;
         }
         return null;
     }
 
+    // =====================================================================
+    // MIRA
+    // =====================================================================
     void Mirar()
     {
         if (baseCanhao == null || _alvoAtual == null) return;
+
         Vector3 direcao = _alvoAtual.position - baseCanhao.position;
         direcao.y = 0f;
-        if (direcao == Vector3.zero) return;
+
+        // BUG 5 CORRIGIDO: "direcao == Vector3.zero" é comparação imprecisa com floats.
+        // Dois valores de ponto flutuante muito próximos de zero podem não ser exatamente zero.
+        if (direcao.sqrMagnitude < 0.0001f) return;
+
         float angulo = Mathf.Atan2(direcao.x, direcao.z) * Mathf.Rad2Deg;
         baseCanhao.localRotation = Quaternion.Euler(0f, angulo, 0f);
     }
 
+    // =====================================================================
+    // DISPARO
+    // =====================================================================
     void Atirar()
     {
         if (prefabBala == null || pontoDisparo == null) return;
-        if (Time.time >= _tempoProximoTiro)
-        {
-            _tempoProximoTiro = Time.time + (1f / tirosPorSegundo);
-            GameObject bala = Instantiate(prefabBala, pontoDisparo.position, pontoDisparo.rotation);
-            Rigidbody rb = bala.GetComponent<Rigidbody>();
-            if (rb != null)
-                rb.linearVelocity = pontoDisparo.forward * velocidadeBala;
-        }
+        if (Time.time < _tempoProximoTiro) return;
+
+        _tempoProximoTiro = Time.time + (1f / tirosPorSegundo);
+
+        GameObject bala = Instantiate(prefabBala, pontoDisparo.position, pontoDisparo.rotation);
+        Rigidbody rb = bala.GetComponent<Rigidbody>();
+        if (rb != null)
+            rb.linearVelocity = pontoDisparo.forward * velocidadeBala;
+
+        TocarSomDisparo();
     }
 
+    // =====================================================================
+    // PATRULHA
+    // =====================================================================
     void Patrulhar()
     {
         if (baseCanhao == null) return;
@@ -176,22 +265,56 @@ public class Torre : MonoBehaviour
         _tempoProximaTroca = Time.time + Random.Range(tempoTrocaMin, tempoTrocaMax);
     }
 
-    private void OnValidate()
+    // =====================================================================
+    // ÁUDIO
+    // =====================================================================
+
+    void TocarSomDisparo()
     {
-        raioVisao         = Mathf.Max(0.5f, raioVisao);
-        intervaloBuscaAlvo = Mathf.Max(0.05f, intervaloBuscaAlvo);
-        tirosPorSegundo   = Mathf.Max(0.1f, tirosPorSegundo);
-        velocidadeBala    = Mathf.Max(0f,   velocidadeBala);
-        velocidadeMin     = Mathf.Max(0f,   velocidadeMin);
-        velocidadeMax     = Mathf.Max(velocidadeMin, velocidadeMax);
-        tempoTrocaMin     = Mathf.Max(0.1f, tempoTrocaMin);
-        tempoTrocaMax     = Mathf.Max(tempoTrocaMin, tempoTrocaMax);
+        if (audioSource == null || clipDisparo == null) return;
+        audioSource.pitch = 1f + Random.Range(-variacaoPitchDisparo, variacaoPitchDisparo);
+        audioSource.PlayOneShot(clipDisparo, volumeDisparo);
     }
 
+    void OnDestroy()
+    {
+        // Toca o som de destruição desacoplado do AudioSource da torre,
+        // pois o GameObject já está sendo destruído — AudioSource.PlayOneShot
+        // pararia junto. AudioSource.PlayClipAtPoint cria um AudioSource
+        // temporário na posição e toca até o fim mesmo após a destruição.
+        if (clipDestruicao != null)
+            AudioSource.PlayClipAtPoint(clipDestruicao, transform.position, volumeDestruicao);
+    }
+
+    // =====================================================================
+    // VALIDAÇÃO
+    // =====================================================================
+    private void OnValidate()
+    {
+        raioVisao          = Mathf.Max(0.5f, raioVisao);
+        intervaloBuscaAlvo = Mathf.Max(0.05f, intervaloBuscaAlvo);
+        tirosPorSegundo    = Mathf.Max(0.1f, tirosPorSegundo);
+        velocidadeBala     = Mathf.Max(0f,   velocidadeBala);
+        velocidadeMin      = Mathf.Max(0f,   velocidadeMin);
+        velocidadeMax      = Mathf.Max(velocidadeMin, velocidadeMax);
+        tempoTrocaMin      = Mathf.Max(0.1f, tempoTrocaMin);
+        tempoTrocaMax      = Mathf.Max(tempoTrocaMin, tempoTrocaMax);
+    }
+
+    // =====================================================================
+    // GIZMOS
+    // =====================================================================
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, raioVisao);
+
+        if (_alvoAtual != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, _alvoAtual.position);
+            Gizmos.DrawSphere(_alvoAtual.position, 0.3f);
+        }
     }
 }
 

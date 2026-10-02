@@ -48,6 +48,14 @@ public class TankAtaque : MonoBehaviour
     [SerializeField] private float      toleranciaMiraParaAtirar   = 6f;
     [SerializeField] private float      alturaExtraMiraAlvo        = 0.2f;
 
+    [Header("Audio de disparo")]
+    [Tooltip("AudioSource 3D do disparo. Se nao for atribuido, sera procurado neste objeto e nos filhos.")]
+    [SerializeField] private AudioSource audioSourceDisparo;
+    [Tooltip("Clip tocado a cada disparo. Mantido separado do AudioSource para funcionar com Audio Resource no Unity 6.")]
+    [SerializeField] private AudioClip audioClipDisparo;
+    [Tooltip("Distancia maxima em unidades do jogo para ouvir o disparo.")]
+    [SerializeField, Min(1f)] private float distanciaMaximaAudioDisparo = 120f;
+
     // =====================================================================
     // MIRA ANTIA�REA
     // =====================================================================
@@ -115,6 +123,12 @@ public class TankAtaque : MonoBehaviour
 
     private void Awake()
     {
+        if (audioSourceDisparo == null)
+            audioSourceDisparo = GetComponent<AudioSource>();
+        if (audioSourceDisparo == null)
+            audioSourceDisparo = GetComponentInChildren<AudioSource>(true);
+        ConfigurarAudioDisparo();
+
         if (tankVisao == null)
             tankVisao = GetComponent<TankVisao>();
 
@@ -373,6 +387,8 @@ public class TankAtaque : MonoBehaviour
         Quaternion rotacaoBala = Quaternion.LookRotation(direcaoTiro, Vector3.up);
         GameObject balaCriada  = Instantiate(prefab, origemTiro, rotacaoBala);
 
+        TocarAudioDisparo();
+
         ProjetilDistancia projetil = balaCriada.GetComponent<ProjetilDistancia>();
         if (projetil != null)
         {
@@ -398,6 +414,33 @@ public class TankAtaque : MonoBehaviour
 
         if (vidaBala > 0f)
             Destroy(balaCriada, vidaBala);
+    }
+
+    private void TocarAudioDisparo()
+    {
+        if (audioSourceDisparo == null || !audioSourceDisparo.isActiveAndEnabled)
+            return;
+
+        if (audioClipDisparo == null)
+            return;
+
+        // No Unity 6, o AudioSource pode usar Audio Resource com .clip vazio.
+        // A referencia explicita do AudioClip garante o disparo pelo mesmo
+        // AudioSource e preserva a atenuacao/distancia 3D configuradas nele.
+        audioSourceDisparo.PlayOneShot(audioClipDisparo);
+    }
+
+    private void ConfigurarAudioDisparo()
+    {
+        if (audioSourceDisparo == null)
+            return;
+
+        audioSourceDisparo.playOnAwake = false;
+        audioSourceDisparo.spatialBlend = 1f;
+        audioSourceDisparo.rolloffMode = AudioRolloffMode.Linear;
+        audioSourceDisparo.maxDistance = Mathf.Max(
+            audioSourceDisparo.minDistance + 0.1f,
+            distanciaMaximaAudioDisparo);
     }
 
     private IEnumerator MoverBalaSemRigidbody(Transform bala, Vector3 direcao, float vel)
