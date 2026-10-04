@@ -384,7 +384,8 @@ MonoBehaviour:
     destruirAtacanteAposDano: 1
   receberImpactoEmCollidersFilhos: 1
   barraVidaUI: {fileID: 7765901659245520250}
-  mostrarDebugDano: 0
+  clipDestruicao: {fileID: 0}
+  volumeDestruicao: 1
 --- !u!114 &4133196453005495604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -398,15 +399,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Torre
   raioVisao: 100
+  detectarEquipeAutomaticamente: 1
   tagsInimigos:
   - Vermelho
   - Verde
+  ignorarAvioes: 1
+  nomeLayerAviao: Aviao
   intervaloBuscaAlvo: 0.2
+  histereseSaida: 0.1
   baseCanhao: {fileID: 2225263066157953970}
   pontoDisparo: {fileID: 8283341987883542431}
+  velocidadeGiro: 360
+  toleranciaMira: 8
   prefabBala: {fileID: 1369670887755148727, guid: 436be975e042b7748b29c6f7f81ede5a, type: 3}
   velocidadeBala: 1
   tirosPorSegundo: 1
+  tempoVidaBala: 0
   prioridade: 0
   velocidadeMin: 10
   velocidadeMax: 30
@@ -418,6 +426,8 @@ MonoBehaviour:
   volumeDisparo: 1
   volumeDestruicao: 1
   variacaoPitchDisparo: 0.05
+  distanciaMinimaAudio: 30
+  distanciaMaximaAudio: 200
 --- !u!114 &2745125019665326399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -434,7 +444,7 @@ MonoBehaviour:
   tagBase: Azul
   mostrarArea: 1
   corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0}
-  corBorda: {r: 0, g: 0.19607878, b: 1, a: 1}
+  corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 1}
   velocidadePiscar: 2
   alturaVisualizacao: 0.5
   segmentosCirculo: 64
@@ -463,7 +473,7 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 1
+  MinDistance: 10
   MaxDistance: 500
   Pan2D: 0
   rolloffMode: 0

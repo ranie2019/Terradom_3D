@@ -48,6 +48,13 @@ public class BaseVidaIA : MonoBehaviour
     [Header("Colliders filhos")]
     [SerializeField] private bool receberImpactoEmCollidersFilhos = true;
 
+    [Header("Áudio")]
+    [Tooltip("Som tocado quando a base IA é destruída (vida chega a zero).")]
+    [SerializeField] private AudioClip clipDestruicao;
+
+    [Range(0f, 1f)]
+    [SerializeField] private float volumeDestruicao = 1f;
+
     public int VidaAtual => vidaAtual;
 
     private readonly Dictionary<int, float> ultimoDano = new Dictionary<int, float>();
@@ -60,7 +67,6 @@ public class BaseVidaIA : MonoBehaviour
         if (reiniciarVidaAoIniciar)
             vidaAtual = vidaMaxima;
 
-        // CONFIGURA A BARRA
         if (barraVidaUI != null)
         {
             barraVidaUI.Configurar(vidaMaxima);
@@ -83,6 +89,10 @@ public class BaseVidaIA : MonoBehaviour
         ProcessarImpacto(other);
     }
 
+    // =========================================================
+    // API PÚBLICA DE DANO
+    // =========================================================
+
     public void ReceberDano(int dano)
     {
         AplicarDano(dano, null);
@@ -90,16 +100,12 @@ public class BaseVidaIA : MonoBehaviour
 
     public void ReceberDano(int dano, GameObject atacante)
     {
-        if (!PodeReceberDano(atacante))
-            return;
-
+        if (!PodeReceberDano(atacante)) return;
         AplicarDano(dano, atacante);
     }
 
     private bool PodeReceberDano(GameObject atacante)
     {
-        // Mantém as tags genéricas (ex.: Bala), mas bloqueia projéteis
-        // identificados como pertencentes à própria equipe da base.
         if (atacante != null
             && TentarObterEquipeDeProjetil(atacante, out string equipeAtacante)
             && !string.IsNullOrEmpty(equipeAtacante))
@@ -109,30 +115,156 @@ public class BaseVidaIA : MonoBehaviour
                 return false;
         }
 
-        if (!exigirTagPermitidaParaReceberDano)
-            return true;
-
-        if (atacante == null)
-            return false;
+        if (!exigirTagPermitidaParaReceberDano) return true;
+        if (atacante == null) return false;
 
         foreach (string tag in tagsQuePodemCausarDano)
         {
-            if (atacante.CompareTag(tag))
-                return true;
+            if (atacante.CompareTag(tag)) return true;
         }
 
         return false;
     }
 
+    // =========================================================
+    // IMPACTO AUTOMÁTICO
+    // =========================================================
+
+    private void ProcessarImpacto(Collider colisor)
+    {
+        if (!receberDanoAutomaticoPorImpacto || colisor == null) return;
+
+        GameObject atacante = colisor.attachedRigidbody != null
+            ? colisor.attachedRigidbody.gameObject
+            : colisor.gameObject;
+
+        if (!PodeReceberDano(atacante)) return;
+
+        int id = atacante.GetInstanceID();
+
+        if (ultimoDano.TryGetValue(id, out float tempo))
+        {
+            if (Time.time - tempo < cooldown) return;
+        }
+
+        if (!TentarObterDano(atacante, out int dano, out bool destruir)) return;
+
+        ultimoDano[id] = Time.time;
+        AplicarDano(dano, atacante);
+
+        if (destruir) Destroy(atacante);
+    }
+
+    private bool TentarObterDano(GameObject atacante, out int dano, out bool destruir)
+    {
+        dano    = 0;
+        destruir = false;
+
+        if (procurarDanoNoAtacante)
+        {
+            Component[] comps = atacante.GetComponentsInChildren<Component>();
+            foreach (var c in comps)
+            {
+                if (c != null && TentarLerDano(c, out dano))
+                {
+                    destruir = true;
+                    return true;
+                }
+            }
+        }
+
+        if (usarDanoPorTagSeNaoEncontrarDanoNoAtacante || !procurarDanoNoAtacante)
+        {
+            foreach (var config in danosAutomaticosPorTag)
+            {
+                if (atacante.CompareTag(config.tagAtacante))
+                {
+                    dano     = config.dano;
+                    destruir = config.destruirAtacanteAposDano;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool TentarLerDano(Component c, out int dano)
+    {
+        dano = 0;
+        if (c == null) return false;
+
+        string[] nomes = { "dano", "Dano", "damage", "Damage" };
+
+        foreach (var nome in nomes)
+        {
+            FieldInfo campo = c.GetType().GetField(nome,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            if (campo != null)
+            {
+                object valor = campo.GetValue(c);
+                if (valor is int i) { dano = i; return true; }
+            }
+        }
+
+        return false;
+    }
+
+    // =========================================================
+    // APLICAR DANO E DESTRUIÇÃO
+    // =========================================================
+
+    private void AplicarDano(int dano, GameObject atacante)
+    {
+        if (dano <= 0 || vidaAtual <= 0) return;
+
+        vidaAtual -= dano;
+        vidaAtual  = Mathf.Max(0, vidaAtual);
+
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
+
+        if (vidaAtual <= 0)
+            DestruirBase();
+    }
+
+    private void DestruirBase()
+    {
+        if (!destruirAoChegarEmZero) return;
+
+        TocarSomDestruicao();
+        Destroy(gameObject);
+    }
+
+    private void TocarSomDestruicao()
+    {
+        if (clipDestruicao == null) return;
+
+        GameObject tempAudio = new GameObject("AudioDestruicaoBaseIA");
+        tempAudio.transform.position = transform.position;
+
+        AudioSource fonte = tempAudio.AddComponent<AudioSource>();
+        fonte.clip         = clipDestruicao;
+        fonte.volume       = volumeDestruicao;
+        fonte.spatialBlend = 0f;
+        fonte.playOnAwake  = false;
+        fonte.Play();
+
+        Destroy(tempAudio, clipDestruicao.length + 0.1f);
+    }
+
+    // =========================================================
+    // HELPERS DE EQUIPE
+    // =========================================================
+
     private static bool TentarObterEquipeDeProjetil(GameObject objeto, out string equipe)
     {
         equipe = string.Empty;
-        if (objeto == null)
-            return false;
+        if (objeto == null) return false;
 
         ProjetilDistancia bala = objeto.GetComponentInParent<ProjetilDistancia>();
-        if (bala == null)
-            bala = objeto.GetComponentInChildren<ProjetilDistancia>(true);
+        if (bala == null) bala  = objeto.GetComponentInChildren<ProjetilDistancia>(true);
         if (bala != null && !string.IsNullOrEmpty(bala.TagEquipeDona))
         {
             equipe = bala.TagEquipeDona;
@@ -140,8 +272,7 @@ public class BaseVidaIA : MonoBehaviour
         }
 
         Missel missel = objeto.GetComponentInParent<Missel>();
-        if (missel == null)
-            missel = objeto.GetComponentInChildren<Missel>(true);
+        if (missel == null) missel = objeto.GetComponentInChildren<Missel>(true);
         if (missel != null && !string.IsNullOrEmpty(missel.TagEquipeDona))
         {
             equipe = missel.TagEquipeDona;
@@ -163,151 +294,21 @@ public class BaseVidaIA : MonoBehaviour
         return string.Empty;
     }
 
-    private void ProcessarImpacto(Collider colisor)
-    {
-        if (!receberDanoAutomaticoPorImpacto || colisor == null)
-            return;
-
-        GameObject atacante = colisor.attachedRigidbody != null
-            ? colisor.attachedRigidbody.gameObject
-            : colisor.gameObject;
-
-        if (!PodeReceberDano(atacante))
-            return;
-
-        int id = atacante.GetInstanceID();
-
-        if (ultimoDano.TryGetValue(id, out float tempo))
-        {
-            if (Time.time - tempo < cooldown)
-                return;
-        }
-
-        int dano = 0;
-        bool destruir = false;
-
-        if (!TentarObterDano(atacante, out dano, out destruir))
-            return;
-
-        ultimoDano[id] = Time.time;
-
-        AplicarDano(dano, atacante);
-
-        if (destruir)
-            Destroy(atacante);
-    }
-
-    private bool TentarObterDano(GameObject atacante, out int dano, out bool destruir)
-    {
-        dano = 0;
-        destruir = false;
-
-        // ETAPA 1: Tenta pegar dano do script do atacante (se configurado)
-        if (procurarDanoNoAtacante)
-        {
-            Component[] comps = atacante.GetComponentsInChildren<Component>();
-
-            foreach (var c in comps)
-            {
-                if (c != null && TentarLerDano(c, out dano))
-                {
-                    destruir = true;
-                    return true;
-                }
-            }
-        }
-
-        // ETAPA 2: Fallback por tag (se configurado)
-        if (usarDanoPorTagSeNaoEncontrarDanoNoAtacante || !procurarDanoNoAtacante)
-        {
-            foreach (var config in danosAutomaticosPorTag)
-            {
-                if (atacante.CompareTag(config.tagAtacante))
-                {
-                    dano = config.dano;
-                    destruir = config.destruirAtacanteAposDano;
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private bool TentarLerDano(Component c, out int dano)
-    {
-        dano = 0;
-
-        if (c == null) return false;
-
-        string[] nomes =
-        {
-            "dano",
-            "Dano",
-            "damage",
-            "Damage"
-        };
-
-        foreach (var nome in nomes)
-        {
-            var campo = c.GetType().GetField(nome,
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-            if (campo != null)
-            {
-                object valor = campo.GetValue(c);
-
-                if (valor is int i)
-                {
-                    dano = i;
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private void AplicarDano(int dano, GameObject atacante)
-    {
-        if (dano <= 0 || vidaAtual <= 0)
-            return;
-
-        vidaAtual -= dano;
-        vidaAtual = Mathf.Max(0, vidaAtual);
-
-        // ATUALIZA BARRA
-        if (barraVidaUI != null)
-            barraVidaUI.AtualizarVida(vidaAtual);
-
-        if (vidaAtual <= 0)
-            DestruirBase();
-    }
-
-    private void DestruirBase()
-    {
-        if (destruirAoChegarEmZero)
-            Destroy(gameObject);
-    }
+    // =========================================================
+    // COLLIDERS FILHOS
+    // =========================================================
 
     private void PrepararCollidersFilhos()
     {
-        if (!receberImpactoEmCollidersFilhos)
-            return;
+        if (!receberImpactoEmCollidersFilhos) return;
 
         Collider[] cols = GetComponentsInChildren<Collider>();
-
         foreach (var col in cols)
         {
-            if (col.transform == transform)
-                continue;
+            if (col.transform == transform) continue;
 
-            BaseVidaColliderFilhoIA ponte =
-                col.gameObject.GetComponent<BaseVidaColliderFilhoIA>();
-
-            if (ponte == null)
-                ponte = col.gameObject.AddComponent<BaseVidaColliderFilhoIA>();
-
+            BaseVidaColliderFilhoIA ponte = col.gameObject.GetComponent<BaseVidaColliderFilhoIA>();
+            if (ponte == null) ponte = col.gameObject.AddComponent<BaseVidaColliderFilhoIA>();
             ponte.Configurar(this);
         }
     }
@@ -317,14 +318,15 @@ public class BaseVidaIA : MonoBehaviour
         ProcessarImpacto(col);
     }
 
+    // =========================================================
+    // CLASSE INTERNA — BRIDGE DE COLLIDER
+    // =========================================================
+
     private class BaseVidaColliderFilhoIA : MonoBehaviour
     {
         private BaseVidaIA baseIA;
 
-        public void Configurar(BaseVidaIA b)
-        {
-            baseIA = b;
-        }
+        public void Configurar(BaseVidaIA b) { baseIA = b; }
 
         private void OnCollisionEnter(Collision collision)
         {

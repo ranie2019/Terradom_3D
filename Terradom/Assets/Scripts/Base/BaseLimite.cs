@@ -10,7 +10,11 @@ public class BaseLimite : MonoBehaviour
     // =========================================================
     private static readonly Dictionary<string, List<BaseLimite>> basesPorTag = new Dictionary<string, List<BaseLimite>>();
     private static readonly Dictionary<string, Mesh> bordasUnificadasPorTag = new Dictionary<string, Mesh>();
+    private static readonly Dictionary<string, Mesh> areasUnificadasPorTag  = new Dictionary<string, Mesh>();
     private static readonly HashSet<string> tagsComBordaDesatualizada = new HashSet<string>();
+    private static readonly HashSet<string> tagsComAreaDesatualizada  = new HashSet<string>();
+    // Primeira base registrada por tag (define cor e intensidade da área para toda a equipe)
+    private static readonly Dictionary<string, BaseLimite> primeiraBasePorTag = new Dictionary<string, BaseLimite>();
     
     [Header("Configuração da Área de Construção")]
     [SerializeField] private float raioArea = 15f;
@@ -65,10 +69,15 @@ public class BaseLimite : MonoBehaviour
     {
         foreach (Mesh mesh in bordasUnificadasPorTag.Values)
             DestruirObjetoUnity(mesh);
+        foreach (Mesh mesh in areasUnificadasPorTag.Values)
+            DestruirObjetoUnity(mesh);
 
         basesPorTag.Clear();
         bordasUnificadasPorTag.Clear();
+        areasUnificadasPorTag.Clear();
         tagsComBordaDesatualizada.Clear();
+        tagsComAreaDesatualizada.Clear();
+        primeiraBasePorTag.Clear();
     }
 
     private static void DestruirObjetoUnity(Object objeto)
@@ -117,6 +126,7 @@ public class BaseLimite : MonoBehaviour
     private void OnEnable()
     {
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
 
         // Quando reativado (após posicionamento), registra novamente
         if (desregistradoTemporariamente)
@@ -133,6 +143,7 @@ public class BaseLimite : MonoBehaviour
     private void OnDisable()
     {
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
     }
 
     private void OnDestroy()
@@ -148,6 +159,7 @@ public class BaseLimite : MonoBehaviour
         if (meshCirculo != null)
             Destroy(meshCirculo);
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
     }
     
     private void Update()
@@ -158,12 +170,14 @@ public class BaseLimite : MonoBehaviour
         {
             posicaoBase = posicaoAtual;
             InvalidarBordaUnificada(tagBase);
+            InvalidarAreaUnificada(tagBase);
         }
 
         if (mostrarArea != mostrarAreaAnterior)
         {
             mostrarAreaAnterior = mostrarArea;
             InvalidarBordaUnificada(tagBase);
+            InvalidarAreaUnificada(tagBase);
         }
 
         if (!mostrarArea)
@@ -205,7 +219,16 @@ public class BaseLimite : MonoBehaviour
         if (!basesPorTag[tagBase].Contains(this))
             basesPorTag[tagBase].Add(this);
 
+        // Registra a primeira base (menor InstanceID) como referência de cor
+        if (!primeiraBasePorTag.ContainsKey(tagBase) ||
+            primeiraBasePorTag[tagBase] == null ||
+            GetInstanceID() < primeiraBasePorTag[tagBase].GetInstanceID())
+        {
+            primeiraBasePorTag[tagBase] = this;
+        }
+
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
     }
     
     private void RemoverBase()
@@ -217,10 +240,29 @@ public class BaseLimite : MonoBehaviour
         {
             basesPorTag[tagBase].Remove(this);
             if (basesPorTag[tagBase].Count == 0)
+            {
                 basesPorTag.Remove(tagBase);
+                primeiraBasePorTag.Remove(tagBase);
+            }
+            else if (primeiraBasePorTag.TryGetValue(tagBase, out BaseLimite primeira) && primeira == this)
+            {
+                // Recalcula a primeira base ao remover a que era referência
+                primeiraBasePorTag.Remove(tagBase);
+                BaseLimite novaPrimeira = null;
+                int menorId = int.MaxValue;
+                foreach (BaseLimite b in basesPorTag[tagBase])
+                {
+                    if (b == null) continue;
+                    int id = b.GetInstanceID();
+                    if (id < menorId) { menorId = id; novaPrimeira = b; }
+                }
+                if (novaPrimeira != null)
+                    primeiraBasePorTag[tagBase] = novaPrimeira;
+            }
         }
 
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
     }
     
     private int ObterTotalBasesDaTag()
@@ -417,42 +459,39 @@ public class BaseLimite : MonoBehaviour
     
     private void OnRenderObject()
     {
-        if (!mostrarArea || materialArea == null || meshCirculo == null)
+        if (!mostrarArea || materialArea == null)
             return;
-        
-        // Ajusta a posição Y baseada no terreno
-        float alturaY = posicaoBase.y;
-        if (terrain != null)
-        {
-            alturaY = terrain.SampleHeight(posicaoBase) + terrain.transform.position.y + alturaVisualizacao;
-        }
-        else
-        {
-            alturaY += alturaVisualizacao;
-        }
-        
-        Vector3 posicaoRender = new Vector3(posicaoBase.x, alturaY, posicaoBase.z);
-        
-        // CORREÇÃO: Sem rotação - a malha já está no plano XZ (horizontal)
-        Matrix4x4 matriz = Matrix4x4.TRS(posicaoRender, Quaternion.identity, Vector3.one);
-        
-        // Mantém o preenchimento atual de cada área.
-        Color corAreaAtual = materialArea.color;
-        corAreaAtual.a = corArea.a * alphaAtual;
-        materialArea.color = corAreaAtual;
-        materialArea.SetPass(0);
-        Graphics.DrawMeshNow(meshCirculo, matriz);
 
-        // Somente uma base por equipe desenha o contorno externo unificado.
+        // Somente a base responsável desenha por toda a equipe
         if (this != ObterBaseResponsavelPelaBorda(tagBase))
             return;
 
+        // --- ÁREA UNIFICADA ---
+        // Usa cor e alpha da PRIMEIRA base registrada para esta tag
+        Color corAreaBase = corArea;
+        if (primeiraBasePorTag.TryGetValue(tagBase, out BaseLimite primeira) && primeira != null)
+            corAreaBase = primeira.corArea;
+
+        Mesh meshAreaUnificada = ObterMeshAreaUnificada(tagBase);
+        if (meshAreaUnificada != null && materialArea != null)
+        {
+            Color corAreaAtual = corAreaBase;
+            corAreaAtual.a = corAreaBase.a * alphaAtual;
+            materialArea.color = corAreaAtual;
+            materialArea.SetPass(0);
+            Graphics.DrawMeshNow(meshAreaUnificada, Matrix4x4.identity);
+        }
+
+        // --- BORDA UNIFICADA ---
         Mesh meshBordaUnificada = ObterMeshBordaUnificada(tagBase);
         if (meshBordaUnificada == null || materialBorda == null)
             return;
 
-        Color corBordaAtual = materialBorda.color;
-        corBordaAtual.a = corBorda.a * (0.5f + alphaAtual * 0.5f);
+        Color corBordaBase = corBorda;
+        if (primeira != null) corBordaBase = primeira.corBorda;
+
+        Color corBordaAtual = corBordaBase;
+        corBordaAtual.a = corBordaBase.a * (0.5f + alphaAtual * 0.5f);
         materialBorda.color = corBordaAtual;
         materialBorda.SetPass(0);
         Graphics.DrawMeshNow(meshBordaUnificada, Matrix4x4.identity);
@@ -462,6 +501,12 @@ public class BaseLimite : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(tag))
             tagsComBordaDesatualizada.Add(tag);
+    }
+
+    private static void InvalidarAreaUnificada(string tag)
+    {
+        if (!string.IsNullOrEmpty(tag))
+            tagsComAreaDesatualizada.Add(tag);
     }
 
     private static List<BaseLimite> ObterBasesDaTag(string tag)
@@ -582,6 +627,119 @@ public class BaseLimite : MonoBehaviour
         mesh.RecalculateBounds();
         bordasUnificadasPorTag[tag] = mesh;
         return mesh;
+    }
+
+    private static Mesh ObterMeshAreaUnificada(string tag)
+    {
+        bool precisaReconstruir = tagsComAreaDesatualizada.Contains(tag) ||
+                                  !areasUnificadasPorTag.ContainsKey(tag);
+        if (!precisaReconstruir)
+            return areasUnificadasPorTag[tag];
+
+        if (areasUnificadasPorTag.TryGetValue(tag, out Mesh antiga))
+        {
+            DestruirObjetoUnity(antiga);
+            areasUnificadasPorTag.Remove(tag);
+        }
+
+        tagsComAreaDesatualizada.Remove(tag);
+        List<BaseLimite> bases = ObterBasesDaTag(tag);
+
+        if (bases.Count == 0)
+        {
+            areasUnificadasPorTag[tag] = null;
+            return null;
+        }
+
+        // ESTRATEGIA CORRETA:
+        // O contorno externo da uniao ja e calculado pela borda (AdicionarBordaVisivel).
+        // Reutilizamos os mesmos arcos visiveis para construir uma lista de pontos
+        // do contorno externo em ordem, e triangulamos esse contorno como um
+        // unico poligono plano usando fan triangulation a partir do centroide.
+        // Isso garante ZERO sobreposicao e alpha uniforme em toda a area.
+
+        // Passo 1: coletar todos os pontos do contorno externo em ordem
+        // Cada base contribui com seus arcos visiveis (ja em ordem angular).
+        // Concatenamos os arcos de todas as bases na ordem em que aparecem
+        // no contorno externo.
+
+        List<Vector3> contorno = new List<Vector3>();
+
+        for (int i = 0; i < bases.Count; i++)
+        {
+            BaseLimite base_ = bases[i];
+            if (base_ == null || base_.raioArea <= 0f) continue;
+
+            List<IntervaloAngular> arcos = CalcularArcosVisiveis(bases, base_);
+            if (arcos.Count == 0) continue;
+
+            Terrain terreno   = ObterTerrenoLimite(base_);
+            Vector3 centro    = base_.transform.position;
+            float   raio      = base_.raioArea;
+            int     segmentos = Mathf.Max(16, base_.segmentosCirculo);
+
+            foreach (IntervaloAngular arco in arcos)
+            {
+                int passos = Mathf.Max(1, Mathf.CeilToInt(
+                    (arco.fim - arco.inicio) / CirculoCompleto * segmentos));
+
+                for (int p = 0; p <= passos; p++)
+                {
+                    float angulo = Mathf.Lerp(arco.inicio, arco.fim, (float)p / passos);
+                    float x = centro.x + Mathf.Cos(angulo) * raio;
+                    float z = centro.z + Mathf.Sin(angulo) * raio;
+                    float y = ObterAlturaRender(terreno, new Vector3(x, 0, z), base_.alturaVisualizacao);
+                    contorno.Add(new Vector3(x, y, z));
+                }
+            }
+        }
+
+        if (contorno.Count < 3)
+        {
+            areasUnificadasPorTag[tag] = null;
+            return null;
+        }
+
+        // Passo 2: calcular o centroide do contorno
+        Vector3 centroide = Vector3.zero;
+        foreach (Vector3 p in contorno)
+            centroide += p;
+        centroide /= contorno.Count;
+
+        // Passo 3: fan triangulation — centroide + cada aresta do contorno
+        List<Vector3> vertices   = new List<Vector3>();
+        List<int>     triangulos = new List<int>();
+
+        for (int i = 0; i < contorno.Count; i++)
+        {
+            Vector3 v0 = contorno[i];
+            Vector3 v1 = contorno[(i + 1) % contorno.Count];
+
+            int idx = vertices.Count;
+            vertices.Add(centroide);
+            vertices.Add(v0);
+            vertices.Add(v1);
+            triangulos.Add(idx);
+            triangulos.Add(idx + 1);
+            triangulos.Add(idx + 2);
+        }
+
+        Mesh mesh = new Mesh { name = "AreaUnificadaBases_" + tag };
+        if (vertices.Count > 65535)
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.SetVertices(vertices);
+        mesh.SetTriangles(triangulos, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        areasUnificadasPorTag[tag] = mesh;
+        return mesh;
+    }
+
+    private static float ObterAlturaRender(Terrain terreno, Vector3 pos, float altVis)
+    {
+        if (terreno != null)
+            return terreno.SampleHeight(pos) + terreno.transform.position.y + altVis;
+        return pos.y + altVis;
     }
 
     private static void AdicionarBordaVisivel(
@@ -1039,6 +1197,7 @@ public class BaseLimite : MonoBehaviour
         // Recria o preenchimento e atualiza o contorno da equipe.
         if (meshCirculo != null) Destroy(meshCirculo);
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
         CriarMeshes();
     }
     
@@ -1066,6 +1225,7 @@ public class BaseLimite : MonoBehaviour
     private void OnValidate()
     {
         InvalidarBordaUnificada(tagBase);
+        InvalidarAreaUnificada(tagBase);
         raioArea = Mathf.Max(5f, raioArea);
         velocidadePiscar = Mathf.Max(0.1f, velocidadePiscar);
         alturaVisualizacao = Mathf.Max(0.01f, alturaVisualizacao);

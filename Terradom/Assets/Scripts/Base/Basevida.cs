@@ -48,12 +48,22 @@ public class BaseVida : MonoBehaviour
     [Header("Barra de Vida")]
     [SerializeField] private BarraVidaUI barraVidaUI;
 
-    [Header("Debug")]
-    [SerializeField] private bool mostrarDebugDano = false;
+    // =========================================================
+    // ÁUDIO DE DESTRUIÇÃO
+    // Som tocado quando a vida chega a zero e a base é destruída.
+    // Usa AudioSource 2D (spatialBlend = 0) em objeto temporário
+    // para não ser cortado junto com o Destroy(gameObject).
+    // =========================================================
+    [Header("Áudio")]
+    [Tooltip("Som tocado quando a base é destruída (vida chega a zero).")]
+    [SerializeField] private AudioClip clipDestruicao;
+
+    [Range(0f, 1f)]
+    [SerializeField] private float volumeDestruicao = 1f;
 
     public int VidaMaxima => vidaMaxima;
-    public int VidaAtual => vidaAtual;
-    public bool EstaViva => vidaAtual > 0;
+    public int VidaAtual  => vidaAtual;
+    public bool EstaViva  => vidaAtual > 0;
 
     private readonly Dictionary<int, float> ultimoDanoAutomaticoPorAtacante = new Dictionary<int, float>();
     private const float CooldownMesmoAtacante = 0.05f;
@@ -67,7 +77,6 @@ public class BaseVida : MonoBehaviour
         else
             vidaAtual = Mathf.Clamp(vidaAtual, 0, vidaMaxima);
 
-        // CONFIGURA A BARRA
         if (barraVidaUI != null)
         {
             barraVidaUI.Configurar(vidaMaxima);
@@ -82,9 +91,7 @@ public class BaseVida : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision == null)
-            return;
-
+        if (collision == null) return;
         ProcessarImpactoAutomatico(collision.collider);
     }
 
@@ -93,52 +100,39 @@ public class BaseVida : MonoBehaviour
         ProcessarImpactoAutomatico(other);
     }
 
-    /// <summary>
-    /// Use este metodo quando o dano ja foi validado por outro script.
-    /// Exemplo: bala, soldado, tanque ou ataque corpo a corpo chama ReceberDano(15).
-    /// </summary>
+    // =========================================================
+    // API PÚBLICA DE DANO
+    // =========================================================
+
+    /// <summary>Use quando o dano já foi validado por outro script.</summary>
     public void ReceberDano(int dano)
     {
         AplicarDano(dano, null);
     }
 
-    /// <summary>
-    /// Use este metodo quando quiser validar a Tag do atacante antes de aplicar o dano.
-    /// Cada inimigo informa o proprio dano. A base nao usa mais dano fixo por colisao.
-    /// </summary>
+    /// <summary>Use quando quiser validar a tag do atacante antes de aplicar o dano.</summary>
     public void ReceberDano(int dano, GameObject atacante)
     {
-        if (!PodeReceberDanoDe(atacante))
-            return;
-
+        if (!PodeReceberDanoDe(atacante)) return;
         AplicarDano(dano, atacante);
     }
 
-    /// <summary>
-    /// Versao pratica para scripts que possuem Component, Collider, Rigidbody, MonoBehaviour etc.
-    /// </summary>
+    /// <summary>Versão prática para scripts que possuem Component, Collider, Rigidbody, etc.</summary>
     public void ReceberDano(int dano, Component atacante)
     {
         GameObject objetoAtacante = atacante != null ? atacante.gameObject : null;
         ReceberDano(dano, objetoAtacante);
     }
 
-    /// <summary>
-    /// Use quando o script de ataque trabalha diretamente com string de Tag.
-    /// </summary>
+    /// <summary>Use quando o script de ataque trabalha diretamente com string de Tag.</summary>
     public void ReceberDanoPorTag(int dano, string tagAtacante)
     {
-        if (!TagEstaPermitida(tagAtacante))
-            return;
-
+        if (!TagEstaPermitida(tagAtacante)) return;
         AplicarDano(dano, null);
     }
 
     public bool PodeReceberDanoDe(GameObject atacante)
     {
-        // Projéteis carregam a equipe de origem; para qualquer outro atacante
-        // (unidade, avião...) usa a tag de equipe da hierarquia. Essa checagem é
-        // independente da whitelist: evita dano aliado por colisão automática.
         if (atacante != null)
         {
             string equipeAtacante;
@@ -151,24 +145,152 @@ public class BaseVida : MonoBehaviour
                 return false;
         }
 
-        if (!exigirTagPermitidaParaReceberDano)
-            return true;
-
-        if (atacante == null)
-            return false;
+        if (!exigirTagPermitidaParaReceberDano) return true;
+        if (atacante == null) return false;
 
         return ObjetoOuPaisTemTagPermitida(atacante.transform);
     }
 
+    // =========================================================
+    // CURA
+    // =========================================================
+
+    public void Curar(int valor)
+    {
+        if (valor <= 0 || vidaAtual <= 0) return;
+
+        vidaAtual = Mathf.Clamp(vidaAtual + valor, 0, vidaMaxima);
+
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
+    }
+
+    public void RestaurarVidaTotal()
+    {
+        vidaAtual = vidaMaxima;
+
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
+    }
+
+    public int GetVidaAtual()  => vidaAtual;
+    public int GetVidaMaxima() => vidaMaxima;
+
+    // =========================================================
+    // IMPACTO AUTOMÁTICO
+    // =========================================================
+
+    private void ProcessarImpactoAutomatico(Collider colisorAtacante)
+    {
+        if (!receberDanoAutomaticoPorImpacto) return;
+        if (colisorAtacante == null || vidaAtual <= 0) return;
+
+        if (colisorAtacante.transform == transform ||
+            colisorAtacante.transform.IsChildOf(transform)) return;
+
+        GameObject atacantePrincipal = ObterObjetoPrincipalDoAtacante(colisorAtacante);
+        if (atacantePrincipal == null) return;
+
+        if (!PodeReceberDanoDe(atacantePrincipal)) return;
+
+        int idAtacante = atacantePrincipal.GetInstanceID();
+
+        if (ultimoDanoAutomaticoPorAtacante.TryGetValue(idAtacante, out float ultimoTempo))
+        {
+            if (Time.time - ultimoTempo < CooldownMesmoAtacante) return;
+        }
+
+        if (!TentarObterDanoDoImpacto(colisorAtacante, atacantePrincipal, out int dano, out bool destruirAtacante))
+            return;
+
+        if (dano <= 0) return;
+
+        ultimoDanoAutomaticoPorAtacante[idAtacante] = Time.time;
+        if (ultimoDanoAutomaticoPorAtacante.Count > 128)
+            LimparCooldownsAntigos();
+
+        AplicarDano(dano, atacantePrincipal);
+
+        if (destruirAtacante)
+            Destroy(atacantePrincipal);
+    }
+
+    private void LimparCooldownsAntigos()
+    {
+        List<int> remover = new List<int>();
+        foreach (KeyValuePair<int, float> par in ultimoDanoAutomaticoPorAtacante)
+        {
+            if (Time.time - par.Value > 1f)
+                remover.Add(par.Key);
+        }
+        for (int i = 0; i < remover.Count; i++)
+            ultimoDanoAutomaticoPorAtacante.Remove(remover[i]);
+    }
+
+    // =========================================================
+    // APLICAR DANO
+    // =========================================================
+
+    private void AplicarDano(int dano, GameObject atacante)
+    {
+        if (dano <= 0 || vidaAtual <= 0) return;
+
+        vidaAtual -= dano;
+        vidaAtual  = Mathf.Max(vidaAtual, 0);
+
+        if (barraVidaUI != null)
+            barraVidaUI.AtualizarVida(vidaAtual);
+
+        // Debug de dano removido conforme solicitado.
+
+        if (vidaAtual <= 0)
+            DestruirBase();
+    }
+
+    // =========================================================
+    // DESTRUIÇÃO
+    // =========================================================
+
+    private void DestruirBase()
+    {
+        if (!destruirAoChegarEmZero) return;
+
+        // Toca o som ANTES de destruir o GameObject.
+        // Usa objeto temporário com AudioSource 2D para o som não ser
+        // cortado junto com o Destroy — mesma abordagem da Torre.cs.
+        TocarSomDestruicao();
+
+        Destroy(gameObject);
+    }
+
+    private void TocarSomDestruicao()
+    {
+        if (clipDestruicao == null) return;
+
+        GameObject tempAudio = new GameObject("AudioDestruicaoBase");
+        tempAudio.transform.position = transform.position;
+
+        AudioSource fonte = tempAudio.AddComponent<AudioSource>();
+        fonte.clip         = clipDestruicao;
+        fonte.volume       = volumeDestruicao;
+        fonte.spatialBlend = 0f;   // 2D — toca em volume cheio independente da câmera
+        fonte.playOnAwake  = false;
+        fonte.Play();
+
+        Destroy(tempAudio, clipDestruicao.length + 0.1f);
+    }
+
+    // =========================================================
+    // HELPERS DE EQUIPE / TAG
+    // =========================================================
+
     private static bool TentarObterEquipeDeProjetil(GameObject objeto, out string equipe)
     {
         equipe = string.Empty;
-        if (objeto == null)
-            return false;
+        if (objeto == null) return false;
 
         ProjetilDistancia bala = objeto.GetComponentInParent<ProjetilDistancia>();
-        if (bala == null)
-            bala = objeto.GetComponentInChildren<ProjetilDistancia>(true);
+        if (bala == null) bala  = objeto.GetComponentInChildren<ProjetilDistancia>(true);
         if (bala != null && !string.IsNullOrEmpty(bala.TagEquipeDona))
         {
             equipe = bala.TagEquipeDona;
@@ -176,8 +298,7 @@ public class BaseVida : MonoBehaviour
         }
 
         Missel missel = objeto.GetComponentInParent<Missel>();
-        if (missel == null)
-            missel = objeto.GetComponentInChildren<Missel>(true);
+        if (missel == null) missel = objeto.GetComponentInChildren<Missel>(true);
         if (missel != null && !string.IsNullOrEmpty(missel.TagEquipeDona))
         {
             equipe = missel.TagEquipeDona;
@@ -199,104 +320,50 @@ public class BaseVida : MonoBehaviour
         return string.Empty;
     }
 
-    public void Curar(int valor)
+    private bool ObjetoOuPaisTemTagPermitida(Transform alvo)
     {
-        if (valor <= 0 || vidaAtual <= 0)
-            return;
-
-        vidaAtual = Mathf.Clamp(vidaAtual + valor, 0, vidaMaxima);
-
-        // ATUALIZA BARRA
-        if (barraVidaUI != null)
-            barraVidaUI.AtualizarVida(vidaAtual);
-    }
-
-    public void RestaurarVidaTotal()
-    {
-        vidaAtual = vidaMaxima;
-
-        // ATUALIZA BARRA
-        if (barraVidaUI != null)
-            barraVidaUI.AtualizarVida(vidaAtual);
-    }
-
-    public int GetVidaAtual()
-    {
-        return vidaAtual;
-    }
-
-    public int GetVidaMaxima()
-    {
-        return vidaMaxima;
-    }
-
-    private void ProcessarImpactoAutomatico(Collider colisorAtacante)
-    {
-        if (!receberDanoAutomaticoPorImpacto)
-            return;
-
-        if (colisorAtacante == null || vidaAtual <= 0)
-            return;
-
-        if (colisorAtacante.transform == transform || colisorAtacante.transform.IsChildOf(transform))
-            return;
-
-        GameObject atacantePrincipal = ObterObjetoPrincipalDoAtacante(colisorAtacante);
-
-        if (atacantePrincipal == null)
-            return;
-
-        if (!PodeReceberDanoDe(atacantePrincipal))
-            return;
-
-        int idAtacante = atacantePrincipal.GetInstanceID();
-
-        if (ultimoDanoAutomaticoPorAtacante.TryGetValue(idAtacante, out float ultimoTempo))
+        Transform atual = alvo;
+        while (atual != null)
         {
-            if (Time.time - ultimoTempo < CooldownMesmoAtacante)
-                return;
+            if (TagEstaPermitida(atual.gameObject.tag)) return true;
+            atual = atual.parent;
         }
-
-        if (!TentarObterDanoDoImpacto(colisorAtacante, atacantePrincipal, out int dano, out bool destruirAtacante))
-            return;
-
-        if (dano <= 0)
-            return;
-
-        ultimoDanoAutomaticoPorAtacante[idAtacante] = Time.time;
-        if (ultimoDanoAutomaticoPorAtacante.Count > 128)
-            LimparCooldownsAntigos();
-        AplicarDano(dano, atacantePrincipal);
-
-        if (destruirAtacante)
-            Destroy(atacantePrincipal);
+        return false;
     }
 
-    private void LimparCooldownsAntigos()
+    private bool TagEstaPermitida(string tagParaTestar)
     {
-        List<int> remover = new List<int>();
-        foreach (KeyValuePair<int, float> par in ultimoDanoAutomaticoPorAtacante)
-        {
-            if (Time.time - par.Value > 1f)
-                remover.Add(par.Key);
-        }
+        if (string.IsNullOrWhiteSpace(tagParaTestar)) return false;
+        if (tagsQuePodemCausarDano == null || tagsQuePodemCausarDano.Length == 0) return false;
 
-        for (int i = 0; i < remover.Count; i++)
-            ultimoDanoAutomaticoPorAtacante.Remove(remover[i]);
+        for (int i = 0; i < tagsQuePodemCausarDano.Length; i++)
+        {
+            string tagPermitida = tagsQuePodemCausarDano[i];
+            if (string.IsNullOrWhiteSpace(tagPermitida)) continue;
+            if (tagParaTestar == tagPermitida) return true;
+        }
+        return false;
     }
 
-    private bool TentarObterDanoDoImpacto(Collider colisorAtacante, GameObject atacantePrincipal, out int dano, out bool destruirAtacante)
+    // =========================================================
+    // LEITURA DE DANO DO ATACANTE
+    // =========================================================
+
+    private bool TentarObterDanoDoImpacto(Collider colisorAtacante, GameObject atacantePrincipal,
+                                           out int dano, out bool destruirAtacante)
     {
         dano = 0;
         destruirAtacante = false;
 
-        if (procurarDanoNoAtacante && TentarLerDanoDoAtacante(colisorAtacante, atacantePrincipal, out dano))
+        if (procurarDanoNoAtacante &&
+            TentarLerDanoDoAtacante(colisorAtacante, atacantePrincipal, out dano))
         {
             destruirAtacante = DeveDestruirAtacantePorTag(atacantePrincipal.transform);
             return true;
         }
 
-        if (usarDanoPorTagSeNaoEncontrarDanoNoAtacante && TentarObterDanoAutomaticoPorTag(atacantePrincipal.transform, out dano, out destruirAtacante))
+        if (usarDanoPorTagSeNaoEncontrarDanoNoAtacante &&
+            TentarObterDanoAutomaticoPorTag(atacantePrincipal.transform, out dano, out destruirAtacante))
             return true;
 
         return false;
@@ -305,26 +372,20 @@ public class BaseVida : MonoBehaviour
     private bool TentarLerDanoDoAtacante(Collider colisorAtacante, GameObject atacantePrincipal, out int dano)
     {
         dano = 0;
-
-        if (atacantePrincipal == null)
-            return false;
+        if (atacantePrincipal == null) return false;
 
         Component[] componentes = atacantePrincipal.GetComponentsInChildren<Component>(true);
-
         for (int i = 0; i < componentes.Length; i++)
         {
-            if (TentarLerDanoDeComponente(componentes[i], out dano))
-                return true;
+            if (TentarLerDanoDeComponente(componentes[i], out dano)) return true;
         }
 
         if (colisorAtacante != null && colisorAtacante.gameObject != atacantePrincipal)
         {
             Component[] componentesDoCollider = colisorAtacante.GetComponents<Component>();
-
             for (int i = 0; i < componentesDoCollider.Length; i++)
             {
-                if (TentarLerDanoDeComponente(componentesDoCollider[i], out dano))
-                    return true;
+                if (TentarLerDanoDeComponente(componentesDoCollider[i], out dano)) return true;
             }
         }
 
@@ -338,14 +399,12 @@ public class BaseVida : MonoBehaviour
         "valorDano", "ValorDano", "damage", "Damage"
     };
 
-    // Reflection resolvida uma vez por tipo (antes era refeita a cada colisão).
     private static readonly Dictionary<System.Type, MemberInfo[]> membrosDanoPorTipo =
         new Dictionary<System.Type, MemberInfo[]>();
 
     private static MemberInfo[] ObterMembrosDeDano(System.Type tipo)
     {
-        if (membrosDanoPorTipo.TryGetValue(tipo, out MemberInfo[] cache))
-            return cache;
+        if (membrosDanoPorTipo.TryGetValue(tipo, out MemberInfo[] cache)) return cache;
 
         BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         List<MemberInfo> encontrados = new List<MemberInfo>();
@@ -353,12 +412,10 @@ public class BaseVida : MonoBehaviour
         for (int i = 0; i < NomesCampoDano.Length; i++)
         {
             FieldInfo campo = tipo.GetField(NomesCampoDano[i], flags);
-            if (campo != null)
-                encontrados.Add(campo);
+            if (campo != null) encontrados.Add(campo);
 
             PropertyInfo propriedade = tipo.GetProperty(NomesCampoDano[i], flags);
-            if (propriedade != null && propriedade.CanRead)
-                encontrados.Add(propriedade);
+            if (propriedade != null && propriedade.CanRead) encontrados.Add(propriedade);
         }
 
         MemberInfo[] resultado = encontrados.ToArray();
@@ -369,18 +426,11 @@ public class BaseVida : MonoBehaviour
     private bool TentarLerDanoDeComponente(Component componente, out int dano)
     {
         dano = 0;
-
-        if (componente == null)
-            return false;
-
-        if (componente is BaseVida)
-            return false;
-
-        if (componente is BaseVidaColliderFilho)
-            return false;
+        if (componente == null) return false;
+        if (componente is BaseVida) return false;
+        if (componente is BaseVidaColliderFilho) return false;
 
         MemberInfo[] membros = ObterMembrosDeDano(componente.GetType());
-
         for (int i = 0; i < membros.Length; i++)
         {
             object valor = null;
@@ -391,32 +441,25 @@ public class BaseVida : MonoBehaviour
             else
             {
                 PropertyInfo propriedade = membros[i] as PropertyInfo;
-                if (propriedade != null)
-                    valor = propriedade.GetValue(componente, null);
+                if (propriedade != null) valor = propriedade.GetValue(componente, null);
             }
 
-            if (TentarConverterParaInteiro(valor, out dano))
-                return true;
+            if (TentarConverterParaInteiro(valor, out dano)) return true;
         }
-
         return false;
     }
 
     private bool TentarLerCampoOuPropriedadeInteira(System.Type tipo, object instancia, string nome, out int valor)
     {
         valor = 0;
-
         BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         FieldInfo campo = tipo.GetField(nome, flags);
-
-        if (campo != null && TentarConverterParaInteiro(campo.GetValue(instancia), out valor))
-            return true;
+        if (campo != null && TentarConverterParaInteiro(campo.GetValue(instancia), out valor)) return true;
 
         PropertyInfo propriedade = tipo.GetProperty(nome, flags);
-
-        if (propriedade != null && propriedade.CanRead && TentarConverterParaInteiro(propriedade.GetValue(instancia, null), out valor))
-            return true;
+        if (propriedade != null && propriedade.CanRead &&
+            TentarConverterParaInteiro(propriedade.GetValue(instancia, null), out valor)) return true;
 
         return false;
     }
@@ -424,27 +467,11 @@ public class BaseVida : MonoBehaviour
     private bool TentarConverterParaInteiro(object valorOriginal, out int valor)
     {
         valor = 0;
+        if (valorOriginal == null) return false;
 
-        if (valorOriginal == null)
-            return false;
-
-        if (valorOriginal is int inteiro)
-        {
-            valor = inteiro;
-            return valor > 0;
-        }
-
-        if (valorOriginal is float numeroFloat)
-        {
-            valor = Mathf.RoundToInt(numeroFloat);
-            return valor > 0;
-        }
-
-        if (valorOriginal is double numeroDouble)
-        {
-            valor = Mathf.RoundToInt((float)numeroDouble);
-            return valor > 0;
-        }
+        if (valorOriginal is int inteiro)       { valor = inteiro;                         return valor > 0; }
+        if (valorOriginal is float numeroFloat) { valor = Mathf.RoundToInt(numeroFloat);   return valor > 0; }
+        if (valorOriginal is double numDouble)  { valor = Mathf.RoundToInt((float)numDouble); return valor > 0; }
 
         return false;
     }
@@ -453,23 +480,16 @@ public class BaseVida : MonoBehaviour
     {
         dano = 0;
         destruirAtacante = false;
-
-        if (atacante == null || danosAutomaticosPorTag == null)
-            return false;
+        if (atacante == null || danosAutomaticosPorTag == null) return false;
 
         Transform atual = atacante;
-
         while (atual != null)
         {
             for (int i = 0; i < danosAutomaticosPorTag.Length; i++)
             {
                 DanoAutomaticoPorTag configuracao = danosAutomaticosPorTag[i];
-
-                if (configuracao == null)
-                    continue;
-
-                if (string.IsNullOrWhiteSpace(configuracao.tagAtacante))
-                    continue;
+                if (configuracao == null) continue;
+                if (string.IsNullOrWhiteSpace(configuracao.tagAtacante)) continue;
 
                 if (atual.CompareTag(configuracao.tagAtacante))
                 {
@@ -478,80 +498,55 @@ public class BaseVida : MonoBehaviour
                     return dano > 0;
                 }
             }
-
             atual = atual.parent;
         }
-
         return false;
     }
 
     private bool DeveDestruirAtacantePorTag(Transform atacante)
     {
-        if (atacante == null || danosAutomaticosPorTag == null)
-            return false;
+        if (atacante == null || danosAutomaticosPorTag == null) return false;
 
         Transform atual = atacante;
-
         while (atual != null)
         {
             for (int i = 0; i < danosAutomaticosPorTag.Length; i++)
             {
                 DanoAutomaticoPorTag configuracao = danosAutomaticosPorTag[i];
-
-                if (configuracao == null)
-                    continue;
-
-                if (string.IsNullOrWhiteSpace(configuracao.tagAtacante))
-                    continue;
-
-                if (atual.CompareTag(configuracao.tagAtacante))
-                    return configuracao.destruirAtacanteAposDano;
+                if (configuracao == null) continue;
+                if (string.IsNullOrWhiteSpace(configuracao.tagAtacante)) continue;
+                if (atual.CompareTag(configuracao.tagAtacante)) return configuracao.destruirAtacanteAposDano;
             }
-
             atual = atual.parent;
         }
-
         return false;
     }
 
     private GameObject ObterObjetoPrincipalDoAtacante(Collider colisorAtacante)
     {
-        if (colisorAtacante == null)
-            return null;
-
-        if (colisorAtacante.attachedRigidbody != null)
-            return colisorAtacante.attachedRigidbody.gameObject;
-
+        if (colisorAtacante == null) return null;
+        if (colisorAtacante.attachedRigidbody != null) return colisorAtacante.attachedRigidbody.gameObject;
         return colisorAtacante.gameObject;
     }
 
+    // =========================================================
+    // COLLIDERS FILHOS
+    // =========================================================
+
     private void PrepararCollidersFilhos()
     {
-        if (!receberImpactoEmCollidersFilhos)
-            return;
+        if (!receberImpactoEmCollidersFilhos) return;
 
         Collider[] colliders = GetComponentsInChildren<Collider>(true);
-
         for (int i = 0; i < colliders.Length; i++)
         {
             Collider col = colliders[i];
-
-            if (col == null)
-                continue;
-
-            if (col.transform == transform)
-                continue;
-
-            // Misseis/projeteis guardados como filhos (ex.: torre) nao podem
-            // reportar impactos como se fossem a propria base.
-            if (EhColliderDeProjetil(col))
-                continue;
+            if (col == null) continue;
+            if (col.transform == transform) continue;
+            if (EhColliderDeProjetil(col)) continue;
 
             BaseVidaColliderFilho ponte = col.GetComponent<BaseVidaColliderFilho>();
-
-            if (ponte == null)
-                ponte = col.gameObject.AddComponent<BaseVidaColliderFilho>();
-
+            if (ponte == null) ponte = col.gameObject.AddComponent<BaseVidaColliderFilho>();
             ponte.Configurar(this);
         }
     }
@@ -567,89 +562,28 @@ public class BaseVida : MonoBehaviour
         ProcessarImpactoAutomatico(colisorAtacante);
     }
 
-    private void AplicarDano(int dano, GameObject atacante)
-    {
-        if (dano <= 0 || vidaAtual <= 0)
-            return;
-
-        vidaAtual -= dano;
-        vidaAtual = Mathf.Max(vidaAtual, 0);
-
-        // ATUALIZA BARRA
-        if (barraVidaUI != null)
-            barraVidaUI.AtualizarVida(vidaAtual);
-
-        if (mostrarDebugDano)
-        {
-            string nomeAtacante = atacante != null ? atacante.name : "Sem atacante informado";
-            Debug.Log($"[BaseVida] {name} recebeu {dano} de dano. Atacante: {nomeAtacante}. Vida: {vidaAtual}/{vidaMaxima}");
-        }
-
-        if (vidaAtual <= 0)
-            DestruirBase();
-    }
-
-    private void DestruirBase()
-    {
-        if (!destruirAoChegarEmZero)
-            return;
-
-        Destroy(gameObject);
-    }
-
-    private bool ObjetoOuPaisTemTagPermitida(Transform alvo)
-    {
-        Transform atual = alvo;
-
-        while (atual != null)
-        {
-            if (TagEstaPermitida(atual.gameObject.tag))
-                return true;
-
-            atual = atual.parent;
-        }
-
-        return false;
-    }
-
-    private bool TagEstaPermitida(string tagParaTestar)
-    {
-        if (string.IsNullOrWhiteSpace(tagParaTestar))
-            return false;
-
-        if (tagsQuePodemCausarDano == null || tagsQuePodemCausarDano.Length == 0)
-            return false;
-
-        for (int i = 0; i < tagsQuePodemCausarDano.Length; i++)
-        {
-            string tagPermitida = tagsQuePodemCausarDano[i];
-
-            if (string.IsNullOrWhiteSpace(tagPermitida))
-                continue;
-
-            if (tagParaTestar == tagPermitida)
-                return true;
-        }
-
-        return false;
-    }
+    // =========================================================
+    // VALIDAÇÃO
+    // =========================================================
 
     private void OnValidate()
     {
         vidaMaxima = Mathf.Max(1, vidaMaxima);
-        vidaAtual = Mathf.Clamp(vidaAtual, 0, vidaMaxima);
+        vidaAtual  = Mathf.Clamp(vidaAtual, 0, vidaMaxima);
 
         if (danosAutomaticosPorTag != null)
         {
             for (int i = 0; i < danosAutomaticosPorTag.Length; i++)
             {
-                if (danosAutomaticosPorTag[i] == null)
-                    continue;
-
+                if (danosAutomaticosPorTag[i] == null) continue;
                 danosAutomaticosPorTag[i].dano = Mathf.Max(0, danosAutomaticosPorTag[i].dano);
             }
         }
     }
+
+    // =========================================================
+    // CLASSE INTERNA — BRIDGE DE COLLIDER
+    // =========================================================
 
     private class BaseVidaColliderFilho : MonoBehaviour
     {
@@ -662,17 +596,13 @@ public class BaseVida : MonoBehaviour
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (baseVida == null || collision == null)
-                return;
-
+            if (baseVida == null || collision == null) return;
             baseVida.ReceberImpactoDoColliderFilho(collision.collider);
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            if (baseVida == null)
-                return;
-
+            if (baseVida == null) return;
             baseVida.ReceberImpactoDoColliderFilho(other);
         }
     }

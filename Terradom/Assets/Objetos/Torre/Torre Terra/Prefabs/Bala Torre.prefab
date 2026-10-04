@@ -50,7 +50,7 @@ MonoBehaviour:
   dano: 1
   velocidade: 100
   tempoDeVida: 10
-  mirarComAlturaDoAlvo: 0
+  mirarComAlturaDoAlvo: 1
   tagsQueRecebemDano:
   - Vermelho
   - Azul

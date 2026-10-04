@@ -1913,6 +1913,10 @@ MonoBehaviour:
   audioSourceDisparo: {fileID: 1025301106467292418}
   audioClipDisparo: {fileID: 8300000, guid: 8fd0543b6619e1f4ebda89f6d191466a, type: 3}
   distanciaMaximaAudioDisparo: 400
+  audioClipDestruicao: {fileID: 8300000, guid: aadf718347fa2234e9c94674d7512970, type: 3}
+  volumeDestruicao: 1
+  distanciaMinimaAudioDestruicao: 10
+  distanciaMaximaAudioDestruicao: 400
   miraAereaGiroY360: {fileID: 1236163295848011056}
   miraAereaElevacaoZ: {fileID: 3911767968643076021}
   spawnBalaAerea: {fileID: 168203290874119318}

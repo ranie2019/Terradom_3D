@@ -56,6 +56,15 @@ public class TankAtaque : MonoBehaviour
     [Tooltip("Distancia maxima em unidades do jogo para ouvir o disparo.")]
     [SerializeField, Min(1f)] private float distanciaMaximaAudioDisparo = 120f;
 
+    [Header("Audio de destruicao")]
+    [Tooltip("Clip tocado quando o tanque e destruido. Toca em um objeto temporario, pois o proprio tanque deixa de existir.")]
+    [SerializeField] private AudioClip audioClipDestruicao;
+    [SerializeField, Range(0f, 1f)] private float volumeDestruicao = 1f;
+    [Tooltip("Ate esta distancia o som da destruicao toca com volume cheio.")]
+    [SerializeField, Min(1f)] private float distanciaMinimaAudioDestruicao = 10f;
+    [Tooltip("Alem desta distancia o som da destruicao fica mudo.")]
+    [SerializeField, Min(2f)] private float distanciaMaximaAudioDestruicao = 150f;
+
     // =====================================================================
     // MIRA ANTIA�REA
     // =====================================================================
@@ -116,6 +125,8 @@ public class TankAtaque : MonoBehaviour
 
     private float proximoTiroEm;
     private float proximoTiroAereoEm;
+
+    private bool encerrando;
 
     // =====================================================================
     // AWAKE
@@ -441,6 +452,52 @@ public class TankAtaque : MonoBehaviour
         audioSourceDisparo.maxDistance = Mathf.Max(
             audioSourceDisparo.minDistance + 0.1f,
             distanciaMaximaAudioDisparo);
+    }
+
+    // =====================================================================
+    // AUDIO DE DESTRUICAO
+    // =====================================================================
+
+    private void OnApplicationQuit()
+    {
+        encerrando = true;
+    }
+
+    private void OnDestroy()
+    {
+        // Nao toca ao sair do jogo nem ao descarregar a cena (troca de cena / Game Over).
+        if (encerrando || !Application.isPlaying || !gameObject.scene.isLoaded)
+            return;
+
+        TocarAudioDestruicao();
+    }
+
+    private void TocarAudioDestruicao()
+    {
+        if (audioClipDestruicao == null)
+            return;
+
+        // O AudioSource do tanque morre junto com ele, entao o som toca em um
+        // objeto temporario que se destroi quando o clip termina.
+        GameObject som = new GameObject("SomDestruicaoTank_Temp");
+        som.transform.position = transform.position;
+
+        AudioSource fonte = som.AddComponent<AudioSource>();
+        fonte.playOnAwake  = false;
+        fonte.loop         = false;
+        fonte.spatialBlend = 1f;
+        fonte.rolloffMode  = AudioRolloffMode.Linear;
+        fonte.minDistance  = distanciaMinimaAudioDestruicao;
+        fonte.maxDistance  = Mathf.Max(distanciaMinimaAudioDestruicao + 1f, distanciaMaximaAudioDestruicao);
+        fonte.clip         = audioClipDestruicao;
+        fonte.volume       = volumeDestruicao;
+
+        // Mantem o mesmo canal de mixer do disparo, se houver.
+        if (audioSourceDisparo != null)
+            fonte.outputAudioMixerGroup = audioSourceDisparo.outputAudioMixerGroup;
+
+        fonte.Play();
+        Destroy(som, audioClipDestruicao.length + 0.1f);
     }
 
     private IEnumerator MoverBalaSemRigidbody(Transform bala, Vector3 direcao, float vel)

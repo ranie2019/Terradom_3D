@@ -54,7 +54,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -484,7 +485,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -1741,7 +1743,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -2260,7 +2263,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -2467,6 +2471,7 @@ GameObject:
   - component: {fileID: 7065634906704601218}
   - component: {fileID: 3143859800070782049}
   - component: {fileID: 774062886363416922}
+  - component: {fileID: 768211856219137385}
   - component: {fileID: 1515062155769153517}
   m_Layer: 10
   m_Name: Torre Ar Vermelho
@@ -2515,6 +2520,7 @@ MonoBehaviour:
   - Espada
   - Bala
   - Missel
+  - Verde
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 1
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
@@ -2524,7 +2530,8 @@ MonoBehaviour:
     destruirAtacanteAposDano: 1
   receberImpactoEmCollidersFilhos: 1
   barraVidaUI: {fileID: 5596591704214324668}
-  mostrarDebugDano: 0
+  clipDestruicao: {fileID: 8300000, guid: e97484bd6cda5fe4fbc2839ba258ea77, type: 3}
+  volumeDestruicao: 1
 --- !u!114 &774062886363416922
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2556,14 +2563,14 @@ MonoBehaviour:
   toleranciaMira: 15
   prefabMissel: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
   pontosMisseis:
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 1494658680748971980}
+  - {fileID: 2152750635867195598}
+  - {fileID: 5622204812943353950}
+  - {fileID: 3157539825845705539}
+  - {fileID: 4676868825471178250}
+  - {fileID: 6729778134386828388}
+  - {fileID: 5127692871046377338}
+  - {fileID: 9109790407343312867}
   intervaloEntreLancamentos: 1
   tempoRecarga: 20
   fonteAudio: {fileID: 1515062155769153517}
@@ -2575,6 +2582,30 @@ MonoBehaviour:
   velocidadeMax: 25
   tempoTrocaMin: 1
   tempoTrocaMax: 3
+--- !u!114 &768211856219137385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5573215296906669854}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
+  raioArea: 70
+  tagBase: Vermelho
+  mostrarArea: 1
+  corArea: {r: 1, g: 0.039215688, b: 0, a: 0}
+  corBorda: {r: 1, g: 0.039215688, b: 0, a: 0.8}
+  velocidadePiscar: 2
+  alturaVisualizacao: 0.5
+  segmentosCirculo: 64
+  terrain: {fileID: 0}
+  debugLogs: 0
+  mostrarConexoes: 1
+  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!82 &1515062155769153517
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2884,7 +2915,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -3586,7 +3618,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -4128,7 +4161,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0
@@ -4303,7 +4337,8 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
-  - Vermelho
+  - Verde
+  - Azul
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
   forcarDanoNaBaseVidaSemValidarTagDoAtacante: 0

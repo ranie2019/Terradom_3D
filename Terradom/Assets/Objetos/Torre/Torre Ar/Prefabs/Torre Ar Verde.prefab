@@ -310,6 +310,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -581,6 +582,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -1721,6 +1723,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -2142,7 +2145,7 @@ MonoBehaviour:
   - Espada
   - Bala
   - Missel
-  - Verde
+  - Azul
   receberDanoAutomaticoPorImpacto: 1
   procurarDanoNoAtacante: 1
   usarDanoPorTagSeNaoEncontrarDanoNoAtacante: 1
@@ -2152,7 +2155,8 @@ MonoBehaviour:
     destruirAtacanteAposDano: 1
   receberImpactoEmCollidersFilhos: 1
   barraVidaUI: {fileID: 6670497425373986081}
-  mostrarDebugDano: 0
+  clipDestruicao: {fileID: 8300000, guid: e97484bd6cda5fe4fbc2839ba258ea77, type: 3}
+  volumeDestruicao: 1
 --- !u!114 &788669089515602631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2208,14 +2212,14 @@ MonoBehaviour:
   toleranciaMira: 15
   prefabMissel: {fileID: 6532590686281397080, guid: 755483d487096104bb68dae06884a1ad, type: 3}
   pontosMisseis:
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
-  - {fileID: 446965431531178481, guid: 755483d487096104bb68dae06884a1ad, type: 3}
+  - {fileID: 7407505457805622326}
+  - {fileID: 7643661463852630589}
+  - {fileID: 7292308260382480119}
+  - {fileID: 4102209158442937336}
+  - {fileID: 5075225407824707731}
+  - {fileID: 8807842449391813971}
+  - {fileID: 1544956303407861083}
+  - {fileID: 4705852681091328802}
   intervaloEntreLancamentos: 1
   tempoRecarga: 20
   fonteAudio: {fileID: 1970755577194326234}
@@ -3250,6 +3254,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -3515,6 +3520,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -3690,6 +3696,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -4376,6 +4383,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1
@@ -5035,6 +5043,7 @@ MonoBehaviour:
   dano: 50
   destruirMesmoSemDano: 1
   tagsQueRecebemDano:
+  - Azul
   - Vermelho
   aplicarDanoEmBaseVida: 1
   baseVidaIgnoraTagDoAlvo: 1

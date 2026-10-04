@@ -20,23 +20,29 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // INSPECTOR
     // =====================================================================
+
     [Header("Visao")]
     public float raioVisao = 80f;
+
     [Tooltip("Layer em que ficam os colliders dos AVIOES. Obrigatorio.")]
     [SerializeField] private LayerMask layerAviao;
+
     [SerializeField] private float intervaloBuscaAlvo = 0.2f;
+
     [Tooltip("Folga (em %) para o alvo sair do raio antes de ser perdido.")]
     [SerializeField, Range(0f, 0.5f)] private float histereseSaida = 0.1f;
 
     [Header("Equipe")]
     [Tooltip("Descobre a equipe da torre pela tag da hierarquia e ataca qualquer outra equipe.")]
     [SerializeField] private bool detectarEquipeAutomaticamente = true;
+
     [Tooltip("Usadas apenas se a equipe automatica nao for encontrada ou estiver desligada.")]
     [SerializeField] private string[] tagsInimigos = { "Vermelho", "Verde" };
 
     [Header("Referencias de Mira")]
     [Tooltip("Filho direto da torre. Gira somente no eixo Y (horizontal), limitado.")]
     [SerializeField] private Transform cabeca;
+
     [Tooltip("Filho da Cabeca. Gira somente no eixo Z (elevacao).")]
     [SerializeField] private Transform baseMissel;
 
@@ -44,6 +50,7 @@ public class TorreAr : MonoBehaviour
     [SerializeField] private float limiteYMin = -180f;
     [SerializeField] private float limiteYMax = 180f;
     [SerializeField] private float velocidadeMira = 5f;
+
     [Tooltip("Se ligado, so dispara quando a cabeca ja estiver apontada para o alvo.")]
     [SerializeField] private bool exigirMiraAlinhada = false;
     [SerializeField] private float toleranciaMira = 15f;
@@ -51,6 +58,7 @@ public class TorreAr : MonoBehaviour
     [Header("Misseis")]
     [Tooltip("PREFAB do Missel (arraste do Project, NAO da cena). Usado para recarregar a torre.")]
     [SerializeField] private Missel prefabMissel;
+
     [Tooltip("Pontos onde os misseis ficam. Pontos sem missel recebem um novo a partir do prefab.")]
     [SerializeField] private Transform[] pontosMisseis;
 
@@ -81,6 +89,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // ESTADO INTERNO
     // =====================================================================
+
     private Transform alvoAtual;
     private Missel[] carregados;          // missel pronto em cada ponto (null = ponto vazio)
     private int indicePontoAtual;
@@ -90,7 +99,6 @@ public class TorreAr : MonoBehaviour
     private float velocidadeAtual;
     private float direcaoAtual;
     private float tempoProximaTroca;
-
     private float proximaBusca;
     private float proximoDisparo;
     private float fimRecarga = -1f;
@@ -101,6 +109,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // UNITY
     // =====================================================================
+
     private void Start()
     {
         if (cabeca != null) anguloYAtual = Mathf.DeltaAngle(0f, cabeca.localEulerAngles.y);
@@ -122,8 +131,7 @@ public class TorreAr : MonoBehaviour
         PrepararAudio();
         DefinirNovaPatrulha();
         LerMisseisIniciais();
-        CarregarPontosVazios(); // preenche pontos que comecaram sem missel
-
+        CarregarPontosVazios();
         proximaBusca = Time.time + Random.Range(0f, intervaloBuscaAlvo);
     }
 
@@ -154,6 +162,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // MISSEIS: CARGA, DISPARO E RECARGA
     // =====================================================================
+
     private void LerMisseisIniciais()
     {
         int n = pontosMisseis != null ? pontosMisseis.Length : 0;
@@ -166,7 +175,7 @@ public class TorreAr : MonoBehaviour
 
             for (int c = 0; c < ponto.childCount; c++)
             {
-                Missel m = ponto.GetChild(c).GetComponent<Missel>();
+                Missel m = ponto.GetChild(c).GetComponentInChildren<Missel>(true);
                 if (m != null && !m.EstaLancado)
                 {
                     carregados[i] = m;
@@ -226,17 +235,73 @@ public class TorreAr : MonoBehaviour
 
     private void CarregarPontosVazios()
     {
-        if (prefabMissel == null || carregados == null) return;
+        if (prefabMissel == null || carregados == null || pontosMisseis == null)
+            return;
+
+        // O campo deve apontar para um prefab do Project, nunca para um objeto da cena.
+        if (prefabMissel.gameObject.scene.IsValid())
+        {
+            Debug.LogError(
+                $"[TorreAr] '{name}': 'Prefab Missel' aponta para um objeto da cena. " +
+                "A referência deve vir da pasta Project.",
+                this);
+            return;
+        }
 
         for (int i = 0; i < carregados.Length; i++)
         {
             Transform ponto = pontosMisseis[i];
-            if (ponto == null) continue;
-            if (carregados[i] != null && !carregados[i].EstaLancado) continue;
 
-            Missel novo = Instantiate(prefabMissel, ponto.position, ponto.rotation, ponto);
-            if (!novo.gameObject.activeSelf)
-                novo.gameObject.SetActive(true);
+            if (ponto == null)
+                continue;
+
+            // O ponto precisa ser um Transform pertencente a uma cena aberta.
+            if (!ponto.gameObject.scene.IsValid())
+            {
+                Debug.LogError(
+                    $"[TorreAr] '{name}': 'Pontos Misseis[{i}]' aponta para um asset/prefab. " +
+                    "O ponto deve ser um Transform da torre na Hierarchy.",
+                    this);
+                continue;
+            }
+
+            if (carregados[i] != null && !carregados[i].EstaLancado)
+                continue;
+
+            // Instancia o GameObject do prefab e só depois define o pai da cena.
+            GameObject objeto = Instantiate(prefabMissel.gameObject);
+
+            if (objeto == null || !objeto.scene.IsValid())
+            {
+                Debug.LogError(
+                    $"[TorreAr] '{name}': o míssil instanciado não pertence a uma cena válida.",
+                    this);
+                continue;
+            }
+
+            // false evita o recálculo de matriz de mundo durante o SetParent.
+            objeto.transform.SetParent(ponto, false);
+            objeto.transform.localPosition = Vector3.zero;
+            objeto.transform.localRotation = Quaternion.identity;
+            objeto.transform.localScale = Vector3.one;
+
+            Missel novo = objeto.GetComponent<Missel>();
+
+            // Permite que Missel.cs esteja no root ou em um filho do prefab.
+            if (novo == null)
+                novo = objeto.GetComponentInChildren<Missel>(true);
+
+            if (novo == null)
+            {
+                Debug.LogError(
+                    $"[TorreAr] '{name}': o prefab do míssil não possui Missel.cs.",
+                    objeto);
+                Destroy(objeto);
+                continue;
+            }
+
+            if (!objeto.activeSelf)
+                objeto.SetActive(true);
 
             carregados[i] = novo;
         }
@@ -278,6 +343,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // AUDIO
     // =====================================================================
+
     private void PrepararAudio()
     {
         if (audioLancamento == null || fonteAudio != null) return;
@@ -285,7 +351,7 @@ public class TorreAr : MonoBehaviour
         fonteAudio = gameObject.AddComponent<AudioSource>();
         fonteAudio.playOnAwake  = false;
         fonteAudio.loop         = false;
-        fonteAudio.spatialBlend = 1f; // 3D: some com a distancia
+        fonteAudio.spatialBlend = 1f; // 3D
         fonteAudio.rolloffMode  = AudioRolloffMode.Linear;
         fonteAudio.minDistance  = 5f;
         fonteAudio.maxDistance  = distanciaMaximaAudio;
@@ -294,7 +360,9 @@ public class TorreAr : MonoBehaviour
     private void TocarAudioLancamento()
     {
         if (audioLancamento == null) return;
+
         if (fonteAudio == null) PrepararAudio();
+
         if (fonteAudio != null)
             fonteAudio.PlayOneShot(audioLancamento, volumeLancamento);
     }
@@ -302,6 +370,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // MIRA
     // =====================================================================
+
     private bool GiroCompleto => (limiteYMax - limiteYMin) >= 359f;
 
     private void GirarCabecaY()
@@ -314,6 +383,7 @@ public class TorreAr : MonoBehaviour
 
         Vector3 dirLocal = transform.InverseTransformDirection(dirWorld);
         float anguloDesejado = Mathf.Atan2(dirLocal.x, dirLocal.z) * Mathf.Rad2Deg;
+
         float anguloAlvo = Mathf.Clamp(anguloDesejado, limiteYMin, limiteYMax);
 
         float t = 1f - Mathf.Exp(-velocidadeMira * Time.deltaTime);
@@ -324,6 +394,7 @@ public class TorreAr : MonoBehaviour
             : Mathf.Lerp(anguloYAtual, anguloAlvo, t);
 
         erroMiraY = Mathf.Abs(Mathf.DeltaAngle(anguloYAtual, anguloDesejado));
+
         cabeca.localRotation = Quaternion.Euler(0f, anguloYAtual, 0f);
     }
 
@@ -333,17 +404,20 @@ public class TorreAr : MonoBehaviour
 
         Transform referencia = cabeca != null ? cabeca : transform;
         Vector3 alvoLocal = referencia.InverseTransformPoint(alvoAtual.position);
+
         float distH = Mathf.Sqrt(alvoLocal.x * alvoLocal.x + alvoLocal.z * alvoLocal.z);
         float elevacao = Mathf.Atan2(alvoLocal.y, distH) * Mathf.Rad2Deg;
 
         float t = 1f - Mathf.Exp(-velocidadeMira * Time.deltaTime);
         anguloZAtual = Mathf.LerpAngle(anguloZAtual, -elevacao, t);
+
         baseMissel.localRotation = Quaternion.Euler(0f, 0f, anguloZAtual);
     }
 
     // =====================================================================
     // PATRULHA (sem alvo)
     // =====================================================================
+
     private void Patrulhar()
     {
         erroMiraY = 180f;
@@ -351,6 +425,7 @@ public class TorreAr : MonoBehaviour
         if (cabeca != null)
         {
             anguloYAtual += direcaoAtual * velocidadeAtual * Time.deltaTime;
+
             if (anguloYAtual <= limiteYMin)
             {
                 anguloYAtual = limiteYMin;
@@ -361,6 +436,7 @@ public class TorreAr : MonoBehaviour
                 anguloYAtual = limiteYMax;
                 direcaoAtual = -1f;
             }
+
             cabeca.localRotation = Quaternion.Euler(0f, anguloYAtual, 0f);
         }
 
@@ -385,6 +461,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // DETECCAO DE ALVO
     // =====================================================================
+
     private bool AlvoValido(Transform alvo)
     {
         if (alvo == null || !alvo.gameObject.activeInHierarchy)
@@ -437,6 +514,7 @@ public class TorreAr : MonoBehaviour
 
                 // Sem IVidaAr: valor alto e finito para ainda poder ser escolhido.
                 if (vida == null) return 1e9f;
+
                 return prioridade == PrioridadeAlvoAr.MenorVida ? vida.VidaAtual : -vida.VidaAtual;
 
             default: // MaisPerto / MaisLonge
@@ -456,10 +534,8 @@ public class TorreAr : MonoBehaviour
             if (EhTagDeEquipe(atual))
             {
                 string equipe = atual.tag;
-
                 if (!string.IsNullOrEmpty(minhaEquipe))
                     return equipe != minhaEquipe ? atual : null;
-
                 return TagEstaNaListaDeInimigos(equipe) ? atual : null;
             }
             atual = atual.parent;
@@ -496,6 +572,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // VALIDACAO
     // =====================================================================
+
     private void OnValidate()
     {
         raioVisao = Mathf.Max(1f, raioVisao);
@@ -515,6 +592,7 @@ public class TorreAr : MonoBehaviour
     // =====================================================================
     // GIZMOS
     // =====================================================================
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 0.8f, 1f, 0.35f);
@@ -531,8 +609,10 @@ public class TorreAr : MonoBehaviour
         {
             Vector3 origem = cabeca.position;
             float r = raioVisao * 0.4f;
+
             Quaternion rotMin = transform.rotation * Quaternion.Euler(0f, limiteYMin, 0f);
             Quaternion rotMax = transform.rotation * Quaternion.Euler(0f, limiteYMax, 0f);
+
             Gizmos.color = Color.yellow;
             Gizmos.DrawRay(origem, rotMin * Vector3.forward * r);
             Gizmos.DrawRay(origem, rotMax * Vector3.forward * r);
@@ -541,4 +621,5 @@ public class TorreAr : MonoBehaviour
 }
 
 public enum PrioridadeAlvoAr { MaisPerto, MaisLonge, MenorVida, MaiorVida }
+
 public interface IVidaAr { float VidaAtual { get; } }
