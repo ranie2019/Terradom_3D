@@ -187,8 +187,8 @@ GameObject:
   - component: {fileID: 2472366273107722476}
   - component: {fileID: 9010927464466834941}
   - component: {fileID: 7403018380156509415}
-  - component: {fileID: 4265938833578959280}
   - component: {fileID: 1354925434358624349}
+  - component: {fileID: 5773950727026716474}
   m_Layer: 8
   m_Name: Torre Vermelhor
   m_TagString: Vermelho
@@ -291,30 +291,6 @@ MonoBehaviour:
   variacaoPitchDisparo: 0.05
   distanciaMinimaAudio: 30
   distanciaMaximaAudio: 200
---- !u!114 &4265938833578959280
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2955571549254343254}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 100
-  tagBase: Vermelho
-  mostrarArea: 1
-  corArea: {r: 1, g: 0.085035965, b: 0, a: 0}
-  corBorda: {r: 1, g: 0.08627451, b: 0, a: 0.8}
-  velocidadePiscar: 2
-  alturaVisualizacao: 0.5
-  segmentosCirculo: 64
-  terrain: {fileID: 0}
-  debugLogs: 0
-  mostrarConexoes: 1
-  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!82 &1354925434358624349
 AudioSource:
   m_ObjectHideFlags: 0
@@ -412,6 +388,26 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5773950727026716474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2955571549254343254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1737343cfa8e7444185751f4adfac143, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimiteIA
+  raioArea: 100
+  tagBase: Vermelho
+  mostrarArea: 1
+  corBorda: {r: 1, g: 0.08627451, b: 0, a: 0.8}
+  velocidadePiscar: 2
+  alturaVisualizacao: 0.5
+  segmentosCirculo: 64
+  terrain: {fileID: 0}
 --- !u!1 &4083589172209159978
 GameObject:
   m_ObjectHideFlags: 0

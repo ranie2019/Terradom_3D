@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 [DisallowMultipleComponent]
 public class RoboIA : MonoBehaviour
@@ -52,9 +53,34 @@ public class RoboIA : MonoBehaviour
     private int indiceBaseTankAtual    = 0;
     private int indiceBaseAviaoAtual   = 0;
 
+    // =========================================================
+    // PAINEL "IA DADOS" (liga/desliga pelo botão)
+    // =========================================================
+    [Header("Painel IA Dados")]
+    [Tooltip("Botão que mostra/esconde as informações da IA. Arraste aqui (não adicione também um OnClick).")]
+    [SerializeField] private Button botaoIADados;
+    [SerializeField] private bool painelVisivelAoIniciar = false;
+
+    [Header("Posição do painel (pixels)")]
+    [Tooltip("Liga: o painel fica logo abaixo do botão IA Dados, alinhado à borda direita dele. " +
+             "Desligado: usa a 'Margem Fixa' em relação ao canto superior direito da tela.")]
+    [SerializeField] private bool posicionarAbaixoDoBotao = true;
+    [Tooltip("Ajuste fino. X: positivo move para a direita, negativo para a esquerda. Y: positivo move para baixo.")]
+    [SerializeField] private Vector2 deslocamentoPainel = new Vector2(0f, 8f);
+    [Tooltip("Só vale com 'Posicionar Abaixo Do Botao' desligado. X: distância da borda direita. Y: distância do topo.")]
+    [SerializeField] private Vector2 margemFixa = new Vector2(10f, 10f);
+
+    private bool painelVisivel;
+    private string textoPainel = string.Empty;
+
+    // Cache do tamanho do texto (só recalcula quando o texto muda).
+    private string textoMedido;
+    private int fonteMedida;
+    private Vector2 tamanhoTexto;
+    private readonly Vector3[] cantosBotao = new Vector3[4];
+
     // FIX 3: GUIStyle criado uma vez para não alocar lixo toda chamada de OnGUI.
     // (OnGUI pode ser chamado várias vezes por frame — evitar new GUIStyle() ali dentro)
-#if UNITY_EDITOR
     private GUIStyle _debugStyle;
     private Transform raizUnidadesIA;
     private int quantidadeColetores;
@@ -62,10 +88,14 @@ public class RoboIA : MonoBehaviour
     private int quantidadeGuerreiros;
     private int quantidadeTanques;
     private int quantidadeAvioes;
-#endif
 
     private void Start()
     {
+        if (botaoIADados != null)
+            botaoIADados.onClick.AddListener(AlternarPainelDados);
+
+        DefinirPainelVisivel(painelVisivelAoIniciar);
+
         roboCriar = FindFirstObjectByType<RoboCriar>();
         if (roboCriar == null)
         {
@@ -82,6 +112,12 @@ public class RoboIA : MonoBehaviour
         Debug.Log("=== ROBO IA INICIADO ===");
     }
 
+    private void OnDestroy()
+    {
+        if (botaoIADados != null)
+            botaoIADados.onClick.RemoveListener(AlternarPainelDados);
+    }
+
     private void Update()
     {
         if (!RoboCriarAtivo()) return;
@@ -90,9 +126,7 @@ public class RoboIA : MonoBehaviour
         proximoUpdate = Time.time + intervalo;
         AtualizarBases();
         OrdenarUnidades();
-#if UNITY_EDITOR
-        AtualizarContagemUnidades();
-#endif
+        AtualizarPainel();
     }
 
     private bool RoboCriarAtivo() => roboCriar != null && roboCriar.isActiveAndEnabled;
@@ -261,14 +295,34 @@ public class RoboIA : MonoBehaviour
     }
 
     // =========================================================
-    // DEBUG
-    // FIX 3: OnGUI limitado ao Editor com #if UNITY_EDITOR.
-    // Antes rodava na build final, criando new GUIStyle() toda chamada
-    // (OnGUI pode rodar várias vezes por frame) — gerava lixo de memória
-    // desnecessário durante a partida real.
+    // PAINEL "IA DADOS"
+    // O texto é montado 1x por tick e só com o painel visível (antes era montado
+    // dentro do OnGUI, que roda várias vezes por frame).
     // =========================================================
 
-#if UNITY_EDITOR
+    /// <summary>Liga/desliga o painel. Use no botão "IA Dados".</summary>
+    public void AlternarPainelDados()
+    {
+        DefinirPainelVisivel(!painelVisivel);
+    }
+
+    public void DefinirPainelVisivel(bool visivel)
+    {
+        painelVisivel = visivel;
+
+        // Ao abrir, já mostra os dados atuais (sem esperar o próximo tick).
+        if (painelVisivel)
+            AtualizarPainel();
+    }
+
+    private void AtualizarPainel()
+    {
+        if (!painelVisivel) return;
+
+        AtualizarContagemUnidades();
+        textoPainel = ConstruirTextoPainel();
+    }
+
     private void AtualizarContagemUnidades()
     {
         if (raizUnidadesIA == null)
@@ -305,23 +359,8 @@ public class RoboIA : MonoBehaviour
         }
     }
 
-    private void OnGUI()
+    private string ConstruirTextoPainel()
     {
-        if (!RoboCriarAtivo())
-        {
-            GUI.Label(new Rect(10, 10, 300, 30), "[RoboIA] → RoboCriar desativado");
-            return;
-        }
-
-        // GUIStyle criado só uma vez (lazy init) para não alocar a cada frame
-        if (_debugStyle == null)
-        {
-            _debugStyle = new GUIStyle();
-            _debugStyle.normal.textColor = Color.green;
-        }
-
-        _debugStyle.fontSize = Screen.width < 480 || Screen.height < 360 ? 12 : 16;
-
         string etapaLabel = etapaUnidade switch
         {
             0 => "Coletor",
@@ -355,11 +394,100 @@ public class RoboIA : MonoBehaviour
         debug += $"Coletores:  {quantidadeColetores}\n";
         debug += $"Tanques:    {quantidadeTanques}\n";
         debug += $"Avioes:     {quantidadeAvioes}";
-
-        float larguraPainel = Mathf.Max(1f, Mathf.Min(520f, Screen.width - 20f));
-        float posicaoX = Mathf.Max(10f, Screen.width - larguraPainel - 10f);
-        float alturaPainel = Mathf.Max(1f, Screen.height - 20f);
-        GUI.Label(new Rect(posicaoX, 10f, larguraPainel, alturaPainel), debug, _debugStyle);
+        return debug;
     }
-#endif
+
+    private void OnGUI()
+    {
+        if (!painelVisivel)
+            return;
+
+        if (!RoboCriarAtivo())
+        {
+            GUI.Label(new Rect(10, 10, 300, 30), "[RoboIA] → RoboCriar desativado");
+            return;
+        }
+
+        // GUIStyle criado só uma vez (lazy init) para não alocar a cada frame
+        if (_debugStyle == null)
+        {
+            _debugStyle = new GUIStyle();
+            _debugStyle.normal.textColor = Color.green;
+        }
+
+        _debugStyle.fontSize = Screen.width < 480 || Screen.height < 360 ? 12 : 16;
+
+        Vector2 tamanho = ObterTamanhoDoTexto();
+
+        float x;
+        float y;
+        if (posicionarAbaixoDoBotao && TentarObterRetanguloDoBotao(out Rect botao))
+        {
+            // Alinha a borda direita do texto com a borda direita do botão e coloca logo abaixo dele.
+            x = botao.xMax - tamanho.x + deslocamentoPainel.x;
+            y = botao.yMax + deslocamentoPainel.y;
+        }
+        else
+        {
+            x = Screen.width - tamanho.x - margemFixa.x;
+            y = margemFixa.y;
+        }
+
+        // Mantém o painel inteiro dentro da tela.
+        x = Mathf.Clamp(x, 0f, Mathf.Max(0f, Screen.width - tamanho.x));
+        y = Mathf.Clamp(y, 0f, Mathf.Max(0f, Screen.height - tamanho.y));
+
+        GUI.Label(new Rect(x, y, tamanho.x + 4f, tamanho.y + 4f), textoPainel, _debugStyle);
+    }
+
+    private Vector2 ObterTamanhoDoTexto()
+    {
+        if (!ReferenceEquals(textoMedido, textoPainel) || fonteMedida != _debugStyle.fontSize)
+        {
+            tamanhoTexto = _debugStyle.CalcSize(new GUIContent(textoPainel));
+            textoMedido = textoPainel;
+            fonteMedida = _debugStyle.fontSize;
+        }
+        return tamanhoTexto;
+    }
+
+    /// <summary>Retângulo do botão em coordenadas do OnGUI (origem no canto superior esquerdo).</summary>
+    private bool TentarObterRetanguloDoBotao(out Rect retangulo)
+    {
+        retangulo = default;
+
+        if (botaoIADados == null || !botaoIADados.gameObject.activeInHierarchy)
+            return false;
+
+        RectTransform rt = botaoIADados.transform as RectTransform;
+        if (rt == null)
+            return false;
+
+        Canvas canvas = botaoIADados.GetComponentInParent<Canvas>();
+        Camera cam = null;
+        if (canvas != null)
+        {
+            canvas = canvas.rootCanvas;
+            if (canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                cam = canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+        }
+
+        rt.GetWorldCorners(cantosBotao);
+
+        float xMin = float.MaxValue, xMax = float.MinValue;
+        float yMin = float.MaxValue, yMax = float.MinValue;
+
+        for (int i = 0; i < 4; i++)
+        {
+            Vector2 p = cam != null ? (Vector2)cam.WorldToScreenPoint(cantosBotao[i]) : (Vector2)cantosBotao[i];
+            xMin = Mathf.Min(xMin, p.x);
+            xMax = Mathf.Max(xMax, p.x);
+            yMin = Mathf.Min(yMin, p.y);
+            yMax = Mathf.Max(yMax, p.y);
+        }
+
+        // Tela: y cresce para cima. OnGUI: y cresce para baixo.
+        retangulo = Rect.MinMaxRect(xMin, Screen.height - yMax, xMax, Screen.height - yMin);
+        return true;
+    }
 }

@@ -2471,7 +2471,7 @@ GameObject:
   - component: {fileID: 7065634906704601218}
   - component: {fileID: 3143859800070782049}
   - component: {fileID: 774062886363416922}
-  - component: {fileID: 768211856219137385}
+  - component: {fileID: 3208890193531776835}
   - component: {fileID: 1515062155769153517}
   m_Layer: 10
   m_Name: Torre Ar Vermelho
@@ -2582,7 +2582,7 @@ MonoBehaviour:
   velocidadeMax: 25
   tempoTrocaMin: 1
   tempoTrocaMax: 3
---- !u!114 &768211856219137385
+--- !u!114 &3208890193531776835
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2591,21 +2591,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 5573215296906669854}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
+  m_Script: {fileID: 11500000, guid: 1737343cfa8e7444185751f4adfac143, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 70
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimiteIA
+  raioArea: 100
   tagBase: Vermelho
   mostrarArea: 1
-  corArea: {r: 1, g: 0.039215688, b: 0, a: 0}
   corBorda: {r: 1, g: 0.039215688, b: 0, a: 0.8}
   velocidadePiscar: 2
   alturaVisualizacao: 0.5
   segmentosCirculo: 64
   terrain: {fileID: 0}
-  debugLogs: 0
-  mostrarConexoes: 1
-  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!82 &1515062155769153517
 AudioSource:
   m_ObjectHideFlags: 0
