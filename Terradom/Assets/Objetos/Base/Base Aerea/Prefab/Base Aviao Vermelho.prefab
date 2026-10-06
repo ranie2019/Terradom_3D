@@ -855,7 +855,7 @@ MonoBehaviour:
   raioArea: 100
   tagBase: Vermelho
   mostrarArea: 1
-  corArea: {r: 1, g: 0.039215688, b: 0, a: 0.15}
+  corArea: {r: 1, g: 0.039215688, b: 0, a: 0}
   corBorda: {r: 1, g: 0.039215688, b: 0, a: 0.8}
   velocidadePiscar: 2
   alturaVisualizacao: 0.5

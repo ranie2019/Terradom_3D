@@ -625,9 +625,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89c3c1889dd67374d810132c23efbb5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameControllerRecursos
-  pedra: 500
-  madeira: 500
-  metal: 500
+  pedra: 9500
+  madeira: 9500
+  metal: 9500
   custoPedraBaseSoldado: 100
   custoMadeiraBaseSoldado: 100
   custoMetalBaseSoldado: 100
@@ -7257,9 +7257,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af5328e95cf01c84ebeb6d2695c83d18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameControllerRecursosIA
-  pedra: 1500
-  madeira: 1500
-  metal: 1500
+  pedra: 10500
+  madeira: 10500
+  metal: 10500
   custoPedraBaseSoldado: 100
   custoMadeiraBaseSoldado: 100
   custoMetalBaseSoldado: 100
@@ -7307,13 +7307,13 @@ MonoBehaviour:
   prefabBaseAviao: {fileID: 6177738934532680852, guid: 043e236a658d24149a70db9dce7bb5a8, type: 3}
   prefabTorreTerra: {fileID: 2955571549254343254, guid: a4b40808f9917814d9c820998f1fea86, type: 3}
   prefabTorreAr: {fileID: 5573215296906669854, guid: 7a8fa32dc6522d54992a5f46238773aa, type: 3}
-  raioSpawn: 250
+  raioSpawn: 30
   camadaBloqueio:
     serializedVersion: 2
     m_Bits: 4294967295
   pontoReferencia: {fileID: 1672257480}
   terrain: {fileID: 450572200}
-  margemColisao: 0.95
+  margemColisao: 1.2
   distanciaMinimaEntreBases: 100
   basesInimigas:
   - transform: {fileID: 6691076894196074902, guid: 9d5bf9877efcd8d4685fef47ddb0dc47, type: 3}

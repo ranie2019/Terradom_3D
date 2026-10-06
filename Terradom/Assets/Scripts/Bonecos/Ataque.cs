@@ -151,7 +151,30 @@ public class Ataque : MonoBehaviour
             return;
         }
 
-        // Para funcionar também com BaseVida/Basevida sem depender do tipo exato.
+        // Bases: chamada direta. O SendMessage("AplicarDano", dano) falhava porque
+        // BaseVida.AplicarDano exige 2 parametros. Passar o atacante tambem permite
+        // que a base bloqueie dano entre aliados.
+        BaseVida baseVida = _alvoAtual.GetComponentInParent<BaseVida>();
+        if (baseVida == null)
+            baseVida = _alvoAtual.GetComponentInChildren<BaseVida>();
+
+        if (baseVida != null)
+        {
+            baseVida.ReceberDano(dano, gameObject);
+            return;
+        }
+
+        BaseVidaIA baseVidaIA = _alvoAtual.GetComponentInParent<BaseVidaIA>();
+        if (baseVidaIA == null)
+            baseVidaIA = _alvoAtual.GetComponentInChildren<BaseVidaIA>();
+
+        if (baseVidaIA != null)
+        {
+            baseVidaIA.ReceberDano(dano, gameObject);
+            return;
+        }
+
+        // Outros tipos de alvo (sem Vida nem base): tenta pelos metodos conhecidos.
         _alvoAtual.SendMessage("AplicarDano", dano, SendMessageOptions.DontRequireReceiver);
         _alvoAtual.SendMessage("ReceberDano", dano, SendMessageOptions.DontRequireReceiver);
     }

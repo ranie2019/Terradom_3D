@@ -10,43 +10,33 @@ public class BaseLimite : MonoBehaviour
     // =========================================================
     private static readonly Dictionary<string, List<BaseLimite>> basesPorTag = new Dictionary<string, List<BaseLimite>>();
     private static readonly Dictionary<string, Mesh> bordasUnificadasPorTag = new Dictionary<string, Mesh>();
-    private static readonly Dictionary<string, Mesh> areasUnificadasPorTag  = new Dictionary<string, Mesh>();
     private static readonly HashSet<string> tagsComBordaDesatualizada = new HashSet<string>();
-    private static readonly HashSet<string> tagsComAreaDesatualizada  = new HashSet<string>();
-    // Primeira base registrada por tag (define cor e intensidade da área para toda a equipe)
+    // Primeira base registrada por tag (define a cor da borda para toda a equipe)
     private static readonly Dictionary<string, BaseLimite> primeiraBasePorTag = new Dictionary<string, BaseLimite>();
-    
+
     [Header("Configuração da Área de Construção")]
     [SerializeField] private float raioArea = 15f;
     [SerializeField] private string tagBase = "Vermelho";
-    
+
     [Header("Efeito Visual")]
     [SerializeField] private bool mostrarArea = true;
-    [SerializeField] private Color corArea = new Color(0.2f, 0.8f, 0.2f, 0.15f);
     [SerializeField] private Color corBorda = new Color(0.2f, 0.8f, 0.2f, 0.8f);
     [SerializeField] private float velocidadePiscar = 2f;
     [SerializeField] private float alturaVisualizacao = 0.05f;
     [SerializeField] private int segmentosCirculo = 64;
-    
+
     [Header("Referência ao Terreno")]
     [SerializeField] private Terrain terrain;
-    
-    [Header("Debug")]
-    [SerializeField] private bool debugLogs = false;
-    [SerializeField] private bool mostrarConexoes = true;
-    [SerializeField] private Color corConexao = Color.yellow;
-    
-    // Materiais para o efeito visual
-    private Material materialArea;
+
+    // Material para o efeito visual
     private Material materialBorda;
-    private Mesh meshCirculo;
-    
+
     // Cache
     private float alphaAtual = 1f;
     private float timerPiscar;
     private Vector3 posicaoBase;
     private bool mostrarAreaAnterior;
-    
+
     // Flag para saber se foi desregistrado temporariamente
     private bool desregistradoTemporariamente = false;
 
@@ -69,14 +59,10 @@ public class BaseLimite : MonoBehaviour
     {
         foreach (Mesh mesh in bordasUnificadasPorTag.Values)
             DestruirObjetoUnity(mesh);
-        foreach (Mesh mesh in areasUnificadasPorTag.Values)
-            DestruirObjetoUnity(mesh);
 
         basesPorTag.Clear();
         bordasUnificadasPorTag.Clear();
-        areasUnificadasPorTag.Clear();
         tagsComBordaDesatualizada.Clear();
-        tagsComAreaDesatualizada.Clear();
         primeiraBasePorTag.Clear();
     }
 
@@ -90,13 +76,13 @@ public class BaseLimite : MonoBehaviour
         else
             DestroyImmediate(objeto);
     }
-    
+
     private void Awake()
     {
         // Procura o Terrain se não foi atribuído
         if (terrain == null)
             terrain = FindFirstObjectByType<Terrain>();
-        
+
         // Usa a tag do GameObject se tagBase estiver vazia
         if (string.IsNullOrEmpty(tagBase))
             tagBase = gameObject.tag;
@@ -106,62 +92,44 @@ public class BaseLimite : MonoBehaviour
         if ((tagObjeto == "Azul" || tagObjeto == "Vermelho" || tagObjeto == "Verde") && tagObjeto != tagBase)
             Debug.LogWarning($"[BaseLimite] '{name}' tem a tag '{tagObjeto}' mas tagBase='{tagBase}'. " +
                              "A área será registrada para a equipe da tagBase.", this);
-        
+
         // Registra esta base no dicionário global
         if (!desregistradoTemporariamente)
             RegistrarBase();
-        
-        // Cria os materiais e meshes para visualização
+
+        // Cria o material da borda para visualização
         CriarMateriais();
-        CriarMeshes();
-        
+
         timerPiscar = 0f;
         posicaoBase = transform.position;
         mostrarAreaAnterior = mostrarArea;
-        
-        if (debugLogs)
-            Debug.Log($"[BaseLimite] Base registrada com tag '{tagBase}'. Total bases desta tag: {ObterTotalBasesDaTag()}");
     }
-    
+
     private void OnEnable()
     {
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
 
         // Quando reativado (após posicionamento), registra novamente
-        if (desregistradoTemporariamente)
-        {
-            desregistradoTemporariamente = false;
-            if (debugLogs)
-                Debug.Log($"[BaseLimite] Base re-registrada após posicionamento. Tag: '{tagBase}'");
-        }
-
-        if (!desregistradoTemporariamente)
-            RegistrarBase();
+        desregistradoTemporariamente = false;
+        RegistrarBase();
     }
-    
+
     private void OnDisable()
     {
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
     }
 
     private void OnDestroy()
     {
         // Remove esta base do dicionário global
         RemoverBase();
-        
-        // Limpa materiais
-        if (materialArea != null)
-            Destroy(materialArea);
+
+        // Limpa material
         if (materialBorda != null)
             Destroy(materialBorda);
-        if (meshCirculo != null)
-            Destroy(meshCirculo);
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
     }
-    
+
     private void Update()
     {
         // Atualiza posição (a base pode ter sido movida)
@@ -170,28 +138,26 @@ public class BaseLimite : MonoBehaviour
         {
             posicaoBase = posicaoAtual;
             InvalidarBordaUnificada(tagBase);
-            InvalidarAreaUnificada(tagBase);
         }
 
         if (mostrarArea != mostrarAreaAnterior)
         {
             mostrarAreaAnterior = mostrarArea;
             InvalidarBordaUnificada(tagBase);
-            InvalidarAreaUnificada(tagBase);
         }
 
         if (!mostrarArea)
             return;
-        
+
         // Atualiza o efeito de pulsar
         timerPiscar += Time.deltaTime * velocidadePiscar;
         alphaAtual = (Mathf.Sin(timerPiscar) + 1f) * 0.5f; // Oscila entre 0 e 1
     }
-    
+
     // =========================================================
     // REGISTRO GLOBAL
     // =========================================================
-    
+
     /// <summary>
     /// Remove temporariamente esta base do dicionário global.
     /// Usado durante o posicionamento (ghost) para que a base
@@ -201,10 +167,8 @@ public class BaseLimite : MonoBehaviour
     {
         desregistradoTemporariamente = true;
         RemoverBase();
-        if (debugLogs)
-            Debug.Log($"[BaseLimite] Base '{gameObject.name}' desregistrada temporariamente para posicionamento");
     }
-    
+
     private void RegistrarBase()
     {
         if (string.IsNullOrEmpty(tagBase))
@@ -212,10 +176,10 @@ public class BaseLimite : MonoBehaviour
             Debug.LogError("[BaseLimite] ❌ Tag da base não pode ser vazia!");
             return;
         }
-        
+
         if (!basesPorTag.ContainsKey(tagBase))
             basesPorTag[tagBase] = new List<BaseLimite>();
-        
+
         if (!basesPorTag[tagBase].Contains(this))
             basesPorTag[tagBase].Add(this);
 
@@ -228,14 +192,13 @@ public class BaseLimite : MonoBehaviour
         }
 
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
     }
-    
+
     private void RemoverBase()
     {
         if (string.IsNullOrEmpty(tagBase))
             return;
-        
+
         if (basesPorTag.ContainsKey(tagBase))
         {
             basesPorTag[tagBase].Remove(this);
@@ -262,20 +225,12 @@ public class BaseLimite : MonoBehaviour
         }
 
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
     }
-    
-    private int ObterTotalBasesDaTag()
-    {
-        if (basesPorTag.ContainsKey(tagBase))
-            return basesPorTag[tagBase].Count;
-        return 0;
-    }
-    
+
     // =========================================================
     // VERIFICAÇÃO DE CONSTRUÇÃO (MÉTODOS ESTÁTICOS)
     // =========================================================
-    
+
     /// <summary>
     /// Verifica se uma posição está dentro da área de construção de alguma base da tag especificada
     /// </summary>
@@ -283,24 +238,24 @@ public class BaseLimite : MonoBehaviour
     {
         if (!basesPorTag.ContainsKey(tag))
             return false;
-        
+
         foreach (BaseLimite baseLimite in basesPorTag[tag])
         {
             if (baseLimite == null)
                 continue;
-            
+
             float distancia = Vector3.Distance(
                 new Vector3(posicao.x, 0, posicao.z),
                 new Vector3(baseLimite.transform.position.x, 0, baseLimite.transform.position.z)
             );
-            
+
             if (distancia <= baseLimite.raioArea)
                 return true;
         }
-        
+
         return false;
     }
-    
+
     /// <summary>
     /// Verifica se uma posição está dentro da área de construção desta base específica
     /// </summary>
@@ -310,10 +265,10 @@ public class BaseLimite : MonoBehaviour
             new Vector3(posicao.x, 0, posicao.z),
             new Vector3(transform.position.x, 0, transform.position.z)
         );
-        
+
         return distancia <= raioArea;
     }
-    
+
     /// <summary>
     /// Verifica se pode construir na posição (dentro da área E longe o suficiente de bases inimigas)
     /// </summary>
@@ -322,31 +277,31 @@ public class BaseLimite : MonoBehaviour
         // Verifica se está dentro da área de alguma base aliada
         if (!PosicaoDentroDeArea(tag, posicao))
             return false;
-        
+
         // Verifica se está longe o suficiente de bases inimigas
         foreach (var kvp in basesPorTag)
         {
             if (kvp.Key == tag)
                 continue; // Pula bases da mesma tag (aliadas)
-            
+
             foreach (BaseLimite baseInimiga in kvp.Value)
             {
                 if (baseInimiga == null)
                     continue;
-                
+
                 float distancia = Vector3.Distance(
                     new Vector3(posicao.x, 0, posicao.z),
                     new Vector3(baseInimiga.transform.position.x, 0, baseInimiga.transform.position.z)
                 );
-                
+
                 if (distancia < distanciaMinimaEntreBases)
                     return false;
             }
         }
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Verifica se existe pelo menos uma base da tag (para construção inicial)
     /// </summary>
@@ -354,7 +309,7 @@ public class BaseLimite : MonoBehaviour
     {
         return basesPorTag.ContainsKey(tag) && basesPorTag[tag].Count > 0;
     }
-    
+
     /// <summary>
     /// Retorna a base mais próxima da tag especificada a partir de uma posição
     /// </summary>
@@ -362,34 +317,34 @@ public class BaseLimite : MonoBehaviour
     {
         if (!basesPorTag.ContainsKey(tag))
             return null;
-        
+
         BaseLimite maisProxima = null;
         float menorDistancia = float.MaxValue;
-        
+
         foreach (BaseLimite baseLimite in basesPorTag[tag])
         {
             if (baseLimite == null)
                 continue;
-            
+
             float distancia = Vector3.Distance(posicao, baseLimite.transform.position);
-            
+
             if (distancia < menorDistancia)
             {
                 menorDistancia = distancia;
                 maisProxima = baseLimite;
             }
         }
-        
+
         return maisProxima;
     }
-    
+
     // =========================================================
     // VISUALIZAÇÃO (CORRIGIDA - CÍRCULO DEITADO NO CHÃO)
     // =========================================================
-    
+
     private void CriarMateriais()
     {
-        // Material da área (transparente)
+        // Material da borda (transparente)
         Shader shaderTransparente = Shader.Find("Sprites/Default");
         if (shaderTransparente == null)
             shaderTransparente = Shader.Find("Unlit/Color");
@@ -400,95 +355,34 @@ public class BaseLimite : MonoBehaviour
         // 'new Material' lançaria exceção e quebraria o Awake da base.
         if (shaderTransparente == null)
         {
-            Debug.LogError("[BaseLimite] Nenhum shader encontrado para desenhar a área. " +
+            Debug.LogError("[BaseLimite] Nenhum shader encontrado para desenhar a borda. " +
                            "Adicione 'Sprites/Default' em Project Settings > Graphics > Always Included Shaders.", this);
             mostrarArea = false;
             return;
         }
-        
-        materialArea = new Material(shaderTransparente);
-        materialArea.color = corArea;
-        
-        // Material da borda
+
         materialBorda = new Material(shaderTransparente);
         materialBorda.color = corBorda;
     }
-    
-    private void CriarMeshes()
-    {
-        // Cada base continua desenhando o preenchimento leve da sua área.
-        // O contorno é gerado uma vez para a união de todas as bases da equipe.
-        meshCirculo = CriarMalhaCircular(raioArea, segmentosCirculo);
-    }
-    
-    private Mesh CriarMalhaCircular(float raio, int segmentos)
-    {
-        Mesh mesh = new Mesh();
-        mesh.name = "PreenchimentoAreaBase";
-        
-        List<Vector3> vertices = new List<Vector3>();
-        List<int> triangulos = new List<int>();
-        
-        // Centro do círculo
-        vertices.Add(Vector3.zero);
 
-        // Vértices da borda (no plano XZ - horizontal)
-        for (int i = 0; i <= segmentos; i++)
-        {
-            float angulo = (float)i / segmentos * CirculoCompleto;
-            float x = Mathf.Cos(angulo) * raio;
-            float z = Mathf.Sin(angulo) * raio;
-            vertices.Add(new Vector3(x, 0, z));
-        }
-
-        // Triângulos (todos conectados ao centro)
-        for (int i = 1; i <= segmentos; i++)
-        {
-            triangulos.Add(0);
-            triangulos.Add(i);
-            triangulos.Add(i + 1 > segmentos ? 1 : i + 1);
-        }
-        
-        mesh.SetVertices(vertices);
-        mesh.SetTriangles(triangulos, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        
-        return mesh;
-    }
-    
     private void OnRenderObject()
     {
-        if (!mostrarArea || materialArea == null)
+        if (!mostrarArea || materialBorda == null)
             return;
 
         // Somente a base responsável desenha por toda a equipe
         if (this != ObterBaseResponsavelPelaBorda(tagBase))
             return;
 
-        // --- ÁREA UNIFICADA ---
-        // Usa cor e alpha da PRIMEIRA base registrada para esta tag
-        Color corAreaBase = corArea;
-        if (primeiraBasePorTag.TryGetValue(tagBase, out BaseLimite primeira) && primeira != null)
-            corAreaBase = primeira.corArea;
-
-        Mesh meshAreaUnificada = ObterMeshAreaUnificada(tagBase);
-        if (meshAreaUnificada != null && materialArea != null)
-        {
-            Color corAreaAtual = corAreaBase;
-            corAreaAtual.a = corAreaBase.a * alphaAtual;
-            materialArea.color = corAreaAtual;
-            materialArea.SetPass(0);
-            Graphics.DrawMeshNow(meshAreaUnificada, Matrix4x4.identity);
-        }
-
         // --- BORDA UNIFICADA ---
         Mesh meshBordaUnificada = ObterMeshBordaUnificada(tagBase);
-        if (meshBordaUnificada == null || materialBorda == null)
+        if (meshBordaUnificada == null)
             return;
 
+        // Usa a cor da PRIMEIRA base registrada para esta tag
         Color corBordaBase = corBorda;
-        if (primeira != null) corBordaBase = primeira.corBorda;
+        if (primeiraBasePorTag.TryGetValue(tagBase, out BaseLimite primeira) && primeira != null)
+            corBordaBase = primeira.corBorda;
 
         Color corBordaAtual = corBordaBase;
         corBordaAtual.a = corBordaBase.a * (0.5f + alphaAtual * 0.5f);
@@ -503,13 +397,7 @@ public class BaseLimite : MonoBehaviour
             tagsComBordaDesatualizada.Add(tag);
     }
 
-    private static void InvalidarAreaUnificada(string tag)
-    {
-        if (!string.IsNullOrEmpty(tag))
-            tagsComAreaDesatualizada.Add(tag);
-    }
-
-    private static List<BaseLimite> ObterBasesDaTag(string tag)
+    public static List<BaseLimite> ObterBasesDaTag(string tag)
     {
         List<BaseLimite> resultado = new List<BaseLimite>();
         if (string.IsNullOrEmpty(tag))
@@ -627,119 +515,6 @@ public class BaseLimite : MonoBehaviour
         mesh.RecalculateBounds();
         bordasUnificadasPorTag[tag] = mesh;
         return mesh;
-    }
-
-    private static Mesh ObterMeshAreaUnificada(string tag)
-    {
-        bool precisaReconstruir = tagsComAreaDesatualizada.Contains(tag) ||
-                                  !areasUnificadasPorTag.ContainsKey(tag);
-        if (!precisaReconstruir)
-            return areasUnificadasPorTag[tag];
-
-        if (areasUnificadasPorTag.TryGetValue(tag, out Mesh antiga))
-        {
-            DestruirObjetoUnity(antiga);
-            areasUnificadasPorTag.Remove(tag);
-        }
-
-        tagsComAreaDesatualizada.Remove(tag);
-        List<BaseLimite> bases = ObterBasesDaTag(tag);
-
-        if (bases.Count == 0)
-        {
-            areasUnificadasPorTag[tag] = null;
-            return null;
-        }
-
-        // ESTRATEGIA CORRETA:
-        // O contorno externo da uniao ja e calculado pela borda (AdicionarBordaVisivel).
-        // Reutilizamos os mesmos arcos visiveis para construir uma lista de pontos
-        // do contorno externo em ordem, e triangulamos esse contorno como um
-        // unico poligono plano usando fan triangulation a partir do centroide.
-        // Isso garante ZERO sobreposicao e alpha uniforme em toda a area.
-
-        // Passo 1: coletar todos os pontos do contorno externo em ordem
-        // Cada base contribui com seus arcos visiveis (ja em ordem angular).
-        // Concatenamos os arcos de todas as bases na ordem em que aparecem
-        // no contorno externo.
-
-        List<Vector3> contorno = new List<Vector3>();
-
-        for (int i = 0; i < bases.Count; i++)
-        {
-            BaseLimite base_ = bases[i];
-            if (base_ == null || base_.raioArea <= 0f) continue;
-
-            List<IntervaloAngular> arcos = CalcularArcosVisiveis(bases, base_);
-            if (arcos.Count == 0) continue;
-
-            Terrain terreno   = ObterTerrenoLimite(base_);
-            Vector3 centro    = base_.transform.position;
-            float   raio      = base_.raioArea;
-            int     segmentos = Mathf.Max(16, base_.segmentosCirculo);
-
-            foreach (IntervaloAngular arco in arcos)
-            {
-                int passos = Mathf.Max(1, Mathf.CeilToInt(
-                    (arco.fim - arco.inicio) / CirculoCompleto * segmentos));
-
-                for (int p = 0; p <= passos; p++)
-                {
-                    float angulo = Mathf.Lerp(arco.inicio, arco.fim, (float)p / passos);
-                    float x = centro.x + Mathf.Cos(angulo) * raio;
-                    float z = centro.z + Mathf.Sin(angulo) * raio;
-                    float y = ObterAlturaRender(terreno, new Vector3(x, 0, z), base_.alturaVisualizacao);
-                    contorno.Add(new Vector3(x, y, z));
-                }
-            }
-        }
-
-        if (contorno.Count < 3)
-        {
-            areasUnificadasPorTag[tag] = null;
-            return null;
-        }
-
-        // Passo 2: calcular o centroide do contorno
-        Vector3 centroide = Vector3.zero;
-        foreach (Vector3 p in contorno)
-            centroide += p;
-        centroide /= contorno.Count;
-
-        // Passo 3: fan triangulation — centroide + cada aresta do contorno
-        List<Vector3> vertices   = new List<Vector3>();
-        List<int>     triangulos = new List<int>();
-
-        for (int i = 0; i < contorno.Count; i++)
-        {
-            Vector3 v0 = contorno[i];
-            Vector3 v1 = contorno[(i + 1) % contorno.Count];
-
-            int idx = vertices.Count;
-            vertices.Add(centroide);
-            vertices.Add(v0);
-            vertices.Add(v1);
-            triangulos.Add(idx);
-            triangulos.Add(idx + 1);
-            triangulos.Add(idx + 2);
-        }
-
-        Mesh mesh = new Mesh { name = "AreaUnificadaBases_" + tag };
-        if (vertices.Count > 65535)
-            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        mesh.SetVertices(vertices);
-        mesh.SetTriangles(triangulos, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        areasUnificadasPorTag[tag] = mesh;
-        return mesh;
-    }
-
-    private static float ObterAlturaRender(Terrain terreno, Vector3 pos, float altVis)
-    {
-        if (terreno != null)
-            return terreno.SampleHeight(pos) + terreno.transform.position.y + altVis;
-        return pos.y + altVis;
     }
 
     private static void AdicionarBordaVisivel(
@@ -1042,7 +817,7 @@ public class BaseLimite : MonoBehaviour
             intervalos.Add(new IntervaloAngular(0f, fimNormalizado - CirculoCompleto));
         }
     }
-    
+
     private void OnDrawGizmos()
     {
         if (!mostrarArea || Application.isPlaying)
@@ -1158,49 +933,25 @@ public class BaseLimite : MonoBehaviour
         ponto.y = baseLimite.ObterAlturaVisual(ponto);
         return ponto;
     }
-    
-    private void OnDrawGizmosSelected()
-    {
-        if (!mostrarConexoes || !Application.isPlaying)
-            return;
-        
-        // Desenha conexões com outras bases da mesma tag
-        if (basesPorTag.ContainsKey(tagBase))
-        {
-            Gizmos.color = corConexao;
-            
-            foreach (BaseLimite outraBase in basesPorTag[tagBase])
-            {
-                if (outraBase == this || outraBase == null)
-                    continue;
-                
-                Gizmos.DrawLine(transform.position, outraBase.transform.position);
-            }
-        }
-        
-    }
-    
+
     // =========================================================
     // CONFIGURAÇÕES PÚBLICAS
     // =========================================================
-    
+
     public float GetRaioArea() => raioArea;
     public string GetTagBase() => tagBase;
-    
+
     /// <summary>
     /// Atualiza o raio da área (útil para upgrades de base)
     /// </summary>
     public void SetRaioArea(float novoRaio)
     {
         raioArea = Mathf.Max(5f, novoRaio);
-        
-        // Recria o preenchimento e atualiza o contorno da equipe.
-        if (meshCirculo != null) Destroy(meshCirculo);
+
+        // Atualiza o contorno da equipe.
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
-        CriarMeshes();
     }
-    
+
     /// <summary>
     /// Configura a tag da base (usado quando é adicionado via código)
     /// </summary>
@@ -1208,37 +959,34 @@ public class BaseLimite : MonoBehaviour
     {
         if (string.IsNullOrEmpty(novaTag))
             return;
-        
+
         // Remove do registro antigo
         RemoverBase();
-        
+
         // Atualiza tag
         tagBase = novaTag;
-        
+
         // Registra com a nova tag (se não estiver desregistrado temporariamente)
         if (!desregistradoTemporariamente)
             RegistrarBase();
         else
             InvalidarBordaUnificada(novaTag);
     }
-    
+
     private void OnValidate()
     {
         InvalidarBordaUnificada(tagBase);
-        InvalidarAreaUnificada(tagBase);
         raioArea = Mathf.Max(5f, raioArea);
         velocidadePiscar = Mathf.Max(0.1f, velocidadePiscar);
         alturaVisualizacao = Mathf.Max(0.01f, alturaVisualizacao);
         segmentosCirculo = Mathf.Clamp(segmentosCirculo, 16, 128);
 
-        // Reconstrói materiais e meshes quando qualquer valor muda no Inspector
-        if (!Application.isPlaying || meshCirculo == null)
+        // Reconstrói o material quando qualquer valor muda no Inspector
+        if (!Application.isPlaying || materialBorda == null)
             return;
 
-        if (materialArea != null) { Destroy(materialArea); materialArea = null; }
-        if (materialBorda != null) { Destroy(materialBorda); materialBorda = null; }
-        if (meshCirculo  != null) { Destroy(meshCirculo);   meshCirculo  = null; }
+        Destroy(materialBorda);
+        materialBorda = null;
         CriarMateriais();
-        CriarMeshes();
     }
 }

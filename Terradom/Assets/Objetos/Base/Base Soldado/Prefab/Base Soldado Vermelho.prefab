@@ -267,8 +267,8 @@ GameObject:
   - component: {fileID: 4391127395565093973}
   - component: {fileID: 2348207100829215443}
   - component: {fileID: 6471754032522877703}
-  - component: {fileID: 4300563247689032185}
   - component: {fileID: 4145329036128203889}
+  - component: {fileID: 503670519025203292}
   m_Layer: 3
   m_Name: Base Soldado Vermelho
   m_TagString: Vermelho
@@ -384,30 +384,6 @@ MonoBehaviour:
   alturaOffset: 0.5
   tagDoTime: Vermelho
   mostrarLogs: 0
---- !u!114 &4300563247689032185
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6137437102736351055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ba167a82f1e20c409585f06f9f136cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseLimite
-  raioArea: 100
-  tagBase: Vermelho
-  mostrarArea: 1
-  corArea: {r: 1, g: 0.039215688, b: 0, a: 0.15}
-  corBorda: {r: 1, g: 0.039215688, b: 0, a: 0.8}
-  velocidadePiscar: 2
-  alturaVisualizacao: 0.5
-  segmentosCirculo: 64
-  terrain: {fileID: 0}
-  debugLogs: 0
-  mostrarConexoes: 1
-  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!82 &4145329036128203889
 AudioSource:
   m_ObjectHideFlags: 0
@@ -505,6 +481,20 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &503670519025203292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6137437102736351055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1737343cfa8e7444185751f4adfac143, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BaseLimiteIA
+  raioArea: 100
+  tagBase: Vermelho
 --- !u!1 &6252068582237215293
 GameObject:
   m_ObjectHideFlags: 0

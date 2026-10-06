@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
@@ -38,6 +39,16 @@ public class ProjetilDistancia : MonoBehaviour
     [SerializeField] private bool alinharEfeitoComNormal = true;
     [SerializeField] private float tempoParaDestruirEfeito = 3f;
 
+    // Buffer COMPARTILHADO entre todos os projeteis (uso sincrono na main thread).
+    // Antes cada bala alocava seu proprio array de 32 RaycastHit.
+    private const int CapBufferHits = 1024;
+    private static RaycastHit[] bufferHitsImpacto = new RaycastHit[32];
+
+    // Cache da reflection dos metodos de dano, por tipo de componente.
+    private static readonly string[] NomesMetodoDano = { "AplicarDano", "ReceberDano", "TomarDano" };
+    private static readonly Dictionary<Type, MethodInfo[]> metodosDanoPorTipo =
+        new Dictionary<Type, MethodInfo[]>();
+
     private Transform alvo;
     private Transform origemDisparo;
     private TankLeve tankDono;
@@ -50,7 +61,7 @@ public class ProjetilDistancia : MonoBehaviour
     private Vector3 direcaoInicial;
     private bool jaColidiu;
     private bool direcaoDefinida;
-    private RaycastHit[] bufferHitsImpacto = new RaycastHit[32];
+    private bool encerrando;
 
     private Vector3 posicaoImpacto;
     private Vector3 normalImpacto;
@@ -62,24 +73,49 @@ public class ProjetilDistancia : MonoBehaviour
     // CONFIGURAR
     // =====================================================================
 
+    /// <summary>
+    /// Define apenas QUEM disparou (equipe, tanque dono e quem ignorar na colisao),
+    /// sem mexer em direcao, dano ou velocidade. Use em quem instancia a bala sem chamar
+    /// Configurar(...) completo (ex.: Torre). Sem isso a bala usa as tags do prefab e nao
+    /// tem protecao contra fogo amigo.
+    /// </summary>
+    public void DefinirDono(Transform novoDono)
+    {
+        origemDisparo = novoDono;
+        tankDono = novoDono != null ? novoDono.GetComponentInParent<TankLeve>() : null;
+        tagEquipeDona = ObterTagEquipe(novoDono);
+
+        AplicarTagsPelaEquipeDona();
+    }
+
     public void Configurar(Transform novoAlvo, int novoDano, float novaVelocidade)
     {
-        alvo      = novoAlvo;
-        dano      = novoDano;
+        alvo       = novoAlvo;
+        dano       = novoDano;
         velocidade = novaVelocidade;
 
-        // BUG 4 CORRIGIDO: o overload simples não definia tagEquipeDona, deixando
-        // EhAliado() sempre retornar false — sem proteção de fogo amigo.
-        // Agora infere a equipe dona pela tag oposta do alvo.
-        // Ex: alvo "Vermelho" → quem disparou provavelmente é "Azul".
-        // Se o alvo não tiver tag de equipe reconhecida, tagEquipeDona fica vazio
-        // (comportamento original preservado).
+        // Sem dono informado, infere a equipe pela tag oposta do alvo
+        // (alvo "Vermelho" -> dono provavelmente "Azul"). Preserva o comportamento original.
         if (novoAlvo != null)
         {
             string tagAlvo = ObterTagEquipe(novoAlvo);
-            if      (tagAlvo == "Vermelho") { tagEquipeDona = "Azul";    tagsQueRecebemDano = new[] { "Vermelho", "Verde" }; }
-            else if (tagAlvo == "Azul")     { tagEquipeDona = "Vermelho"; tagsQueRecebemDano = new[] { "Azul",    "Verde" }; }
-            else if (tagAlvo == "Verde")    { tagEquipeDona = "";          /* sem alvo com tag de equipe conhecida */ }
+            if (tagAlvo == "Vermelho")
+            {
+                tagEquipeDona = "Azul";
+                tagsQueRecebemDano = new[] { "Vermelho", "Verde" };
+            }
+            else if (tagAlvo == "Azul")
+            {
+                tagEquipeDona = "Vermelho";
+                tagsQueRecebemDano = new[] { "Azul", "Verde" };
+            }
+            else if (tagAlvo == "Verde")
+            {
+                // Dono desconhecido: nao da para proteger aliados, mas o alvo Verde
+                // precisa poder receber dano (antes ficava com a tag padrao "Vermelho").
+                tagEquipeDona = string.Empty;
+                tagsQueRecebemDano = new[] { "Verde" };
+            }
         }
 
         DefinirDirecaoInicial();
@@ -88,19 +124,15 @@ public class ProjetilDistancia : MonoBehaviour
     public void Configurar(Transform novoAlvo, int novoDano, float novaVelocidade,
                            Transform novoDono, Vector3 pontoMira)
     {
-        alvo          = novoAlvo;
-        dano          = novoDano;
-        velocidade    = novaVelocidade;
-        origemDisparo = novoDono;
-        tankDono      = novoDono != null ? novoDono.GetComponentInParent<TankLeve>() : null;
-        tagEquipeDona = ObterTagEquipe(novoDono);
+        alvo       = novoAlvo;
+        dano       = novoDano;
+        velocidade = novaVelocidade;
+
+        DefinirDono(novoDono);
+
         distanciaDoDisparo = novoDono != null && novoAlvo != null
             ? Vector3.Distance(novoDono.position, novoAlvo.position)
             : 0f;
-
-        if      (tagEquipeDona == "Azul")    tagsQueRecebemDano = new[] { "Vermelho", "Verde" };
-        else if (tagEquipeDona == "Vermelho") tagsQueRecebemDano = new[] { "Azul",    "Verde" };
-        else if (tagEquipeDona == "Verde")    tagsQueRecebemDano = new[] { "Azul",    "Vermelho" };
 
         DefinirDirecaoInicial(pontoMira);
     }
@@ -111,6 +143,13 @@ public class ProjetilDistancia : MonoBehaviour
         Configurar(novoAlvo, novoDano, novaVelocidade, novoDono, pontoMira);
         camadasAlvoPermitidas   = novasCamadasAlvo;
         restringirDanoPorCamada = true;
+    }
+
+    private void AplicarTagsPelaEquipeDona()
+    {
+        if      (tagEquipeDona == "Azul")     tagsQueRecebemDano = new[] { "Vermelho", "Verde" };
+        else if (tagEquipeDona == "Vermelho") tagsQueRecebemDano = new[] { "Azul",     "Verde" };
+        else if (tagEquipeDona == "Verde")    tagsQueRecebemDano = new[] { "Azul",     "Vermelho" };
     }
 
     // =====================================================================
@@ -141,8 +180,13 @@ public class ProjetilDistancia : MonoBehaviour
         MoverComDeteccaoContinua(Time.fixedDeltaTime);
     }
 
+    private void OnApplicationQuit()
+    {
+        encerrando = true;
+    }
+
     // =====================================================================
-    // DIREÇÃO INICIAL
+    // DIRECAO INICIAL
     // =====================================================================
 
     private void DefinirDirecaoInicial()
@@ -188,14 +232,14 @@ public class ProjetilDistancia : MonoBehaviour
     {
         if (!configurarRigidbodyAutomaticamente || rb == null) return;
 
-        rb.isKinematic         = true;
-        rb.useGravity          = false;
-        rb.interpolation       = RigidbodyInterpolation.Interpolate;
+        rb.isKinematic            = true;
+        rb.useGravity             = false;
+        rb.interpolation          = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
     }
 
     // =====================================================================
-    // MOVIMENTO E DETECÇÃO
+    // MOVIMENTO E DETECCAO
     // =====================================================================
 
     private void MoverComDeteccaoContinua(float deltaTime)
@@ -213,9 +257,7 @@ public class ProjetilDistancia : MonoBehaviour
         {
             Vector3 pontoImpacto = hit.point;
 
-            // BUG 5 CORRIGIDO: "== Vector3.zero" é comparação imprecisa com floats.
-            // hit.point retorna zero quando o projétil começa dentro de um collider.
-            // sqrMagnitude é a comparação correta para verificar vetor próximo de zero.
+            // hit.point vem zerado quando o projetil comeca dentro de um collider.
             if (pontoImpacto.sqrMagnitude < 0.0001f)
                 pontoImpacto = origem + direcao * hit.distance;
 
@@ -246,21 +288,17 @@ public class ProjetilDistancia : MonoBehaviour
 
         float distanciaTotal = distanciaMovimento + Mathf.Max(0f, margemDeteccaoImpacto);
         float raio           = Mathf.Max(0.01f, raioDeteccaoImpacto);
+        Vector3 dirNormalizada = direcao.normalized;
 
-        // BUG 3 CORRIGIDO: while(true) sem saída de emergência.
-        // Array.Resize sem teto criava alocações GC indefinidas em cenas densas.
-        // Agora o buffer tem cap de 1024 hits — suficiente para qualquer cenário normal.
-        const int capBuffer = 1024;
-
-        while (bufferHitsImpacto.Length <= capBuffer)
+        while (true)
         {
             int quantidade = Physics.SphereCastNonAlloc(
-                origem, raio, direcao.normalized,
+                origem, raio, dirNormalizada,
                 bufferHitsImpacto, distanciaTotal,
                 camadasDeImpacto, triggerMode
             );
 
-            bool  encontrou     = false;
+            bool  encontrou      = false;
             float menorDistancia = float.MaxValue;
 
             for (int i = 0; i < quantidade; i++)
@@ -278,22 +316,22 @@ public class ProjetilDistancia : MonoBehaviour
                 }
             }
 
-            // Buffer não estava cheio: resultado é completo
+            // Buffer nao encheu: o resultado e completo.
             if (quantidade < bufferHitsImpacto.Length)
                 return encontrou;
 
-            // Buffer estava cheio: pode ter hits ignorados — dobra e tenta de novo
-            int novoTamanho = bufferHitsImpacto.Length * 2;
-            if (novoTamanho > capBuffer) novoTamanho = capBuffer;
-            Array.Resize(ref bufferHitsImpacto, novoTamanho);
-        }
+            // Encheu e ja esta no teto: devolve o melhor encontrado
+            // (antes o loop nunca terminava ao atingir o teto).
+            if (bufferHitsImpacto.Length >= CapBufferHits)
+                return encontrou;
 
-        // Chegou no cap: retorna o melhor encontrado até agora
-        return melhorHit.collider != null;
+            // Encheu: pode haver hits ignorados. Dobra (ate o teto) e tenta de novo.
+            Array.Resize(ref bufferHitsImpacto, Mathf.Min(bufferHitsImpacto.Length * 2, CapBufferHits));
+        }
     }
 
     // =====================================================================
-    // COLISÃO
+    // COLISAO
     // =====================================================================
 
     private bool ColisorEhDoProprioProjetil(Collider colisor)
@@ -317,8 +355,9 @@ public class ProjetilDistancia : MonoBehaviour
 
         if (collision.contactCount > 0)
         {
-            posicaoImpacto = collision.contacts[0].point;
-            normalImpacto  = collision.contacts[0].normal;
+            ContactPoint contato = collision.GetContact(0);
+            posicaoImpacto = contato.point;
+            normalImpacto  = contato.normal;
             houveImpacto   = true;
         }
 
@@ -328,6 +367,18 @@ public class ProjetilDistancia : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (other == null) return;
+        if (ColisorEhDoProprioProjetil(other) || EhAliado(other.transform)) return;
+
+        // Guarda o ponto do impacto para o efeito (antes triggers nunca tocavam efeito).
+        // bounds.ClosestPoint e seguro para qualquer collider; Collider.ClosestPoint
+        // falha em MeshCollider nao convexo.
+        if (!houveImpacto)
+        {
+            posicaoImpacto = other.bounds.ClosestPoint(transform.position);
+            normalImpacto  = -direcaoInicial;
+            houveImpacto   = true;
+        }
+
         ColidiuComCollider(other);
     }
 
@@ -363,13 +414,18 @@ public class ProjetilDistancia : MonoBehaviour
     }
 
     // =====================================================================
-    // EFEITO AO SER DESTRUÍDO
+    // EFEITO AO SER DESTRUIDO
     // =====================================================================
 
     private void OnDestroy()
     {
         if (!resultadoRegistrado && tankDono != null)
             RegistrarResultadoDisparo(false);
+
+        // Nao cria objetos ao sair do Play Mode nem ao descarregar a cena
+        // (evita o aviso "Some objects were not cleaned up when closing the scene").
+        if (encerrando || !gameObject.scene.isLoaded)
+            return;
 
         if (tocarEfeitoSomenteNoImpacto && !houveImpacto) return;
         SpawnarEfeito();
@@ -399,7 +455,7 @@ public class ProjetilDistancia : MonoBehaviour
     }
 
     // =====================================================================
-    // LÓGICA DE DANO
+    // LOGICA DE DANO
     // =====================================================================
 
     private bool TentarAplicarDano(Transform transformAtingido)
@@ -435,10 +491,7 @@ public class ProjetilDistancia : MonoBehaviour
         if (!baseVidaIgnoraTagDoAlvo && !ObjetoOuFamiliaTemTagPermitida(transformAtingido))
             return false;
 
-        // BUG 1 CORRIGIDO: baseVidaIgnoraTagDoAlvo = true (padrão) fazia com que QUALQUER
-        // BaseVidaIA recebesse dano, incluindo bases da própria equipe do projétil.
-        // O check anterior só validava a tag do ALVO, mas nunca comparava com a equipe
-        // do ATACANTE. Agora: se a base for aliada, ignora — independente de qualquer flag.
+        // Base aliada nunca recebe dano, independente das flags.
         if (!string.IsNullOrEmpty(tagEquipeDona) && ObterTagEquipe(transformAtingido) == tagEquipeDona)
             return false;
 
@@ -540,9 +593,7 @@ public class ProjetilDistancia : MonoBehaviour
     {
         if (alvoTransform == null) return false;
 
-        // BUG 6 CORRIGIDO: GetComponents<MonoBehaviour>() era chamado separadamente,
-        // mas GetComponentsInChildren já inclui o próprio objeto — os componentes do root
-        // eram verificados duas vezes (redundante). Removida a chamada duplicada.
+        // GetComponentsInChildren ja inclui o proprio objeto.
         if (TentarInvocarMetodoDeDanoNosComponentes(
                 alvoTransform.GetComponentsInChildren<MonoBehaviour>(true), valorDano))
             return true;
@@ -563,30 +614,42 @@ public class ProjetilDistancia : MonoBehaviour
             MonoBehaviour comp = componentes[i];
             if (comp == null || comp == this) continue;
 
-            if (TentarInvocarMetodo(comp, "AplicarDano", valorDano)) return true;
-            if (TentarInvocarMetodo(comp, "ReceberDano",  valorDano)) return true;
-            if (TentarInvocarMetodo(comp, "TomarDano",    valorDano)) return true;
+            MethodInfo[] metodos = ObterMetodosDeDano(comp.GetType());
+            for (int m = 0; m < metodos.Length; m++)
+            {
+                if (metodos[m] != null && TentarInvocarMetodo(comp, metodos[m], valorDano))
+                    return true;
+            }
         }
 
         return false;
     }
 
-    private bool TentarInvocarMetodo(MonoBehaviour componente, string nomeMetodo, int valorDano)
+    // Reflection resolvida uma vez por tipo (antes: GetMethod x3 por componente a cada impacto).
+    private static MethodInfo[] ObterMetodosDeDano(Type tipo)
     {
-        MethodInfo metodo = componente.GetType().GetMethod(
-            nomeMetodo,
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-            null,
-            new[] { typeof(int) },
-            null
-        );
+        if (metodosDanoPorTipo.TryGetValue(tipo, out MethodInfo[] cache))
+            return cache;
 
-        if (metodo == null) return false;
+        MethodInfo[] metodos = new MethodInfo[NomesMetodoDano.Length];
+        for (int i = 0; i < NomesMetodoDano.Length; i++)
+        {
+            metodos[i] = tipo.GetMethod(
+                NomesMetodoDano[i],
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                new[] { typeof(int) },
+                null
+            );
+        }
 
-        // BUG 2 CORRIGIDO: metodo.Invoke sem try/catch.
-        // Se o método de dano do alvo lançar qualquer exceção, ela subia como
-        // TargetInvocationException e interrompia ColidiuComTransform antes do
-        // Destroy(gameObject) — projétil ficava vivo com jaColidiu = true até expirar.
+        metodosDanoPorTipo[tipo] = metodos;
+        return metodos;
+    }
+
+    private bool TentarInvocarMetodo(MonoBehaviour componente, MethodInfo metodo, int valorDano)
+    {
+        // Excecao no metodo do alvo nao pode impedir o Destroy do projetil.
         try
         {
             metodo.Invoke(componente, new object[] { valorDano });
@@ -594,7 +657,7 @@ public class ProjetilDistancia : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[ProjetilDistancia] Falha ao invocar {nomeMetodo} em {componente.GetType().Name}: {e.InnerException?.Message ?? e.Message}");
+            Debug.LogWarning($"[ProjetilDistancia] Falha ao invocar {metodo.Name} em {componente.GetType().Name}: {e.InnerException?.Message ?? e.Message}");
             return false;
         }
     }
@@ -634,7 +697,7 @@ public class ProjetilDistancia : MonoBehaviour
     }
 
     // =====================================================================
-    // VALIDAÇÃO
+    // VALIDACAO
     // =====================================================================
 
     private void OnValidate()

@@ -54,6 +54,7 @@ public class Torre : MonoBehaviour
     // =====================================================================
     [Header("Disparo")]
     [SerializeField] private GameObject prefabBala;
+    [Tooltip("So vale para balas com Rigidbody dinamico. O ProjetilDistancia usa o proprio campo 'Velocidade'.")]
     [SerializeField] private float velocidadeBala = 20f;
     [SerializeField] private float tirosPorSegundo = 2f;
     [Tooltip("Destroi a bala apos X segundos (0 = desligado; a bala se encarrega).")]
@@ -357,6 +358,12 @@ public class Torre : MonoBehaviour
         _tempoProximoTiro = Time.time + (1f / tirosPorSegundo);
 
         GameObject bala = Instantiate(prefabBala, pontoDisparo.position, pontoDisparo.rotation);
+
+        // Informa a equipe da torre ao projetil: protege aliados (fogo amigo) e define
+        // quem a bala pode ferir. Sem isso ela usa as tags fixas do prefab.
+        ProjetilDistancia projetil = bala.GetComponent<ProjetilDistancia>();
+        if (projetil != null)
+            projetil.DefinirDono(transform);
 
         Rigidbody rb = bala.GetComponent<Rigidbody>();
         if (rb != null && !rb.isKinematic)

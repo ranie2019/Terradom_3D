@@ -23,7 +23,7 @@ public class BaseAreaIA : MonoBehaviour
     [SerializeField] private LayerMask camadaBloqueio = ~0;
 
     [Header("Ponto de Referência")]
-    [Tooltip("Arraste aqui a primeira Base Soldado da cena. Novas bases serão geradas ao redor deste ponto.")]
+    [Tooltip("Arraste aqui a primeira Base Soldado da cena.")]
     [SerializeField] private Transform pontoReferencia;
 
     [Header("Limite do Terreno")]
@@ -40,8 +40,26 @@ public class BaseAreaIA : MonoBehaviour
 
     private Transform pastaBases;
 
+    // Cache de layers — calculado uma vez no Awake para não chamar
+    // LayerMask.NameToLayer (string lookup) em cada tick de jogo.
+    private int _layerBaseSoldado;
+    private int _layerBaseTank;
+    private int _layerBaseAviao;
+    private int _layerTorreTerra;
+    private int _layerTorreAr;
+    private int _layerDefault;
+
+    private readonly List<Transform> _bufferBases = new List<Transform>();
+
     private void Awake()
     {
+        _layerBaseSoldado = LayerMask.NameToLayer("BaseSoldado");
+        _layerBaseTank    = LayerMask.NameToLayer("BaseTank");
+        _layerBaseAviao   = LayerMask.NameToLayer("BaseAviao");
+        _layerTorreTerra  = LayerMask.NameToLayer("TorreTerra");
+        _layerTorreAr     = LayerMask.NameToLayer("TorreAr");
+        _layerDefault     = LayerMask.NameToLayer("Default");
+
         GarantirPastaBases();
     }
 
@@ -53,8 +71,7 @@ public class BaseAreaIA : MonoBehaviour
     }
 
     // =========================================================
-    // PUBLICO
-    // 0 = Soldado | 1 = Tank | 2 = Aviao | 3 = Torre Terra | 4 = Torre Ar
+    // PÚBLICO — 0=Soldado 1=Tank 2=Aviao 3=TorreTerra 4=TorreAr
     // =========================================================
 
     public bool TentarCriarBasePorIndice(int indice)
@@ -70,48 +87,32 @@ public class BaseAreaIA : MonoBehaviour
         return false;
     }
 
-    public bool TentarCriarBaseSoldado()
-    {
-        return CriarBase(prefabBaseSoldado, "BaseSoldado",
-            () => GameControllerRecursosIA.Instance.PodeCriarBaseSoldado(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseSoldado());
-    }
+    public bool TentarCriarBaseSoldado() => CriarBase(prefabBaseSoldado, "BaseSoldado",
+        () => GameControllerRecursosIA.Instance.PodeCriarBaseSoldado(),
+        () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseSoldado());
 
-    public bool TentarCriarBaseTank()
-    {
-        return CriarBase(prefabBaseTank, "BaseTank",
-            () => GameControllerRecursosIA.Instance.PodeCriarBaseVeiculo(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseVeiculo());
-    }
+    public bool TentarCriarBaseTank() => CriarBase(prefabBaseTank, "BaseTank",
+        () => GameControllerRecursosIA.Instance.PodeCriarBaseVeiculo(),
+        () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseVeiculo());
 
-    public bool TentarCriarBaseAviao()
-    {
-        return CriarBase(prefabBaseAviao, "BaseAviao",
-            () => GameControllerRecursosIA.Instance.PodeCriarBaseAviao(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseAviao());
-    }
+    public bool TentarCriarBaseAviao() => CriarBase(prefabBaseAviao, "BaseAviao",
+        () => GameControllerRecursosIA.Instance.PodeCriarBaseAviao(),
+        () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaBaseAviao());
 
-    public bool TentarCriarTorreTerra()
-    {
-        return CriarBase(prefabTorreTerra, "TorreTerra",
-            () => GameControllerRecursosIA.Instance.PodeCriarTorreTerra(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreTerra());
-    }
+    public bool TentarCriarTorreTerra() => CriarBase(prefabTorreTerra, "TorreTerra",
+        () => GameControllerRecursosIA.Instance.PodeCriarTorreTerra(),
+        () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreTerra());
 
-    public bool TentarCriarTorreAr()
-    {
-        return CriarBase(prefabTorreAr, "TorreAr",
-            () => GameControllerRecursosIA.Instance.PodeCriarTorreAr(),
-            () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreAr());
-    }
+    public bool TentarCriarTorreAr() => CriarBase(prefabTorreAr, "TorreAr",
+        () => GameControllerRecursosIA.Instance.PodeCriarTorreAr(),
+        () => GameControllerRecursosIA.Instance.TentarGastarRecursosDaTorreAr());
 
     // =========================================================
-    // PRIVADO
+    // CRIAÇÃO
     // =========================================================
 
     private bool CriarBase(GameObject prefab, string layerName,
-        System.Func<bool> podeCriar,
-        System.Func<bool> gastarRecursos)
+        System.Func<bool> podeCriar, System.Func<bool> gastarRecursos)
     {
         if (prefab == null)
         {
@@ -125,7 +126,6 @@ public class BaseAreaIA : MonoBehaviour
             return false;
         }
 
-        // Verifica recurso ANTES de gerar posição
         if (!podeCriar()) return false;
 
         if (!TentarGerarPosicaoValida(out Vector3 pos))
@@ -149,7 +149,7 @@ public class BaseAreaIA : MonoBehaviour
 
         int layer = LayerMask.NameToLayer(layerName);
         if (layer == -1)
-            Debug.LogWarning($"[BaseAreaIA] ⚠️ Layer '{layerName}' não existe! Crie em Project Settings > Tags and Layers.");
+            Debug.LogWarning($"[BaseAreaIA] ⚠️ Layer '{layerName}' não existe!");
         else
             AplicarLayerRecursivo(obj, layer);
     }
@@ -162,22 +162,40 @@ public class BaseAreaIA : MonoBehaviour
             AplicarLayerRecursivo(obj.transform.GetChild(i).gameObject, layer);
     }
 
+    // =========================================================
+    // BUSCA DE POSIÇÃO VÁLIDA
+    //
+    // BUG CORRIGIDO: A Tentativa 2 gerava posições em
+    // Random.Range(-raioSpawn, raioSpawn) ao redor da base existente.
+    // Como a base está no centro, e a restrição é distanciaMinimaEntreBases,
+    // quando raioSpawn <= distanciaMinimaEntreBases era matematicamente
+    // IMPOSSÍVEL encontrar uma posição válida — ela sempre estava perto
+    // demais da base que serviu de referência.
+    //
+    // Solução: Tentativa 2 usa coordenadas polares para gerar posições
+    // num ANEL entre distanciaMinimaEntreBases e distanciaMinimaEntreBases+raioSpawn,
+    // garantindo que a posição começa JÁ além da distância mínima.
+    // =========================================================
+
     private bool TentarGerarPosicaoValida(out Vector3 posicaoFinal)
     {
         posicaoFinal = Vector3.zero;
+        if (pastaBases == null) GarantirPastaBases();
 
-        // Centro de referência — usa ponto configurado no Inspector
-        // Se não tiver, tenta usar o próprio transform como fallback
         Vector3 centroReferencia = pontoReferencia != null
             ? pontoReferencia.position
             : transform.position;
 
-        // Tentativa 1: ao redor do ponto de referência
-        for (int i = 0; i < 20; i++)
+        // Tentativa 1: ao redor do ponto de referência com raio maior
+        // Usa raioSpawn + distanciaMinimaEntreBases para cobrir área além da base inicial
+        float raioExtendido = raioSpawn + distanciaMinimaEntreBases;
+        for (int i = 0; i < 30; i++)
         {
+            float angulo = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float distancia = Random.Range(distanciaMinimaEntreBases + 2f, raioExtendido);
             Vector3 pos = centroReferencia + new Vector3(
-                Random.Range(-raioSpawn, raioSpawn), 0,
-                Random.Range(-raioSpawn, raioSpawn));
+                Mathf.Cos(angulo) * distancia, 0,
+                Mathf.Sin(angulo) * distancia);
 
             if (PosicaoValida(pos))
             {
@@ -186,19 +204,24 @@ public class BaseAreaIA : MonoBehaviour
             }
         }
 
-        // Tentativa 2: ao redor de bases existentes
-        if (pastaBases == null) GarantirPastaBases();
-
+        // Tentativa 2: anel ao redor de cada base existente
+        // CORRIGIDO: gera posições ALÉM da distância mínima (não dentro dela)
+        // usando coordenadas polares com raio entre distanciaMinima e distanciaMinima+raioSpawn.
         for (int i = 0; i < pastaBases.childCount; i++)
         {
             Transform baseExistente = pastaBases.GetChild(i);
             if (baseExistente == null) continue;
 
-            for (int j = 0; j < 10; j++)
+            for (int j = 0; j < 20; j++)
             {
+                // Anel: começa ALÉM da distância mínima, não do centro
+                float angulo    = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+                float distancia = Random.Range(distanciaMinimaEntreBases + 2f,
+                                              distanciaMinimaEntreBases + raioSpawn);
+
                 Vector3 pos = baseExistente.position + new Vector3(
-                    Random.Range(-raioSpawn, raioSpawn), 0,
-                    Random.Range(-raioSpawn, raioSpawn));
+                    Mathf.Cos(angulo) * distancia, 0,
+                    Mathf.Sin(angulo) * distancia);
 
                 if (PosicaoValida(pos))
                 {
@@ -214,38 +237,39 @@ public class BaseAreaIA : MonoBehaviour
 
     private bool PosicaoValida(Vector3 pos)
     {
+        // 1. Limites do terreno
         if (terrain != null)
         {
             Vector3 tPos  = terrain.transform.position;
             Vector3 tSize = terrain.terrainData.size;
-
             if (pos.x < tPos.x || pos.x > tPos.x + tSize.x ||
                 pos.z < tPos.z || pos.z > tPos.z + tSize.z)
                 return false;
         }
 
-        Collider[] cols = Physics.OverlapSphere(pos, margemColisao, camadaBloqueio, QueryTriggerInteraction.Ignore);
+        // 2. Colisão com obstáculos — usa cache de layer Default
+        Collider[] cols = Physics.OverlapSphere(pos, margemColisao, camadaBloqueio,
+                                                QueryTriggerInteraction.Ignore);
         for (int i = 0; i < cols.Length; i++)
         {
             if (cols[i] == null) continue;
-            if (cols[i].gameObject.layer == LayerMask.NameToLayer("Default")) continue;
+            if (cols[i].gameObject.layer == _layerDefault) continue;
             return false;
         }
 
+        // 3. Distância mínima entre bases — usa cache de layers
         Collider[] nearby = Physics.OverlapSphere(pos, distanciaMinimaEntreBases);
         for (int i = 0; i < nearby.Length; i++)
         {
             if (nearby[i] == null) continue;
             int layer = nearby[i].gameObject.layer;
-
-            if (layer == LayerMask.NameToLayer("BaseSoldado") ||
-                layer == LayerMask.NameToLayer("BaseTank")    ||
-                layer == LayerMask.NameToLayer("BaseAviao")   ||
-                layer == LayerMask.NameToLayer("TorreTerra") ||
-                layer == LayerMask.NameToLayer("TorreAr"))
+            if (layer == _layerBaseSoldado || layer == _layerBaseTank  ||
+                layer == _layerBaseAviao   || layer == _layerTorreTerra ||
+                layer == _layerTorreAr)
                 return false;
         }
 
+        // 4. Distância mínima de bases inimigas configuradas manualmente
         if (basesInimigas != null)
         {
             foreach (BaseInimiga inimiga in basesInimigas)
@@ -262,21 +286,18 @@ public class BaseAreaIA : MonoBehaviour
     private Vector3 AjustarAlturaTerreno(Vector3 pos)
     {
         if (terrain == null) return pos;
-        float y = terrain.SampleHeight(pos) + terrain.transform.position.y;
-        pos.y = y;
+        pos.y = terrain.SampleHeight(pos) + terrain.transform.position.y;
         return pos;
     }
 
     // =========================================================
-    // CONSULTAS
-    // 0 = Soldado | 1 = Tank | 2 = Aviao | 3 = Torre Terra | 4 = Torre Ar
+    // CONSULTAS — 0=Soldado 1=Tank 2=Aviao 3=TorreTerra 4=TorreAr
     // =========================================================
 
     public int ContarBasesPorIndice(int indice)
     {
         if (pastaBases == null) GarantirPastaBases();
-
-        int layer = LayerMask.NameToLayer(IndiceParaLayerName(indice));
+        int layer = CamadaPorIndice(indice);
         if (layer == -1) return 0;
 
         int count = 0;
@@ -293,30 +314,29 @@ public class BaseAreaIA : MonoBehaviour
     public Transform[] ObterBasesPorIndice(int indice)
     {
         if (pastaBases == null) GarantirPastaBases();
+        int layer = CamadaPorIndice(indice);
+        if (layer == -1) return System.Array.Empty<Transform>();
 
-        int layer = LayerMask.NameToLayer(IndiceParaLayerName(indice));
-        if (layer == -1) return new Transform[0];
-
-        List<Transform> lista = new List<Transform>();
+        _bufferBases.Clear();
         for (int i = 0; i < pastaBases.childCount; i++)
         {
             Transform t = pastaBases.GetChild(i);
             if (t != null && t.gameObject.layer == layer)
-                lista.Add(t);
+                _bufferBases.Add(t);
         }
-        return lista.ToArray();
+        return _bufferBases.ToArray();
     }
 
-    private string IndiceParaLayerName(int indice)
+    private int CamadaPorIndice(int indice)
     {
         switch (indice)
         {
-            case 0: return "BaseSoldado";
-            case 1: return "BaseTank";
-            case 2: return "BaseAviao";
-            case 3: return "TorreTerra";
-            case 4: return "TorreAr";
-            default: return "";
+            case 0: return _layerBaseSoldado;
+            case 1: return _layerBaseTank;
+            case 2: return _layerBaseAviao;
+            case 3: return _layerTorreTerra;
+            case 4: return _layerTorreAr;
+            default: return -1;
         }
     }
 

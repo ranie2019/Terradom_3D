@@ -109,14 +109,12 @@ public class RoboIA : MonoBehaviour
         quantidadeTorreTerra  = roboCriar.ContarTorreTerra();
         quantidadeTorreAr     = roboCriar.ContarTorreAr();
 
-        // Sem nenhuma Base Soldado, interrompe a produção de unidades e
-        // prioriza reconstruí-la. A tentativa ocorre imediatamente e se repete
-        // pelo ciclo normal enquanto a IA aguarda recursos ou espaço válido.
-        if (quantidadeBaseSoldado == 0)
+        // Sem Base Soldado: prioriza reconstrução mas NÃO pausa ainda.
+        // A pausa só ocorre se realmente faltar recurso (ver abaixo).
+        if (quantidadeBaseSoldado == 0 && baseAtual != TipoBaseAtual.Soldado)
         {
-            baseAtual = TipoBaseAtual.Soldado;
+            baseAtual        = TipoBaseAtual.Soldado;
             timerBaseSoldado = 0f;
-            aguardandoBase = true;
         }
 
         if (baseAtual == TipoBaseAtual.Nenhuma)
@@ -134,7 +132,9 @@ public class RoboIA : MonoBehaviour
             TickTimer(ref timerBaseSoldado);
             if (timerBaseSoldado <= 0f)
             {
-                aguardandoBase = true;
+                bool temRec = GameControllerRecursosIA.Instance != null &&
+                              GameControllerRecursosIA.Instance.PodeCriarBaseSoldado();
+                aguardandoBase = !temRec;
                 if (roboCriar.CriarBaseSoldado()) { timerBaseSoldado = tempoBaseSoldado; baseAtual = TipoBaseAtual.Tank; aguardandoBase = false; }
             }
         }
@@ -144,7 +144,9 @@ public class RoboIA : MonoBehaviour
             TickTimer(ref timerBaseTank);
             if (timerBaseTank <= 0f)
             {
-                aguardandoBase = true;
+                bool temRec = GameControllerRecursosIA.Instance != null &&
+                              GameControllerRecursosIA.Instance.PodeCriarBaseVeiculo();
+                aguardandoBase = !temRec;
                 if (roboCriar.CriarBaseTank()) { timerBaseTank = tempoBaseTank; baseAtual = TipoBaseAtual.Aviao; aguardandoBase = false; }
             }
         }
@@ -154,7 +156,9 @@ public class RoboIA : MonoBehaviour
             TickTimer(ref timerBaseAviao);
             if (timerBaseAviao <= 0f)
             {
-                aguardandoBase = true;
+                bool temRec = GameControllerRecursosIA.Instance != null &&
+                              GameControllerRecursosIA.Instance.PodeCriarBaseAviao();
+                aguardandoBase = !temRec;
                 if (roboCriar.CriarBaseAviao()) { timerBaseAviao = tempoBaseAviao; baseAtual = TipoBaseAtual.TorreTerra; aguardandoBase = false; }
             }
         }
@@ -164,7 +168,9 @@ public class RoboIA : MonoBehaviour
             TickTimer(ref timerTorreTerra);
             if (timerTorreTerra <= 0f)
             {
-                aguardandoBase = true;
+                bool temRec = GameControllerRecursosIA.Instance != null &&
+                              GameControllerRecursosIA.Instance.PodeCriarTorreTerra();
+                aguardandoBase = !temRec;
                 if (roboCriar.CriarTorreTerra()) { timerTorreTerra = tempoTorreTerra; baseAtual = TipoBaseAtual.TorreAr; aguardandoBase = false; }
             }
         }
@@ -174,7 +180,9 @@ public class RoboIA : MonoBehaviour
             TickTimer(ref timerTorreAr);
             if (timerTorreAr <= 0f)
             {
-                aguardandoBase = true;
+                bool temRec = GameControllerRecursosIA.Instance != null &&
+                              GameControllerRecursosIA.Instance.PodeCriarTorreAr();
+                aguardandoBase = !temRec;
                 if (roboCriar.CriarTorreAr()) { timerTorreAr = tempoTorreAr; baseAtual = TipoBaseAtual.Soldado; aguardandoBase = false; }
             }
         }
@@ -332,6 +340,14 @@ public class RoboIA : MonoBehaviour
         debug += $"Construindo:   {baseAtual}\n";
         debug += $"Producao:      {(aguardandoBase ? "PAUSADA" : "ATIVA")}\n";
         debug += $"Prox. Unidade: {etapaLabel}\n";
+        debug += $"---\n";
+        debug += "RECURSOS IA\n";
+        int _pedra   = GameControllerRecursosIA.Instance != null ? GameControllerRecursosIA.Instance.pedra   : 0;
+        int _madeira = GameControllerRecursosIA.Instance != null ? GameControllerRecursosIA.Instance.madeira : 0;
+        int _metal   = GameControllerRecursosIA.Instance != null ? GameControllerRecursosIA.Instance.metal   : 0;
+        debug += $"Pedra:   {_pedra}\n";
+        debug += $"Madeira: {_madeira}\n";
+        debug += $"Metal:   {_metal}\n";
         debug += $"---\n";
         debug += "UNIDADES ATUAIS\n";
         debug += $"Guerreiros: {quantidadeGuerreiros}\n";

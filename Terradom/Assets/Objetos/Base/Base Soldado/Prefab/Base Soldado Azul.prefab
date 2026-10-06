@@ -662,15 +662,11 @@ MonoBehaviour:
   raioArea: 100
   tagBase: Azul
   mostrarArea: 1
-  corArea: {r: 0.2, g: 0.31764707, b: 0.8, a: 0}
   corBorda: {r: 0.2, g: 0.31764707, b: 0.8, a: 1}
   velocidadePiscar: 2
   alturaVisualizacao: 0.5
   segmentosCirculo: 64
   terrain: {fileID: 0}
-  debugLogs: 0
-  mostrarConexoes: 1
-  corConexao: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!82 &-2894084988390553274
 AudioSource:
   m_ObjectHideFlags: 0

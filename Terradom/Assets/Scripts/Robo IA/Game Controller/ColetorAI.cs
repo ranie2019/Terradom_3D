@@ -90,6 +90,7 @@ public class ColetorAi : MonoBehaviour
     [SerializeField] private float distanciaAcao = 2f;
     [SerializeField] private float distanciaSairDaAcao = 2.5f;
     [SerializeField] private float tempoEntreAcoes = 1f;
+    [SerializeField] private int   quantidadePorAcao = 10;
 
     [Header("Tags de recurso")]
     [SerializeField] private string tagPedra = "Pedra";
@@ -672,6 +673,14 @@ public class ColetorAi : MonoBehaviour
             return;
 
         proximaAcao = Time.time + tempoEntreAcoes;
+
+        // Entrega o recurso coletado ao GameController da IA
+        if (gameControllerRecursos != null && tipoRecursoAtual != TipoRecurso.Nenhum)
+        {
+            string nomeRecurso = tipoRecursoAtual == TipoRecurso.Pedra  ? "Pedra"  :
+                                 tipoRecursoAtual == TipoRecurso.Arvore ? "Arvore" : "Metal";
+            gameControllerRecursos.AdicionarRecurso("Vermelho", nomeRecurso, quantidadePorAcao);
+        }
     }
 
     private void MoverNaDirecao(Vector3 direcao)
